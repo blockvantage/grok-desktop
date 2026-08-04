@@ -1,0 +1,22 @@
+2026-07-14 provider registry preflight on shipped TaskRunner path
+
+pnpm typecheck → 0
+pnpm test → 0 TOTAL=823
+pnpm test:remote → 0
+pnpm build → 0
+git diff --check → 0
+
+Focused (focused/provider-preflight-path.txt): 38 passed
+  provider-preflight, provider-preflight-runner, fail-closed, runner, dispatch, artifacts
+
+Proven:
+  - createProviderPreflight + TaskRunner.providerPreflight on Gateway.start path
+  - deny shell → engine.run never called; receipt detail.source === provider_registry
+  - balanced allow → engine runs to done
+  - ACP registry preflight proceeds under deny (RPC mediates later)
+  - browser-tool-handler + workspace-deliverables extracts; runner ~898 LOC
+
+Not claimed:
+  - AgentProvider.runTurn product execution cutover
+  - live ACP default without GROKDESK_ACP
+  - production relay / vault purge

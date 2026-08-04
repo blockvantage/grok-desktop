@@ -1,0 +1,16 @@
+2026-07-14 policy-provider-gate extract + ACP stdio factory wiring
+
+pnpm typecheck → 0
+pnpm test → 0 TOTAL=816 (from suite/test5.txt)
+pnpm test:remote → 0 (111)
+pnpm build → 0
+git diff --check → 0
+pnpm audit --prod → 2 moderate (documented)
+
+New/changed:
+- packages/gateway/src/services/policy-provider-gate.ts (+test) pure SEC-01 gate
+- TaskRunner uses evaluateProviderOwnToolsGate
+- spawnAcpLineTransport + composition auto-factory when GROKDESK_ACP=1
+- default remains headless-degraded without env
+
+Still blocked: live ACP default without env, grok-landing, vault purge auth, large App/runner splits

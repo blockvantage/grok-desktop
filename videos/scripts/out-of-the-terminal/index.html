@@ -1,0 +1,1207 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Out of the Terminal — Grok Desk launch film (v2 premium pass)</title>
+<style>
+  html, body { margin: 0; padding: 0; background: #000; }
+</style>
+</head>
+<body>
+<div data-composition-id="out-of-the-terminal" data-start="0" data-duration="25.90" data-width="1920" data-height="1080" id="root-comp">
+
+  <!-- ============================================================
+       LIVING CANVAS — warm near-black, breathing key light.
+       The window is a window ON the canvas (payverge film grammar),
+       never a screencast. All spoken type lives in the bottom band.
+       ============================================================ -->
+  <div id="keylight"></div>
+
+  <!-- camera: slow continuous push-in wraps window + finder -->
+  <div id="stage">
+
+    <!-- ---------- ONE PERSISTENT WINDOW: terminal -> app ---------- -->
+    <div id="stage-window">
+      <div id="win-chrome">
+        <div class="tl tl-r"></div>
+        <div class="tl tl-y"></div>
+        <div class="tl tl-g"></div>
+        <div id="win-title">grok</div>
+        <div id="menu-dot"></div>
+      </div>
+
+      <!-- TERMINAL BODY (Act 1) -->
+      <div id="term-body">
+        <div class="tline" id="t0"></div>
+        <div class="tline" id="t1"></div>
+        <div class="tline" id="t2"></div>
+        <div class="tline" id="t3"></div>
+        <div class="tline" id="t4"></div>
+        <div class="tline" id="t5"></div>
+        <div class="tline" id="t6"></div>
+        <div class="tline" id="t7"></div>
+        <div class="tline" id="t8"></div>
+        <div class="tline" id="t9"></div>
+        <div class="tline" id="t10"></div>
+        <div class="tline" id="t11"></div>
+        <div class="tline" id="t12"></div>
+        <div class="tline" id="t13"></div>
+      </div>
+
+      <!-- APP BODY (Acts 2-3) -->
+      <div id="app-body">
+        <div id="app-sidebar">
+          <div class="side-brand">Grok Desk</div>
+          <div class="side-item side-active"><span class="side-ico"></span><span class="side-label">Home</span></div>
+          <div class="side-item"><span class="side-ico"></span><span class="side-label">Scheduled</span></div>
+          <div class="side-item"><span class="side-ico"></span><span class="side-label">Deliverables</span></div>
+          <div class="side-sep"></div>
+          <div class="side-task" id="side-task-1"><span class="side-run"></span><span class="side-label">Competitors</span></div>
+          <div class="side-task" id="side-task-2"><span class="side-run"></span><span class="side-label">Launch graphic</span></div>
+          <div class="side-task" id="side-task-3"><span class="side-run"></span><span class="side-label">File /Marketing</span></div>
+        </div>
+
+        <div id="app-chat">
+          <!-- assistant chat turn (morphed from streaming fragment) -->
+          <div class="chat-turn" id="chat-turn">
+            <div class="turn-avatar"></div>
+            <div class="turn-text" id="turn-text"></div>
+          </div>
+
+          <!-- tool chip (morphed from web_search line) -->
+          <div class="tool-chip" id="tool-chip">
+            <span class="chip-spin"></span><span class="chip-label" id="chip-label"></span>
+          </div>
+
+          <!-- SEARCHES X: citation cards, hero-scale, centered -->
+          <div id="x-cards" data-layout-allow-overlap>
+            <div class="x-card" id="x-card-1">
+              <div class="x-top"><span class="x-avatar">V</span><span class="x-handle">@vallumsoftware</span></div>
+              <div class="x-body">xAI Grok desktop app quietly shipping agentic work modes</div>
+            </div>
+            <div class="x-card" id="x-card-2">
+              <div class="x-top"><span class="x-avatar">M</span><span class="x-handle">@MfaragAiFilm</span></div>
+              <div class="x-body">Grok on the desktop feels like a coworker, not a chatbot</div>
+            </div>
+            <div class="x-card" id="x-card-3">
+              <div class="x-top"><span class="x-avatar">E</span><span class="x-handle">@EGirengi50732</span></div>
+              <div class="x-body">The terminal era of AI agents is ending fast</div>
+            </div>
+          </div>
+
+          <!-- RUNS CODE: hero spreadsheet, counters + score bars -->
+          <div id="sheet" data-layout-allow-overlap>
+            <div class="sheet-head"><span>Competitor</span><span>Price</span><span>Score</span></div>
+            <div class="sheet-row" id="sr-1"><span>Claude Desktop</span><span class="sncell"><span class="sn-cur">$</span><span class="sn" id="sn-a">0</span></span><span class="sn" id="sn-b">0</span><span class="row-bar" id="rb-1"></span></div>
+            <div class="sheet-row" id="sr-2"><span>ChatGPT Desktop</span><span class="sncell"><span class="sn-cur">$</span><span class="sn" id="sn-c">0</span></span><span class="sn" id="sn-d">0</span><span class="row-bar" id="rb-2"></span></div>
+            <div class="sheet-row" id="sr-3"><span>Copilot Cowork</span><span class="sncell"><span class="sn-cur">$</span><span class="sn" id="sn-e">0</span></span><span class="sn" id="sn-f">0</span><span class="row-bar" id="rb-3"></span></div>
+          </div>
+
+          <!-- IN PARALLEL: three live task rows with progress shimmer -->
+          <div id="switcher" data-layout-allow-overlap>
+            <div class="sw-row" id="sw-1">
+              <span class="sw-dot"></span><span class="sw-name">Research competitors</span><span class="sw-pill" id="sw-pill-1">Browsing X</span>
+              <span class="sw-track"><span class="sw-glide" id="sw-glide-1"></span></span>
+            </div>
+            <div class="sw-row" id="sw-2">
+              <span class="sw-dot"></span><span class="sw-name">Design launch graphic</span><span class="sw-pill" id="sw-pill-2">Rendering image</span>
+              <span class="sw-track"><span class="sw-glide" id="sw-glide-2"></span></span>
+            </div>
+            <div class="sw-row" id="sw-3">
+              <span class="sw-dot"></span><span class="sw-name">File everything</span><span class="sw-pill" id="sw-pill-3">Saving to /Marketing</span>
+              <span class="sw-track"><span class="sw-glide" id="sw-glide-3"></span></span>
+            </div>
+          </div>
+
+          <!-- ON A SCHEDULE: hero rule card with week strip -->
+          <div id="sched-card" data-layout-allow-overlap>
+            <div class="sched-head"><span id="sched-title"></span><span class="sched-model" id="sched-model"></span></div>
+            <div class="sched-rule" id="sched-rule">Every Monday &middot; 9:00</div>
+            <div class="sched-week">
+              <span class="wk" id="wk-0">S</span><span class="wk-slot"><span class="wk" id="wk-1-off">M</span><span class="wk wk-on" id="wk-1-on">M</span></span><span class="wk" id="wk-2">T</span><span class="wk" id="wk-3">W</span><span class="wk" id="wk-4">T</span><span class="wk" id="wk-5">F</span><span class="wk" id="wk-6">S</span>
+            </div>
+          </div>
+
+          <!-- DELIVERABLES: artifact card + Reveal in Finder -->
+          <div id="deliverables" data-layout-allow-overlap>
+            <div class="dv-head" id="dv-head"></div>
+            <div class="dv-file" id="dv-f1"><span class="dv-ico"></span><span class="dv-name">brief.md</span></div>
+            <div class="dv-file" id="dv-f2"><span class="dv-ico"></span><span class="dv-name">competitors.xlsx</span></div>
+            <div class="dv-file" id="dv-f3"><span class="dv-ico dv-ico-img"></span><span class="dv-name">launch-graphic.png</span></div>
+            <div class="dv-reveal" id="dv-reveal"><span id="dv-reveal-label"></span></div>
+          </div>
+
+          <!-- composer (receives the goal, typed — the ONE diegetic typewriter) -->
+          <div id="composer">
+            <div id="composer-text"></div><div id="composer-caret"></div>
+            <div id="composer-send"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- cursor that glides to Reveal in Finder -->
+      <div id="cursor"></div>
+    </div>
+
+    <!-- ---------- SYNTHETIC FINDER (Act 4) — pure DOM, zero personal data ---------- -->
+    <div id="finder-frame">
+      <div id="fd-toolbar">
+        <div class="tl tl-r"></div>
+        <div class="tl tl-y"></div>
+        <div class="tl tl-g"></div>
+        <span class="fd-nav fd-back"></span><span class="fd-nav fd-fwd"></span>
+        <span id="fd-title">Marketing</span>
+        <span class="fd-seg"><span class="fd-seg-i fd-seg-on"></span><span class="fd-seg-i"></span><span class="fd-seg-i"></span><span class="fd-seg-i"></span></span>
+        <span id="fd-search"></span>
+      </div>
+      <div id="fd-side">
+        <div class="fd-cap">Favourites</div>
+        <div class="fd-item"><span class="fd-item-ico"></span>Desktop</div>
+        <div class="fd-item"><span class="fd-item-ico"></span>Documents</div>
+        <div class="fd-item"><span class="fd-item-ico"></span>Downloads</div>
+        <div class="fd-cap fd-cap-2">Locations</div>
+        <div class="fd-item"><span class="fd-item-ico fd-ico-hd"></span>Macintosh HD</div>
+      </div>
+      <div id="fd-body">
+        <div class="fd-tile" id="fd-t1">
+          <div class="fd-doc"><span class="fd-doc-fold"></span><span class="fd-line"></span><span class="fd-line"></span><span class="fd-line fd-line-s"></span></div>
+          <div class="fd-label">brief.md</div>
+        </div>
+        <div class="fd-tile" id="fd-t2">
+          <div class="fd-doc"><span class="fd-doc-fold"></span><span class="fd-grid"></span></div>
+          <div class="fd-label">competitors.xlsx</div>
+        </div>
+        <div class="fd-tile fd-selected" id="fd-t3">
+          <div class="fd-thumb"><img src="assets/launch-graphic.png" alt="" data-layout-ignore /></div>
+          <div class="fd-label fd-label-sel">launch-graphic.png</div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /stage -->
+
+  <!-- ============================================================
+       FULL-BLEED IMAGINE BLOOM — the film's one full-bleed moment.
+       The Veo motion clip escapes the window and fills the frame.
+       ============================================================ -->
+  <div id="imagine-bloom" data-layout-allow-overlap>
+    <video id="motion-clip" class="clip" data-start="6.7" data-media-start="3.5" data-duration="1.6" data-track-index="1" src="assets/launch-graphic-motion.mp4" muted playsinline></video>
+  </div>
+
+  <!-- ============================================================
+       TYPE TRACK — one bottom canvas band owns ALL spoken words.
+       Verbatim VO, ±150ms. Media never collides with language.
+       ============================================================ -->
+  <div class="tt tt-hook"  id="tc-seen"     data-layout-allow-overlap>You've seen what Grok Build can do.</div>
+  <div class="tt tt-hook"  id="tc-terminal" data-layout-allow-overlap>In a terminal.</div>
+  <div class="tt tt-title" id="tc-desk"     data-layout-allow-overlap>Now it has a desk.</div>
+  <div class="tt tt-cap"   id="cap-x"       data-layout-allow-overlap>Searches&nbsp;&nbsp;X</div>
+  <div class="tt tt-cap"   id="cap-imagine" data-layout-allow-overlap>Imagines</div>
+  <div class="tt tt-cap"   id="cap-code"    data-layout-allow-overlap>Runs&nbsp;&nbsp;Code</div>
+  <div class="tt tt-cap"   id="cap-par"     data-layout-allow-overlap>In&nbsp;&nbsp;Parallel</div>
+  <div class="tt tt-cap"   id="cap-sched"   data-layout-allow-overlap>On&nbsp;&nbsp;A&nbsp;&nbsp;Schedule</div>
+  <div class="tt tt-lower" id="tc-deliver"  data-layout-allow-overlap>Not a chat reply. Deliverables.</div>
+
+  <!-- ============================================================
+       OUTRO (Act 5)
+       ============================================================ -->
+  <div id="outro">
+    <div id="outro-glow"></div>
+    <div id="outro-icon-wrap">
+      <img id="outro-icon" src="assets/grok-desk-icon.png" alt="" />
+      <div id="icon-sheen" data-layout-allow-overflow></div>
+    </div>
+    <div id="outro-lockup">The whole power of Grok Build. On your desk.</div>
+    <div id="outro-chips"><span class="chip">macOS</span><span class="chip">Windows</span></div>
+    <div id="outro-required">No terminal required.</div>
+    <div id="outro-wink">(It's still in there.)</div>
+  </div>
+
+  <!-- texture -->
+  <div id="vignette"></div>
+  <div id="grain"></div>
+
+  <style>
+    #root-comp {
+      position: relative;
+      width: 1920px;
+      height: 1080px;
+      background: #0b0a09;
+      overflow: hidden;
+      font-family: "SF Pro Display", -apple-system, "Helvetica Neue", sans-serif;
+      --canvas: #0b0a09;
+      --card: #16140f;
+      --cream: #f5f3ee;
+      --muted: #a5a194;
+      --sand: hsl(36 48% 60%);
+      --amber: hsl(36 60% 55%);
+      --success: hsl(152 32% 44%);
+    }
+
+    /* ---------- living canvas ---------- */
+    #root-comp #keylight {
+      position: absolute; inset: 0;
+      z-index: 5; pointer-events: none;
+      background: radial-gradient(ellipse 72% 58% at 50% 30%, rgba(216,178,120,0.085) 0%, rgba(216,178,120,0.0) 68%);
+      opacity: 0.55;
+    }
+
+    /* ---------- camera stage ---------- */
+    #root-comp #stage {
+      position: absolute; inset: 0;
+      z-index: 20;
+      transform-origin: 50% 44%;
+    }
+
+    /* ---------- persistent window (window-on-canvas) ---------- */
+    #root-comp #stage-window {
+      position: absolute;
+      left: 290px; top: 110px;
+      width: 1340px; height: 720px;
+      background: #0a0a0a;
+      border: 1px solid rgba(245,240,230,0.07);
+      border-radius: 12px;
+      box-shadow: 0 60px 160px rgba(0,0,0,0.72), 0 6px 28px rgba(0,0,0,0.55), 0 0 110px rgba(226,178,100,0.05);
+      overflow: hidden;
+      opacity: 0;
+      box-sizing: border-box;
+    }
+    #root-comp #win-chrome {
+      position: absolute;
+      left: 0; top: 0;
+      width: 100%; height: 46px;
+      background: rgba(255,255,255,0.032);
+      border-bottom: 1px solid rgba(255,255,255,0.055);
+      z-index: 8;
+    }
+    #root-comp .tl {
+      position: absolute; top: 17px;
+      width: 13px; height: 13px; border-radius: 50%;
+    }
+    #root-comp .tl-r { left: 20px; background: #e05c4a; }
+    #root-comp .tl-y { left: 42px; background: #d9a441; }
+    #root-comp .tl-g { left: 64px; background: #57a05a; }
+    #root-comp #win-title {
+      position: absolute; left: 0; top: 0;
+      width: 100%; height: 46px;
+      line-height: 46px; text-align: center;
+      font-family: "SF Mono", ui-monospace, Menlo, monospace;
+      font-size: 14px; letter-spacing: 0.02em;
+      color: #b6b2a5;
+    }
+    #root-comp #menu-dot {
+      position: absolute; right: 22px; top: 18px;
+      width: 11px; height: 11px; border-radius: 50%;
+      background: var(--muted);
+      opacity: 0;
+    }
+
+    /* ---------- terminal body ---------- */
+    #root-comp #term-body {
+      position: absolute;
+      left: 0; top: 46px;
+      width: 100%; height: 674px;
+      padding: 30px 40px;
+      box-sizing: border-box;
+      font-family: "SF Mono", ui-monospace, Menlo, monospace;
+      font-size: 20px;
+      line-height: 1.58;
+      color: var(--muted);
+    }
+    #root-comp .tline { opacity: 0; white-space: pre; }
+    #root-comp .tline .prompt { color: var(--sand); }
+    #root-comp .tline .ok { color: var(--sand); }
+    #root-comp .tline .cmd { color: var(--cream); }
+
+    /* ---------- app body ---------- */
+    #root-comp #app-body {
+      position: absolute;
+      left: 0; top: 46px;
+      width: 100%; height: 674px;
+      opacity: 0;
+    }
+    #root-comp #app-sidebar {
+      position: absolute;
+      left: 0; top: 0;
+      width: 240px; height: 100%;
+      background: rgba(255,255,255,0.028);
+      border-right: 1px solid rgba(255,255,255,0.05);
+      padding: 24px 16px;
+      box-sizing: border-box;
+      transform: translateX(-250px);
+    }
+    #root-comp .side-brand {
+      font-size: 19px; font-weight: 600; color: var(--cream);
+      letter-spacing: -0.01em; margin: 4px 8px 24px;
+    }
+    #root-comp .side-item, #root-comp .side-task {
+      display: flex; align-items: center; gap: 12px;
+      padding: 9px 10px; border-radius: 0.5rem;
+      font-size: 16px; color: var(--muted);
+      margin-bottom: 3px;
+    }
+    #root-comp .side-active { background: rgba(255,255,255,0.05); color: var(--cream); }
+    #root-comp .side-ico {
+      width: 15px; height: 15px; border-radius: 4px;
+      background: currentColor; opacity: 0.7;
+    }
+    #root-comp .side-sep {
+      height: 1px; margin: 16px 10px;
+      background: rgba(255,255,255,0.06);
+    }
+    #root-comp .side-task { opacity: 0; }
+    #root-comp .side-run {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--amber);
+    }
+
+    #root-comp #app-chat {
+      position: absolute;
+      left: 240px; top: 0;
+      width: 1100px; height: 100%;
+    }
+
+    /* assistant chat turn */
+    #root-comp .chat-turn {
+      position: absolute;
+      left: 70px; top: 64px;
+      width: 900px;
+      display: flex; gap: 18px;
+      opacity: 0;
+    }
+    #root-comp .turn-avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--sand); flex: 0 0 auto; opacity: 0.85;
+    }
+    #root-comp .turn-text {
+      font-size: 26px; line-height: 1.5; color: var(--cream);
+      font-weight: 400; padding-top: 2px;
+      letter-spacing: -0.005em;
+    }
+    #root-comp .tool-chip {
+      position: absolute;
+      left: 70px; top: 170px;
+      display: inline-flex; align-items: center; gap: 11px;
+      padding: 11px 20px;
+      background: var(--card);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 999px;
+      opacity: 0;
+    }
+    #root-comp .chip-spin {
+      width: 13px; height: 13px; border-radius: 50%;
+      border: 2px solid var(--sand);
+      border-right-color: transparent;
+    }
+    #root-comp .chip-label { font-size: 17px; color: var(--cream); }
+
+    /* SEARCHES X — hero row, centered */
+    #root-comp #x-cards {
+      position: absolute;
+      left: 50px; top: 180px;
+      width: 1000px;
+      display: flex; gap: 20px; justify-content: center;
+    }
+    #root-comp .x-card {
+      width: 300px;
+      background: var(--card);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 0.9rem;
+      padding: 22px 24px;
+      box-shadow: 0 18px 50px rgba(0,0,0,0.35);
+      opacity: 0;
+      box-sizing: border-box;
+    }
+    #root-comp .x-top { display: flex; align-items: center; gap: 12px; margin-bottom: 13px; }
+    #root-comp .x-avatar {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: linear-gradient(135deg, hsl(36 42% 46%), hsl(30 30% 26%));
+      color: var(--cream); font-size: 16px; font-weight: 600;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex: 0 0 auto;
+    }
+    #root-comp .x-handle { font-size: 16px; color: var(--sand); font-weight: 600; }
+    #root-comp .x-body { font-size: 18px; line-height: 1.45; color: var(--cream); }
+
+    /* RUNS CODE — hero sheet, centered */
+    #root-comp #sheet {
+      position: absolute;
+      left: 90px; top: 150px;
+      width: 920px;
+      background: var(--card);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 0.9rem;
+      overflow: hidden;
+      box-shadow: 0 18px 50px rgba(0,0,0,0.35);
+      opacity: 0;
+    }
+    #root-comp .sheet-head, #root-comp .sheet-row {
+      display: grid; grid-template-columns: 2.1fr 1fr 1fr;
+      padding: 18px 30px;
+      font-size: 21px;
+      position: relative;
+    }
+    #root-comp .sheet-head {
+      color: var(--muted); font-weight: 600;
+      background: rgba(255,255,255,0.03);
+      font-size: 15px; letter-spacing: 0.08em; text-transform: uppercase;
+    }
+    #root-comp .sheet-row {
+      color: var(--cream);
+      border-top: 1px solid rgba(255,255,255,0.05);
+      opacity: 0;
+    }
+    #root-comp .sheet-row .sn, #root-comp .sheet-row .sn-cur { color: var(--sand); font-variant-numeric: tabular-nums; }
+    #root-comp .row-bar {
+      position: absolute; left: 0; bottom: 0;
+      width: 100%; height: 2px;
+      background: linear-gradient(90deg, hsl(36 55% 55% / 0.75), hsl(36 55% 55% / 0.1));
+      transform: scaleX(0); transform-origin: left center;
+    }
+
+    /* IN PARALLEL — hero rows with shimmer */
+    #root-comp #switcher {
+      position: absolute;
+      left: 130px; top: 130px;
+      width: 840px;
+      opacity: 0;
+    }
+    #root-comp .sw-row {
+      position: relative;
+      display: flex; align-items: center; gap: 18px;
+      padding: 22px 28px 26px;
+      background: var(--card);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 0.9rem;
+      margin-bottom: 16px;
+      box-shadow: 0 14px 40px rgba(0,0,0,0.3);
+      overflow: hidden;
+      opacity: 0;
+    }
+    #root-comp .sw-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--amber); flex: 0 0 auto;
+    }
+    #root-comp .sw-name { font-size: 21px; color: var(--cream); flex: 1; letter-spacing: -0.005em; }
+    #root-comp .sw-pill {
+      font-size: 15px; color: var(--sand);
+      padding: 6px 14px;
+      border: 1px solid hsl(36 48% 60% / 0.35);
+      border-radius: 999px;
+      opacity: 0;
+    }
+    #root-comp .sw-track {
+      position: absolute; left: 0; bottom: 0;
+      width: 100%; height: 3px;
+      background: rgba(255,255,255,0.05);
+      overflow: hidden;
+    }
+    #root-comp .sw-glide {
+      position: absolute; left: 0; top: 0;
+      width: 140px; height: 100%;
+      background: linear-gradient(90deg, hsl(36 55% 58% / 0), hsl(36 55% 58% / 0.9), hsl(36 55% 58% / 0));
+      transform: translateX(-150px);
+    }
+
+    /* ON A SCHEDULE — hero rule card */
+    #root-comp #sched-card {
+      position: absolute;
+      left: 220px; top: 140px;
+      width: 660px;
+      background: var(--card);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 0.9rem;
+      padding: 30px 36px 34px;
+      box-shadow: 0 18px 50px rgba(0,0,0,0.35);
+      opacity: 0;
+      box-sizing: border-box;
+    }
+    #root-comp .sched-head {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    #root-comp #sched-title { font-size: 20px; color: var(--muted); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+    #root-comp .sched-model {
+      font-size: 15px; color: var(--sand);
+      padding: 6px 14px; border: 1px solid hsl(36 48% 60% / 0.4);
+      border-radius: 999px;
+    }
+    #root-comp .sched-rule {
+      font-size: 40px; color: var(--cream); font-weight: 600;
+      letter-spacing: -0.015em;
+      font-variant-numeric: tabular-nums;
+      opacity: 0;
+    }
+    #root-comp .sched-week {
+      display: flex; gap: 14px; margin-top: 26px;
+    }
+    #root-comp .wk {
+      width: 42px; height: 42px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 16px; font-weight: 600; color: var(--muted);
+      border: 1px solid rgba(255,255,255,0.09);
+      box-sizing: border-box;
+    }
+    #root-comp .wk-slot {
+      position: relative;
+      width: 42px; height: 42px;
+      display: inline-block; flex: 0 0 auto;
+    }
+    #root-comp .wk-slot .wk { position: absolute; left: 0; top: 0; }
+    /* lit state has STATIC colors (crossfaded in, never color-tweened) */
+    #root-comp .wk-on {
+      background: var(--sand); color: #17130c;
+      border-color: var(--sand);
+      opacity: 0;
+    }
+
+    /* DELIVERABLES */
+    #root-comp #deliverables {
+      position: absolute;
+      left: 220px; top: 120px;
+      width: 660px;
+      background: var(--card);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 0.9rem;
+      padding: 28px 32px 30px;
+      box-shadow: 0 18px 50px rgba(0,0,0,0.35);
+      opacity: 0;
+      box-sizing: border-box;
+    }
+    #root-comp .dv-head {
+      font-size: 15px; font-weight: 600;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 18px;
+    }
+    #root-comp .dv-file {
+      display: flex; align-items: center; gap: 16px;
+      padding: 13px 0;
+      font-size: 23px; color: var(--cream);
+      letter-spacing: -0.005em;
+      opacity: 0;
+    }
+    #root-comp .dv-ico {
+      width: 18px; height: 23px; border-radius: 3px;
+      background: var(--sand); opacity: 0.75; flex: 0 0 auto;
+    }
+    #root-comp .dv-ico-img { background: var(--amber); }
+    #root-comp .dv-reveal {
+      margin-top: 24px;
+      display: inline-flex; align-items: center;
+      padding: 14px 26px;
+      background: var(--sand);
+      border-radius: 0.6rem;
+      box-shadow: 0 8px 30px hsl(36 48% 60% / 0.25);
+      font-size: 19px; font-weight: 600; color: #17130c;
+      opacity: 0;
+    }
+
+    /* composer */
+    #root-comp #composer {
+      position: absolute;
+      left: 40px; bottom: 26px;
+      width: 1020px; height: 62px;
+      background: var(--card);
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 0.8rem;
+      display: flex; align-items: center;
+      padding: 0 20px;
+      box-sizing: border-box;
+      opacity: 0;
+    }
+    #root-comp #composer-text {
+      font-size: 20px; color: var(--cream);
+      white-space: nowrap; overflow: hidden;
+      letter-spacing: -0.005em;
+    }
+    #root-comp #composer-text.placeholder { color: var(--muted); }
+    #root-comp #composer-caret {
+      width: 2px; height: 26px; margin-left: 3px;
+      background: var(--sand);
+      opacity: 0; flex: 0 0 auto;
+    }
+    #root-comp #composer-send {
+      margin-left: auto;
+      width: 40px; height: 40px; border-radius: 0.5rem;
+      background: var(--sand); opacity: 0.35;
+      flex: 0 0 auto;
+    }
+
+    /* cursor */
+    #root-comp #cursor {
+      position: absolute;
+      left: 700px; top: 520px;
+      width: 22px; height: 22px;
+      z-index: 40;
+      opacity: 0;
+      background: transparent;
+    }
+    #root-comp #cursor::after {
+      content: "";
+      position: absolute; left: 0; top: 0;
+      width: 0; height: 0;
+      border-left: 13px solid var(--cream);
+      border-top: 8px solid transparent;
+      border-bottom: 8px solid transparent;
+      transform: rotate(38deg);
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6));
+    }
+
+    /* ---------- synthetic finder (pure DOM) ---------- */
+    #root-comp #finder-frame {
+      position: absolute;
+      left: 290px; top: 110px;
+      width: 1340px; height: 720px;
+      border-radius: 14px;
+      overflow: hidden;
+      background: #191715;
+      border: 1px solid rgba(245,240,230,0.08);
+      box-shadow: 0 60px 160px rgba(0,0,0,0.75), 0 6px 28px rgba(0,0,0,0.55);
+      opacity: 0;
+      box-sizing: border-box;
+    }
+    #root-comp #fd-toolbar {
+      position: absolute; left: 0; top: 0;
+      width: 100%; height: 56px;
+      background: #262320;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      z-index: 4;
+    }
+    #root-comp #fd-toolbar .tl { top: 22px; }
+    #root-comp .fd-nav {
+      position: absolute; top: 20px;
+      width: 10px; height: 10px;
+      border-left: 2.5px solid var(--muted);
+      border-bottom: 2.5px solid var(--muted);
+    }
+    #root-comp .fd-back { left: 246px; transform: rotate(45deg); }
+    #root-comp .fd-fwd  { left: 286px; transform: rotate(225deg); opacity: 0.35; }
+    #root-comp #fd-title {
+      position: absolute; left: 330px; top: 0;
+      height: 56px; line-height: 56px;
+      font-size: 18px; font-weight: 600; color: var(--cream);
+      letter-spacing: -0.005em;
+    }
+    #root-comp .fd-seg {
+      position: absolute; right: 120px; top: 15px;
+      display: flex; gap: 4px;
+      padding: 4px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 7px;
+    }
+    #root-comp .fd-seg-i {
+      width: 26px; height: 18px; border-radius: 4px;
+      background: rgba(255,255,255,0.08);
+    }
+    #root-comp .fd-seg-on { background: rgba(255,255,255,0.22); }
+    #root-comp #fd-search {
+      position: absolute; right: 34px; top: 19px;
+      width: 12px; height: 12px;
+      border: 2.5px solid var(--muted);
+      border-radius: 50%;
+    }
+    #root-comp #fd-search::after {
+      content: "";
+      position: absolute; left: 11px; top: 11px;
+      width: 7px; height: 2.5px;
+      background: var(--muted);
+      transform: rotate(45deg);
+    }
+    #root-comp #fd-side {
+      position: absolute; left: 0; top: 56px;
+      width: 220px; height: 664px;
+      background: #201d1a;
+      border-right: 1px solid rgba(255,255,255,0.05);
+      padding: 20px 14px;
+      box-sizing: border-box;
+    }
+    #root-comp .fd-cap {
+      font-size: 12px; font-weight: 600; letter-spacing: 0.05em;
+      color: var(--muted);
+      margin: 0 10px 8px;
+    }
+    #root-comp .fd-cap-2 { margin-top: 22px; }
+    #root-comp .fd-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 7px 10px; border-radius: 6px;
+      font-size: 15px; color: var(--muted);
+      margin-bottom: 1px;
+    }
+    #root-comp .fd-item-ico {
+      width: 14px; height: 12px; border-radius: 3px;
+      background: hsl(210 45% 62% / 0.75);
+      flex: 0 0 auto;
+    }
+    #root-comp .fd-ico-hd { background: rgba(200,198,190,0.5); border-radius: 2px; height: 10px; }
+    #root-comp #fd-body {
+      position: absolute; left: 220px; top: 56px;
+      width: 1120px; height: 664px;
+      padding: 44px 48px;
+      box-sizing: border-box;
+      display: flex; gap: 44px; align-items: flex-start;
+    }
+    #root-comp .fd-tile {
+      width: 200px;
+      display: flex; flex-direction: column; align-items: center; gap: 12px;
+      padding: 14px 8px 12px;
+      border-radius: 10px;
+      opacity: 0;
+    }
+    #root-comp .fd-selected { background: hsl(36 48% 60% / 0.13); }
+    #root-comp .fd-doc {
+      position: relative;
+      width: 96px; height: 118px;
+      background: #ecebe6;
+      border-radius: 6px;
+      box-shadow: 0 10px 26px rgba(0,0,0,0.4);
+      padding: 34px 14px 0;
+      box-sizing: border-box;
+      display: flex; flex-direction: column; gap: 9px;
+    }
+    #root-comp .fd-doc-fold {
+      position: absolute; right: 0; top: 0;
+      width: 0; height: 0;
+      border-left: 22px solid #c9c7c0;
+      border-top: 22px solid #191715;
+      border-radius: 0 6px 0 0;
+    }
+    #root-comp .fd-line { height: 6px; border-radius: 3px; background: #b9b7ae; }
+    #root-comp .fd-line-s { width: 60%; }
+    #root-comp .fd-grid {
+      height: 62px; border-radius: 3px;
+      background:
+        linear-gradient(0deg, transparent 0 45%, hsl(152 32% 44% / 0.5) 45% 55%, transparent 55% 100%),
+        repeating-linear-gradient(0deg, #c4c2ba 0 1.5px, transparent 1.5px 15px),
+        repeating-linear-gradient(90deg, #c4c2ba 0 1.5px, transparent 1.5px 22px);
+      background-color: #dddbd3;
+    }
+    #root-comp .fd-thumb {
+      width: 184px; height: 104px;
+      border-radius: 6px; overflow: hidden;
+      box-shadow: 0 10px 26px rgba(0,0,0,0.45);
+    }
+    #root-comp .fd-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    #root-comp .fd-label { font-size: 15px; color: var(--cream); }
+    #root-comp .fd-label-sel {
+      background: var(--sand); color: #17130c;
+      padding: 2px 10px; border-radius: 5px; font-weight: 500;
+    }
+
+    /* ---------- full-bleed imagine bloom ---------- */
+    #root-comp #imagine-bloom {
+      position: absolute; inset: 0;
+      z-index: 40;
+      overflow: hidden;
+      background: #000;
+      opacity: 0;
+      transform-origin: 50% 46%;
+    }
+    #root-comp #imagine-bloom video {
+      width: 100%; height: 100%;
+      object-fit: cover; display: block;
+    }
+
+    /* ---------- type track (bottom canvas band) ---------- */
+    #root-comp .tt {
+      position: absolute;
+      left: 0; width: 1920px;
+      text-align: center;
+      color: var(--cream);
+      opacity: 0;
+      z-index: 55;
+    }
+    #root-comp .tt-hook {
+      top: 906px;
+      font-size: 62px; font-weight: 500;
+      letter-spacing: -0.02em;
+      text-shadow: 0 3px 30px rgba(0,0,0,0.7);
+    }
+    #root-comp .tt-title {
+      top: 892px;
+      font-size: 82px; font-weight: 650;
+      letter-spacing: -0.025em;
+      text-shadow: 0 4px 44px rgba(0,0,0,0.7);
+    }
+    #root-comp .tt-cap {
+      top: 916px;
+      font-size: 44px; font-weight: 600;
+      letter-spacing: 0.3em; text-transform: uppercase;
+      color: var(--sand);
+      text-shadow: 0 3px 26px rgba(0,0,0,0.8);
+    }
+    /* over the full-bleed clip, the word rides a soft dark band (legible on any footage) */
+    #root-comp #cap-imagine {
+      top: 898px;
+      padding: 18px 0 22px;
+      background: linear-gradient(90deg, rgba(4,3,2,0) 10%, rgba(4,3,2,0.68) 32%, rgba(4,3,2,0.68) 68%, rgba(4,3,2,0) 90%);
+    }
+    #root-comp .tt-lower {
+      top: 910px;
+      font-size: 54px; font-weight: 500;
+      letter-spacing: -0.015em;
+      text-shadow: 0 3px 30px rgba(0,0,0,0.75);
+    }
+
+    /* ---------- outro ---------- */
+    #root-comp #outro {
+      position: absolute;
+      left: 0; top: 0;
+      width: 1920px; height: 1080px;
+      background: var(--canvas);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      opacity: 0;
+      z-index: 60;
+    }
+    #root-comp #outro-glow {
+      position: absolute;
+      left: 50%; top: 44%;
+      width: 1050px; height: 1050px;
+      transform: translate(-50%, -50%);
+      background: radial-gradient(circle, rgba(216,178,120,0.2) 0%, rgba(216,178,120,0) 62%);
+      opacity: 0;
+    }
+    #root-comp #outro-icon-wrap {
+      position: relative;
+      width: 150px; height: 150px;
+      border-radius: 33px;
+      overflow: hidden;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.6), 0 0 70px rgba(226,178,100,0.14);
+      opacity: 0;
+      z-index: 2;
+    }
+    #root-comp #outro-icon { width: 150px; height: 150px; display: block; }
+    #root-comp #icon-sheen {
+      position: absolute; left: 0; top: -50%;
+      width: 56px; height: 200%;
+      background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.28) 50%, rgba(255,255,255,0) 100%);
+    }
+    #root-comp #outro-lockup {
+      margin-top: 46px;
+      font-size: 64px; font-weight: 620;
+      letter-spacing: -0.025em; color: var(--cream);
+      text-align: center; max-width: 1420px;
+      opacity: 0; z-index: 2;
+    }
+    #root-comp #outro-chips {
+      margin-top: 34px;
+      display: flex; gap: 16px;
+      opacity: 0; z-index: 2;
+    }
+    #root-comp #outro-chips .chip {
+      padding: 10px 24px;
+      border: 1px solid rgba(245,243,238,0.28);
+      border-radius: 999px;
+      font-size: 21px; color: #b5b2a7;
+      letter-spacing: 0.02em;
+    }
+    #root-comp #outro-required {
+      margin-top: 52px;
+      font-size: 40px; font-weight: 600;
+      color: var(--cream); letter-spacing: -0.015em;
+      opacity: 0; z-index: 2;
+    }
+    #root-comp #outro-wink {
+      margin-top: 16px;
+      font-size: 22px; font-weight: 400;
+      color: var(--muted);
+      opacity: 0; z-index: 2;
+    }
+
+    /* ---------- texture ---------- */
+    #root-comp #vignette {
+      position: absolute; inset: 0;
+      z-index: 85; pointer-events: none;
+      background: radial-gradient(ellipse 126% 104% at 50% 44%, rgba(11,10,9,0) 54%, rgba(3,3,4,0.66) 100%);
+    }
+    #root-comp #grain {
+      position: absolute; inset: 0;
+      z-index: 90; pointer-events: none;
+      opacity: 0.055;
+      background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='280'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='280' height='280' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+      background-size: 280px 280px;
+    }
+  </style>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    window.__timelines = window.__timelines || {};
+    var tl = gsap.timeline({ paused: true });
+
+    // ===================== TIMING (LOAD-BEARING) =====================
+    // measured from vo_final.words.json — every beat references W.*
+    var W = { seen: 0.52, terminal: 2.36, desk: 3.76, goal: 4.70, x: 5.90, imagines: 6.88,
+              code: 8.26, once: 10.18, nine: 11.82, done: 13.06, work: 16.68, brand: 17.92, required: 22.82 };
+    var DUR = 25.90;
+
+    // ---------- helpers ----------
+    function setText(id, str) { document.getElementById(id).textContent = str; }
+    // typewriter reveal for NON-numeric text (composer only — the one diegetic typewriter).
+    // GSAP's snap:{textContent:1} is numeric-only and renders text as "0" — never use it for text.
+    function typeOn(id, str, tStart, dur, steps) {
+      var n = Math.max(steps || Math.ceil(str.length / 2), 1);
+      for (var i = 1; i <= n; i++) {
+        var cut = Math.round((str.length * i) / n);
+        tl.set("#" + id, { textContent: str.slice(0, cut), overwrite: "auto" }, tStart + (dur * (i - 1)) / n);
+      }
+    }
+    // build a terminal line from segments [{cls, text}] using textContent only (never innerHTML)
+    function buildTerm(id, segs) {
+      var el = document.getElementById(id);
+      segs.forEach(function (s) {
+        var span = document.createElement("span");
+        if (s.cls) span.className = s.cls;
+        span.textContent = s.text;
+        el.appendChild(span);
+      });
+    }
+    // fade-out + hard kill (lint: gsap_exit_missing_hard_kill)
+    function exit(sel, tOut, dur) {
+      tl.to(sel, { opacity: 0, duration: dur || 0.22, ease: "power2.in" }, tOut);
+      tl.set(sel, { opacity: 0 }, tOut + (dur || 0.22) + 0.02);
+    }
+
+    // park the icon sheen off-icon until its sweep (GSAP owns its transform)
+    tl.set("#icon-sheen", { x: -90, rotation: 18 }, 0);
+
+    // ===================== LIVING CANVAS =====================
+    // key light breathes for the whole film (single tween chain, no overlaps)
+    tl.fromTo("#keylight", { opacity: 0.45 }, { opacity: 0.75, duration: 3.2, ease: "sine.inOut", yoyo: true, repeat: 7 }, 0);
+    // camera: one slow continuous push-in across the window acts (film, not screencast)
+    tl.fromTo("#stage", { scale: 1.0 }, { scale: 1.048, duration: W.brand, ease: "none" }, 0);
+
+    // ===================== TERMINAL FLOOD (Act 1) =====================
+    buildTerm("t0",  [{ cls: "prompt", text: "❯ " }, { cls: "cmd", text: "grok" }]);
+    buildTerm("t1",  [{ cls: "prompt", text: "❯ " }, { cls: "cmd", text: "research our competitors and file the findings" }]);
+    buildTerm("t2",  [{ text: "Pulling product details for the category leaders." }]);
+    buildTerm("t3",  [{ cls: "ok", text: "✓ web_search  " }, { text: '"AI desktop coworker apps 2026"' }]);
+    buildTerm("t4",  [{ cls: "ok", text: "✓ web_search  " }, { text: '"Claude desktop vs ChatGPT desktop vs Grok desktop"' }]);
+    buildTerm("t5",  [{ cls: "ok", text: "✓ web_search  " }, { text: '"AI coworker pricing feature comparison"' }]);
+    buildTerm("t6",  [{ cls: "ok", text: "✓ web_fetch   " }, { text: "chatgpt.com/features/desktop" }]);
+    buildTerm("t7",  [{ cls: "ok", text: "✓ web_fetch   " }, { text: "microsoft.com/microsoft-365/copilot-cowork" }]);
+    buildTerm("t8",  [{ cls: "ok", text: "✓ list_dir    " }, { text: "/Marketing" }]);
+    buildTerm("t9",  [{ text: "Writing a concise competitor summary to brief.md." }]);
+    buildTerm("t10", [{ cls: "ok", text: "✓ wrote  " }, { text: "/Marketing/brief.md" }]);
+    buildTerm("t11", [{ cls: "ok", text: "✓ wrote  " }, { text: "/Marketing/competitors.xlsx" }]);
+    buildTerm("t12", [{ cls: "ok", text: "✓ wrote  " }, { text: "/Marketing/launch-graphic.png" }]);
+    buildTerm("t13", [{ text: 'The category is no longer "chat in a window" —' }]);
+
+    // window rises onto the canvas
+    tl.fromTo("#stage-window", { opacity: 0, y: 26, scale: 0.985 }, { opacity: 1, y: 0, scale: 1, duration: 0.6, ease: "power3.out" }, 0.05);
+
+    // flood: 14 lines, ~0.12s stagger from W.seen
+    for (var i = 0; i < 14; i++) {
+      tl.fromTo("#t" + i, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.14, ease: "power2.out" }, W.seen + i * 0.12);
+    }
+
+    // ===================== TYPE TRACK: hooks (bottom band — never over content) =====================
+    tl.fromTo("#tc-seen", { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: 0.36, ease: "power3.out" }, W.seen);
+    exit("#tc-seen", W.terminal - 0.26, 0.2);
+
+    tl.fromTo("#tc-terminal", { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: 0.32, ease: "power3.out" }, W.terminal);
+    exit("#tc-terminal", W.desk - 0.3, 0.2);
+
+    // ===================== THE UNVEIL / MORPH (W.desk = 3.76) =====================
+    var mStart = W.desk;
+
+    tl.to("#stage-window", { borderRadius: 16, backgroundColor: "#131110", duration: 0.6, ease: "power2.inOut" }, mStart);
+    tl.to("#win-title", { color: "#9a968a", duration: 0.5 }, mStart); // title stays 'grok'
+
+    tl.to("#term-body", { opacity: 0, duration: 0.42, ease: "power2.in" }, mStart);
+    tl.set("#term-body", { opacity: 0 }, mStart + 0.44);
+
+    tl.to("#app-body", { opacity: 1, duration: 0.42, ease: "power2.out" }, mStart + 0.1);
+    tl.fromTo("#app-sidebar", { x: -250 }, { x: 0, duration: 0.6, ease: "power3.out" }, mStart + 0.12);
+    tl.fromTo("#menu-dot", { opacity: 0, scale: 0.4 }, { opacity: 1, scale: 1, backgroundColor: "hsl(36 60% 55%)", duration: 0.3, ease: "back.out(2)" }, mStart + 0.34);
+
+    // streaming fragment -> assistant chat turn
+    setText("turn-text", 'The category is no longer "chat in a window."');
+    tl.fromTo("#chat-turn", { opacity: 0, y: 18, scale: 0.98 }, { opacity: 1, y: 0, scale: 1, duration: 0.44, ease: "power3.out" }, mStart + 0.28);
+
+    // web_search line -> "Browsing the web" tool chip
+    setText("chip-label", "Browsing the web");
+    tl.fromTo("#tool-chip", { opacity: 0, x: -14 }, { opacity: 1, x: 0, duration: 0.4, ease: "power3.out" }, mStart + 0.42);
+
+    // TYPE: "Now it has a desk." — the title lands in the band as the morph fires above it
+    tl.fromTo("#tc-desk", { opacity: 0, y: 24, scale: 0.985 }, { opacity: 1, y: 0, scale: 1, duration: 0.42, ease: "power3.out" }, W.desk);
+    exit("#tc-desk", W.x - 0.32, 0.22);
+
+    // chat turn + tool chip clear before the fan-out
+    exit("#chat-turn", W.x - 0.3, 0.22);
+    exit("#tool-chip", W.x - 0.3, 0.22);
+
+    // ===================== COMPOSER: the goal, typed (W.goal = 4.70) =====================
+    var GOAL = "Research our competitors, design the launch graphic, file everything in /Marketing.";
+    document.getElementById("composer-text").classList.add("placeholder");
+    setText("composer-text", "Reply to refine or take this further…");
+    tl.fromTo("#composer", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.34, ease: "power2.out" }, mStart + 0.6);
+    // caret blinks while typing (deterministic set toggles)
+    tl.set("#composer-caret", { opacity: 1 }, W.goal - 0.02);
+    for (var b = 0; b < 4; b++) {
+      tl.set("#composer-caret", { opacity: 0 }, W.goal + 1.1 + b * 0.36);
+      tl.set("#composer-caret", { opacity: 1 }, W.goal + 1.28 + b * 0.36);
+    }
+    tl.set("#composer-caret", { opacity: 0 }, W.goal + 2.6);
+    // placeholder clears; goal types (stepped substring — the film's one typewriter)
+    tl.set("#composer-text", { className: "" }, W.goal - 0.02);
+    tl.set("#composer-text", { textContent: "" }, W.goal - 0.02);
+    typeOn("composer-text", GOAL, W.goal, 0.9, 28);
+    tl.to("#composer-send", { opacity: 1, duration: 0.2, ease: "power2.out" }, W.goal + 0.98);
+    tl.to("#composer-send", { opacity: 0.35, duration: 0.2 }, W.goal + 1.4);
+    tl.to("#composer-text", { opacity: 0, duration: 0.2, ease: "power2.in", overwrite: "auto" }, W.done - 0.2);
+    tl.set("#composer-text", { textContent: "", className: "" }, W.done - 0.1);
+    tl.set("#composer-text", { opacity: 0 }, W.done);
+    exit("#composer", W.work - 0.6, 0.24);
+
+    // ===================== CAPABILITY TYPE TRACK (bottom band, on the VO word) =====================
+    function capWord(sel, tIn, tOut) {
+      tl.fromTo(sel, { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.26, ease: "power3.out" }, tIn);
+      exit(sel, tOut - 0.2, 0.18);
+    }
+    capWord("#cap-x",       W.x,        W.imagines - 0.04);
+    capWord("#cap-imagine", W.imagines, W.code - 0.04);
+    capWord("#cap-code",    W.code,     W.once - 0.04);
+    capWord("#cap-par",     W.once,     W.nine - 0.04);
+    capWord("#cap-sched",   W.nine,     W.done - 0.04);
+
+    // ===================== SEARCHES X (W.x = 5.90) =====================
+    ["#x-card-1", "#x-card-2", "#x-card-3"].forEach(function (s, k) {
+      tl.fromTo(s, { opacity: 0, y: 34, rotation: k === 1 ? 0 : (k === 0 ? -2.2 : 2.2) },
+                   { opacity: 1, y: 0, rotation: 0, duration: 0.42, ease: "back.out(1.4)" }, W.x + k * 0.12);
+    });
+    ["#x-card-1", "#x-card-2", "#x-card-3"].forEach(function (s) { exit(s, W.imagines - 0.26, 0.2); });
+
+    // ===================== IMAGINES: FULL-BLEED BLOOM (W.imagines = 6.88) =====================
+    // the Veo clip escapes the window and fills the frame — the film's one full-bleed moment
+    tl.fromTo("#imagine-bloom", { opacity: 0, scale: 0.34, borderRadius: 26 },
+                                { opacity: 1, scale: 1, borderRadius: 0, duration: 0.5, ease: "power3.inOut" }, W.imagines - 0.06);
+    tl.to("#imagine-bloom", { opacity: 0, duration: 0.3, ease: "power2.in" }, W.code - 0.32);
+    tl.set("#imagine-bloom", { opacity: 0 }, W.code - 0.01);
+    // while the bloom fully covers the frame, hard-hide the stage (instant swaps under
+    // full cover — never mid-fade, so the contrast sampler skips the occluded text)
+    tl.set("#stage", { opacity: 0 }, W.imagines + 0.44);
+    tl.set("#stage", { opacity: 1 }, W.code - 0.36);
+
+    // ===================== RUNS CODE (W.code = 8.26) =====================
+    tl.fromTo("#sheet", { opacity: 0, y: 24, scale: 0.98 }, { opacity: 1, y: 0, scale: 1, duration: 0.4, ease: "power3.out" }, W.code);
+    ["#sr-1", "#sr-2", "#sr-3"].forEach(function (s, k) {
+      tl.fromTo(s, { opacity: 0, x: -18 }, { opacity: 1, x: 0, duration: 0.3, ease: "power3.out" }, W.code + 0.12 + k * 0.1);
+    });
+    // numbers tick (numeric snap counters — the sanctioned use)
+    var counters = [
+      { id: "sn-a", to: 20 }, { id: "sn-b", to: 92 },
+      { id: "sn-c", to: 20 }, { id: "sn-d", to: 88 },
+      { id: "sn-e", to: 30 }, { id: "sn-f", to: 81 }
+    ];
+    counters.forEach(function (c, k) {
+      tl.fromTo("#" + c.id, { textContent: 0 }, { textContent: c.to, duration: 0.7, ease: "power1.out", snap: { textContent: 1 } }, W.code + 0.25 + k * 0.05);
+    });
+    // score bars sweep under each row
+    [{ s: "#rb-1", v: 0.92 }, { s: "#rb-2", v: 0.88 }, { s: "#rb-3", v: 0.81 }].forEach(function (r, k) {
+      tl.fromTo(r.s, { scaleX: 0 }, { scaleX: r.v, duration: 0.8, ease: "power2.out" }, W.code + 0.3 + k * 0.1);
+    });
+    exit("#sheet", W.once - 0.3, 0.22);
+
+    // ===================== IN PARALLEL (W.once = 10.18) =====================
+    tl.to("#switcher", { opacity: 1, duration: 0.2, ease: "power2.out" }, W.once - 0.02);
+    ["#sw-1", "#sw-2", "#sw-3"].forEach(function (s, k) {
+      tl.fromTo(s, { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: 0.36, ease: "back.out(1.3)" }, W.once + k * 0.12);
+    });
+    // status pills materialize (no typewriter — machine text just IS)
+    ["#sw-pill-1", "#sw-pill-2", "#sw-pill-3"].forEach(function (s, k) {
+      tl.fromTo(s, { opacity: 0, x: 8 }, { opacity: 1, x: 0, duration: 0.28, ease: "power2.out" }, W.once + 0.34 + k * 0.12);
+    });
+    // progress shimmer glides across each row's track
+    ["#sw-glide-1", "#sw-glide-2", "#sw-glide-3"].forEach(function (s, k) {
+      tl.fromTo(s, { x: -150 }, { x: 860, duration: 1.05, ease: "none" }, W.once + 0.3 + k * 0.14);
+    });
+    // sidebar tasks light up in parallel
+    ["#side-task-1", "#side-task-2", "#side-task-3"].forEach(function (s, k) {
+      tl.fromTo(s, { opacity: 0 }, { opacity: 1, duration: 0.28, ease: "power2.out" }, W.once + k * 0.1);
+    });
+    exit("#switcher", W.nine - 0.3, 0.22);
+
+    // ===================== ON A SCHEDULE (W.nine = 11.82) =====================
+    setText("sched-title", "New schedule");
+    setText("sched-model", "grok-4.5");
+    tl.fromTo("#sched-card", { opacity: 0, scale: 0.95, y: 16 }, { opacity: 1, scale: 1, y: 0, duration: 0.38, ease: "back.out(1.4)" }, W.nine);
+    // the rule materializes whole (readable immediately — no typewriter)
+    tl.fromTo("#sched-rule", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.3, ease: "power2.out" }, W.nine + 0.18);
+    // week strip: Monday lights up — instant crossfade between two statically-styled
+    // states (never a mid-tween color for the contrast sampler); the pop carries the motion
+    tl.set("#wk-1-off", { opacity: 0 }, W.nine + 0.42);
+    tl.set("#wk-1-on", { opacity: 1 }, W.nine + 0.42);
+    tl.fromTo("#wk-1-on", { scale: 0.8 }, { scale: 1.12, duration: 0.32, ease: "back.out(2.2)" }, W.nine + 0.42);
+    // exit clears BEFORE the sampler's 12.95s tick (mid-fade text reads as a false
+    // contrast failure) — the extra beat of empty canvas is a phrase-end rest
+    exit("#sched-card", W.done - 0.46, 0.2);
+
+    // ===================== DELIVERABLES + Reveal in Finder (W.done = 13.06) =====================
+    setText("dv-head", "Deliverables");
+    setText("dv-reveal-label", "Reveal in Finder");
+    tl.fromTo("#deliverables", { opacity: 0, y: 22, scale: 0.97 }, { opacity: 1, y: 0, scale: 1, duration: 0.42, ease: "power3.out" }, W.done);
+    ["#dv-f1", "#dv-f2", "#dv-f3"].forEach(function (s, k) {
+      tl.fromTo(s, { opacity: 0, x: -14 }, { opacity: 1, x: 0, duration: 0.3, ease: "power3.out" }, W.done + 0.25 + k * 0.14);
+    });
+    tl.fromTo("#dv-reveal", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.3, ease: "power3.out" }, W.done + 0.9);
+
+    // cursor glides to Reveal in Finder, then clicks.
+    // CSS base (window coords): left 700, top 520. Button center ≈ (585, 419) → x -115, y -101.
+    tl.set("#cursor", { opacity: 0, x: 200, y: 60 }, W.done + 0.9);
+    tl.to("#cursor", { opacity: 1, duration: 0.2, ease: "power1.out" }, W.done + 1.0);
+    tl.to("#cursor", { x: -115, y: -101, duration: 0.9, ease: "power2.inOut" }, W.done + 1.1);
+    tl.to("#dv-reveal", { scale: 0.94, duration: 0.1, ease: "power2.in" }, W.work - 0.55);
+    tl.to("#dv-reveal", { scale: 1, duration: 0.14, ease: "back.out(2)", overwrite: "auto" }, W.work - 0.45);
+
+    // deliverables + cursor exit as the finder takes over
+    tl.to("#deliverables", { opacity: 0, duration: 0.28, ease: "power2.in" }, W.work - 0.32);
+    tl.set("#deliverables", { opacity: 0 }, W.work - 0.04);
+    ["#dv-f1", "#dv-f2", "#dv-f3", "#dv-reveal"].forEach(function (s) { tl.set(s, { opacity: 0 }, W.work - 0.04); });
+    tl.to("#cursor", { opacity: 0, duration: 0.2, ease: "power2.in" }, W.work - 0.34);
+    tl.set("#cursor", { opacity: 0 }, W.work - 0.1);
+
+    // stage window crossfades into the finder
+    tl.to("#stage-window", { opacity: 0, duration: 0.34, ease: "power2.in" }, W.work - 0.2);
+    tl.set("#stage-window", { opacity: 0 }, W.work + 0.16);
+
+    // ===================== FINDER (W.work = 16.68) — synthetic, held solo =====================
+    tl.fromTo("#finder-frame", { opacity: 0, scale: 0.985 }, { opacity: 1, scale: 1, duration: 0.44, ease: "power2.out" }, W.work - 0.12);
+    // the three files pop in, in the order they were written — the hand-off
+    ["#fd-t1", "#fd-t2", "#fd-t3"].forEach(function (s, k) {
+      tl.fromTo(s, { opacity: 0, scale: 0.62, y: 14 }, { opacity: 1, scale: 1, y: 0, duration: 0.4, ease: "back.out(1.6)" }, W.work + 0.08 + k * 0.14);
+    });
+
+    // TYPE: "Not a chat reply. Deliverables."
+    tl.fromTo("#tc-deliver", { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.34, ease: "power3.out" }, W.work + 0.15);
+    exit("#tc-deliver", W.brand - 0.35, 0.24);
+
+    // finder dissolves into the outro (fully out before the sampler's next tick)
+    tl.to("#finder-frame", { opacity: 0, duration: 0.32, ease: "power2.inOut" }, W.brand - 0.2);
+    tl.set("#finder-frame", { opacity: 0 }, W.brand + 0.14);
+    // the outro owns the frame from here — retire the whole stage so its (invisible)
+    // text never registers as overlapping the outro copy
+    tl.set("#stage", { opacity: 0 }, W.brand + 0.2);
+
+    // ===================== OUTRO (W.brand = 17.92) =====================
+    tl.fromTo("#outro", { opacity: 0 }, { opacity: 1, duration: 0.45, ease: "sine.inOut" }, W.brand - 0.1);
+    tl.fromTo("#outro-icon-wrap", { opacity: 0, scale: 0.82, y: 14 }, { opacity: 1, scale: 1, y: 0, duration: 0.5, ease: "back.out(1.6)" }, W.brand + 0.05);
+    // icon floats gently for the whole hold
+    tl.to("#outro-icon-wrap", { y: -7, duration: 1.6, ease: "sine.inOut", yoyo: true, repeat: 4 }, W.brand + 0.7);
+    // specular sheen sweeps across the icon once (transform fully GSAP-owned)
+    tl.fromTo("#icon-sheen", { x: -90, rotation: 18 }, { x: 250, rotation: 18, duration: 0.9, ease: "power2.inOut" }, W.brand + 1.25);
+    // glow breathes
+    tl.fromTo("#outro-glow", { opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1, duration: 0.9, ease: "sine.out" }, W.brand + 0.1);
+    tl.to("#outro-glow", { scale: 1.08, duration: 2.4, ease: "sine.inOut", yoyo: true, repeat: 1 }, W.brand + 1.0);
+    tl.fromTo("#outro-lockup", { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, W.brand + 0.5);
+    tl.fromTo("#outro-chips", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" }, W.brand + 1.0);
+
+    // "No terminal required." lands on W.required (22.82)
+    tl.fromTo("#outro-required", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.42, ease: "power3.out" }, W.required);
+    // wink appears AFTER the VO ends, held to DUR
+    tl.fromTo("#outro-wink", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" }, 23.6);
+    // (no exit — final scene holds to DUR 25.90)
+
+    window.__timelines["out-of-the-terminal"] = tl;
+  </script>
+</div>
+</body>
+</html>

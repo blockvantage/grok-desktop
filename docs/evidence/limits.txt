@@ -1,0 +1,6 @@
+# Authorization / environment limits (2026-07-14)
+
+- Production relay source of truth lives in external `grok-landing` repository — not in this workspace. Cannot audit deploy parity or production-equivalent load tests without access.
+- Paid model inference not authorized for this session; Grok provider ACP conformance uses stubs / fail-closed paths only.
+- Destructive credential purge of user DBs and production task mutation not authorized.
+- `pnpm audit --prod` remains unclean for two Expo transitive moderates; see audit-exceptions.md (expires 2026-10-14).

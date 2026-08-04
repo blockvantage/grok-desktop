@@ -1,0 +1,45 @@
+name: Bug report
+description: Something in Grok Desk is broken or unexpected
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a problem. Product feedback and feature ideas are better at [grokdesk.app/feedback](https://grokdesk.app/feedback).
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - macOS Apple Silicon
+        - macOS Intel
+        - Windows x64
+        - Other / unclear
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: App version
+      description: From About, or the release tag you installed (e.g. 1.0.0)
+      placeholder: "1.0.0"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: What you did, what you expected, what happened instead
+      placeholder: |
+        1. …
+        2. …
+        Expected: …
+        Actual: …
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / screenshots (optional)
+      description: Redact secrets. Tray diagnostics or relevant log snippets help.

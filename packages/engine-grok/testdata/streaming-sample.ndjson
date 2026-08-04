@@ -1,0 +1,5 @@
+{"type":"step","title":"Plan","status":"start"}
+{"type":"message","role":"assistant","text":"Starting work on the goal."}
+{"type":"tool_use","id":"tool-1","name":"Write","input":{"path":"/workspace/out.md","content":"# Report\n"}}
+{"type":"tool_result","id":"tool-1","ok":true,"output":"wrote /workspace/out.md"}
+{"type":"result","result":"Finished the report"}

@@ -1,0 +1,358 @@
+# Qualified signed desktop release pipeline.
+# Builds/publishes only: darwin-arm64, darwin-x64, win32-x64.
+# Does NOT publish portable Windows or win32-arm64 (held back until qualification).
+#
+# Protected release environment configuration:
+#   GROKDESK_LICENSE_PUBLIC_KEY, GROKDESK_RELEASE_PUBLIC_KEYS,
+#   GROKDESK_LEASE_PUBLIC_KEYS — public verify material baked at build time
+#   GROKDESK_ENTITLEMENT_API_URL / GROKDESK_MANIFEST_URL — public endpoints
+#   CSC_LINK / CSC_KEY_PASSWORD   — Developer ID certificate
+#   WIN_CSC_LINK / WIN_CSC_KEY_PASSWORD — Authenticode certificate
+#   APPLE_ID / APPLE_APP_SPECIFIC_PASSWORD / APPLE_TEAM_ID — notarization
+#
+# Never commit private keys. Manifest signing happens out-of-band (entitlement
+# service / KMS, two-person approval) — this workflow never receives the
+# release-manifest private key.
+
+name: release-desktop
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (e.g. v0.1.0)"
+        required: false
+        default: ""
+      dry_run:
+        description: "Skip artifact upload when true"
+        required: false
+        default: "true"
+
+permissions:
+  contents: read
+
+env:
+  # Holdback: only set to "1" after docs/releases/qualification/win32-arm64.md
+  # is complete and dual-approved. Default empty keeps win32-arm64 unpublished.
+  QUALIFIED_WIN32_ARM64: ""
+  # Explicit release publish set (never portable).
+  RELEASE_PUBLISH_ARTIFACTS: "dmg,zip,nsis"
+
+jobs:
+  gate:
+    name: typecheck-test-contract-assert
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      # version comes from package.json packageManager (pnpm@9.6.0)
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "20"
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build workspace packages
+        # Topo-build all desktop workspace deps (agent-runtime, providers, …).
+        run: pnpm --filter "@grokdesk/desktop^..." run build
+
+      - name: Typecheck
+        run: |
+          pnpm --filter @grokdesk/shared typecheck
+          pnpm --filter @grokdesk/license typecheck
+          pnpm --filter @grokdesk/agent-runtime typecheck
+          pnpm --filter @grokdesk/engine-grok typecheck
+          pnpm --filter @grokdesk/engine-testkit typecheck
+          pnpm --filter @grokdesk/provider-echo typecheck
+          pnpm --filter @grokdesk/provider-grok typecheck
+          pnpm --filter @grokdesk/entitlement-client typecheck
+          pnpm --filter @grokdesk/gateway typecheck
+          pnpm --filter @grokdesk/desktop typecheck
+
+      - name: Unit tests
+        run: |
+          pnpm --filter @grokdesk/shared test
+          pnpm --filter @grokdesk/license test
+          pnpm --filter @grokdesk/agent-runtime test
+          pnpm --filter @grokdesk/engine-grok test
+          pnpm --filter @grokdesk/engine-testkit test
+          pnpm --filter @grokdesk/provider-echo test
+          pnpm --filter @grokdesk/provider-grok test
+          pnpm --filter @grokdesk/entitlement-client test
+          pnpm --filter @grokdesk/gateway test
+          pnpm --filter @grokdesk/desktop test
+
+      - name: Contract / vector checks
+        run: |
+          pnpm exec vitest run scripts/check-cross-repo-contracts.test.ts
+          pnpm exec vitest run scripts/assert-release-targets.test.ts
+          # Dry-run landing compare when LANDING_ROOT is unset is OK for desktop-only.
+          pnpm exec tsx scripts/check-cross-repo-contracts.ts --dry-run
+
+      - name: Assert release targets (no win32-arm64 / no portable)
+        run: pnpm exec tsx scripts/assert-release-targets.ts
+
+      - name: Package smoke
+        run: pnpm --filter @grokdesk/desktop exec vitest run src/packaging.smoke.test.ts
+
+      - name: Refuse entitlement unlock bake envs on gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${GROKDESK_DEV_UNLOCK:-}" = "1" ] || [ "${GROKDESK_BAKE_DEV_UNLOCK:-}" = "1" ]; then
+            echo "Gate must not run with entitlement unlock envs set"
+            exit 1
+          fi
+          # Workflow source must keep refuse_unlock in the package job.
+          grep -q refuse_unlock .github/workflows/release-desktop.yml
+          grep -q 'const v = true' .github/workflows/release-desktop.yml
+
+  package:
+    name: package-${{ matrix.target }}
+    needs: gate
+    runs-on: ${{ matrix.os }}
+    environment: release-desktop
+    strategy:
+      fail-fast: false
+      matrix:
+        # Qualified publication matrix only. win32-arm64 is intentionally absent.
+        include:
+          - target: darwin-arm64
+            os: macos-14
+            platform: mac
+            arch: arm64
+            # dmg + zip for updater; never portable
+            eb_args: "--mac --arm64 -c.mac.target=dmg -c.mac.target=zip"
+          # Build x64 on Apple Silicon runners (macos-13 Intel is scarce/phased out).
+          - target: darwin-x64
+            os: macos-14
+            platform: mac
+            arch: x64
+            eb_args: "--mac --x64 -c.mac.target=dmg -c.mac.target=zip"
+          - target: win32-x64
+            os: windows-latest
+            platform: win
+            arch: x64
+            # NSIS only — do not publish portable Windows
+            eb_args: "--win --x64 --config.win.target=nsis"
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      # version comes from package.json packageManager (pnpm@9.6.0)
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "20"
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate protected release configuration
+        shell: bash
+        env:
+          TARGET_PLATFORM: ${{ matrix.platform }}
+          GROKDESK_LICENSE_PUBLIC_KEY: ${{ secrets.GROKDESK_LICENSE_PUBLIC_KEY }}
+          GROKDESK_RELEASE_PUBLIC_KEYS: ${{ secrets.GROKDESK_RELEASE_PUBLIC_KEYS }}
+          GROKDESK_LEASE_PUBLIC_KEYS: ${{ secrets.GROKDESK_LEASE_PUBLIC_KEYS }}
+          GROKDESK_ENTITLEMENT_API_URL: ${{ vars.GROKDESK_ENTITLEMENT_API_URL }}
+          GROKDESK_MANIFEST_URL: ${{ vars.GROKDESK_MANIFEST_URL }}
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          require() { test -n "${!1:-}" || { echo "Missing required release value: $1"; exit 1; }; }
+          refuse_unlock() {
+            local name="$1"
+            local val="${!name:-}"
+            if [ "$val" = "1" ] || [ "$val" = "true" ] || [ "$val" = "TRUE" ]; then
+              echo "Release must not set $name (would bake or enable entitlement unlock)"
+              exit 1
+            fi
+          }
+          require GROKDESK_LICENSE_PUBLIC_KEY
+          require GROKDESK_RELEASE_PUBLIC_KEYS
+          require GROKDESK_LEASE_PUBLIC_KEYS
+          require GROKDESK_ENTITLEMENT_API_URL
+          require GROKDESK_MANIFEST_URL
+          # Hard gate: never bake or propagate entitlement unlock in release.
+          refuse_unlock GROKDESK_DEV_UNLOCK
+          refuse_unlock GROKDESK_BAKE_DEV_UNLOCK
+          unset GROKDESK_DEV_UNLOCK GROKDESK_BAKE_DEV_UNLOCK || true
+          node -e 'JSON.parse(process.env.GROKDESK_RELEASE_PUBLIC_KEYS); JSON.parse(process.env.GROKDESK_LEASE_PUBLIC_KEYS)'
+          node -e 'for (const n of ["GROKDESK_ENTITLEMENT_API_URL","GROKDESK_MANIFEST_URL"]) { const u=new URL(process.env[n]); if (u.protocol !== "https:") throw new Error(`${n} must use HTTPS`) }'
+          if [ "$TARGET_PLATFORM" = "mac" ]; then
+            require CSC_LINK
+            require CSC_KEY_PASSWORD
+            require APPLE_ID
+            require APPLE_APP_SPECIFIC_PASSWORD
+            require APPLE_TEAM_ID
+          else
+            require WIN_CSC_LINK
+            require WIN_CSC_KEY_PASSWORD
+          fi
+
+      - name: Build packages + desktop
+        env:
+          GROKDESK_LICENSE_PUBLIC_KEY: ${{ secrets.GROKDESK_LICENSE_PUBLIC_KEY }}
+          GROKDESK_RELEASE_PUBLIC_KEYS: ${{ secrets.GROKDESK_RELEASE_PUBLIC_KEYS }}
+          GROKDESK_LEASE_PUBLIC_KEYS: ${{ secrets.GROKDESK_LEASE_PUBLIC_KEYS }}
+          GROKDESK_ENTITLEMENT_API_URL: ${{ vars.GROKDESK_ENTITLEMENT_API_URL }}
+          GROKDESK_MANIFEST_URL: ${{ vars.GROKDESK_MANIFEST_URL }}
+          # Explicitly empty — never bake entitlement unlock into release binaries.
+          GROKDESK_DEV_UNLOCK: ""
+          GROKDESK_BAKE_DEV_UNLOCK: ""
+        run: |
+          set -euo pipefail
+          if [ "${GROKDESK_DEV_UNLOCK:-}" = "1" ] || [ "${GROKDESK_BAKE_DEV_UNLOCK:-}" = "1" ]; then
+            echo "Refuse unlock env during release build"
+            exit 1
+          fi
+          unset GROKDESK_DEV_UNLOCK GROKDESK_BAKE_DEV_UNLOCK || true
+          # desktop build script topo-builds workspace deps first
+          pnpm --filter @grokdesk/desktop build
+          # Post-build artifact gate: isBakedDevUnlock must inline false.
+          main_js="apps/desktop/out/main/index.js"
+          test -f "$main_js" || { echo "Missing $main_js after desktop build"; exit 1; }
+          if grep -E 'function isBakedDevUnlock(\$[0-9]+)?\(\)' -A6 "$main_js" | grep -q 'const v = true'; then
+            echo "FATAL: entitlement unlock baked true into release main bundle"
+            exit 1
+          fi
+          if ! grep -E 'function isBakedDevUnlock(\$[0-9]+)?\(\)' -A6 "$main_js" | grep -q 'const v = false'; then
+            echo "FATAL: could not confirm isBakedDevUnlock inlines false"
+            exit 1
+          fi
+
+      - name: Package smoke (per-runner)
+        run: pnpm --filter @grokdesk/desktop exec vitest run src/packaging.smoke.test.ts
+
+      - name: Assert release targets before package
+        run: pnpm exec tsx scripts/assert-release-targets.ts
+        shell: bash
+
+      - name: Package signed candidate
+        working-directory: apps/desktop
+        env:
+          # Wire CSC_* / Apple secrets in the protected environment for real signs.
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          GROKDESK_LICENSE_PUBLIC_KEY: ${{ secrets.GROKDESK_LICENSE_PUBLIC_KEY }}
+          GROKDESK_RELEASE_PUBLIC_KEYS: ${{ secrets.GROKDESK_RELEASE_PUBLIC_KEYS }}
+          GROKDESK_LEASE_PUBLIC_KEYS: ${{ secrets.GROKDESK_LEASE_PUBLIC_KEYS }}
+          GROKDESK_ENTITLEMENT_API_URL: ${{ vars.GROKDESK_ENTITLEMENT_API_URL }}
+          GROKDESK_MANIFEST_URL: ${{ vars.GROKDESK_MANIFEST_URL }}
+        run: pnpm exec electron-builder ${{ matrix.eb_args }} -c.forceCodeSigning=true --publish never
+        shell: bash
+
+      - name: Verify macOS signature, Gatekeeper, and notarization staple
+        if: ${{ matrix.platform == 'mac' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          found=0
+          while IFS= read -r bundle; do
+            found=1
+            codesign --verify --deep --strict --verbose=2 "$bundle"
+            spctl --assess --verbose=2 --type exec "$bundle"
+            xcrun stapler validate "$bundle"
+          done < <(find apps/desktop/release -type d -name '*.app' -print)
+          test "$found" -eq 1 || { echo "No packaged .app found"; exit 1; }
+
+      - name: Verify Windows Authenticode signature and timestamp
+        if: ${{ matrix.platform == 'win' }}
+        shell: pwsh
+        run: |
+          $installers = @(Get-ChildItem apps/desktop/release -Recurse -File -Filter '*Setup*.exe')
+          if ($installers.Count -eq 0) { throw 'No NSIS installer found' }
+          foreach ($installer in $installers) {
+            $signature = Get-AuthenticodeSignature $installer.FullName
+            if ($signature.Status -ne 'Valid') { throw "Invalid Authenticode signature: $($installer.FullName) status=$($signature.Status)" }
+            if ($null -eq $signature.TimeStamperCertificate) { throw "Missing Authenticode timestamp: $($installer.FullName)" }
+          }
+
+      - name: SHA-256 hashes
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="apps/desktop/release"
+          mkdir -p "$out"
+          hash_file="$out/SHA256SUMS-${{ matrix.target }}.txt"
+          : > "$hash_file"
+          if [ -d "$out" ]; then
+            # Hash installer/updater artifacts only (skip blockmaps optionally kept).
+            find "$out" -type f \( \
+              -name '*.dmg' -o -name '*.zip' -o -name '*.exe' -o -name '*.AppImage' \
+            \) ! -name '*Portable*' -print0 2>/dev/null \
+              | sort -z \
+              | while IFS= read -r -d '' f; do
+                  if command -v shasum >/dev/null 2>&1; then
+                    shasum -a 256 "$f" >> "$hash_file"
+                  else
+                    sha256sum "$f" >> "$hash_file"
+                  fi
+                done
+          fi
+          echo "Wrote $hash_file"
+          test -s "$hash_file" || { echo "ERROR: no release artifacts were hashed"; exit 1; }
+          cat "$hash_file"
+          # Fail closed if a portable artifact appeared.
+          if find "$out" -type f -iname '*portable*' 2>/dev/null | grep -q .; then
+            echo "ERROR: portable Windows artifact produced; release forbids portable."
+            exit 1
+          fi
+
+      - name: Scan Windows candidate with Microsoft Defender
+        if: ${{ matrix.platform == 'win' }}
+        shell: pwsh
+        run: |
+          Update-MpSignature
+          Start-MpScan -ScanType CustomScan -ScanPath (Resolve-Path 'apps/desktop/release')
+          $threats = @(Get-MpThreatDetection | Where-Object { $_.Resources -match 'apps.desktop.release' })
+          if ($threats.Count -gt 0) { $threats | Format-List | Out-String | Write-Error; throw 'Microsoft Defender detected a threat in release artifacts' }
+
+      - name: Upload candidate artifacts
+        if: ${{ inputs.dry_run != 'true' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: desktop-${{ matrix.target }}
+          path: |
+            apps/desktop/release/**
+            !apps/desktop/release/**/*Portable*
+          if-no-files-found: error
+
+  # Catalog import + manifest sign are intentionally out-of-band.
+  # This job only documents the gate; it does not hold private signing keys.
+  release-approval-reminder:
+    name: release-approval-gate
+    needs: package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Manual gates before manifest sign
+        run: |
+          cat <<'EOF'
+          Before signing a compatibility / release manifest:
+            1. Complete docs/releases/qualification-template.md for each target
+            2. Codesign / Authenticode + notarization/staple evidence attached
+            3. SHA-256 catalog imported to entitlement release service
+            4. Two-person approval on stable channel
+            5. win32-arm64 remains unpublished (QUALIFIED_WIN32_ARM64 unset)
+          See:
+            docs/runbooks/bad-release-rollback.md
+            docs/runbooks/artifact-revocation.md
+          EOF

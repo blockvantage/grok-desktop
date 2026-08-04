@@ -1,0 +1,36 @@
+{
+  "deviceRequest": {
+    "deskVersion": "0.1.0",
+    "platform": "darwin",
+    "arch": "arm64"
+  },
+  "activationChallengeResponse": {
+    "challengeId": "11111111-1111-4111-8111-111111111111",
+    "nonce": "dGVzdC1ub25jZQ",
+    "expiresAt": "2030-01-01T00:00:00.000Z",
+    "serverTime": "2026-07-16T00:00:00.000Z"
+  },
+  "productKeyCanary": "GD3.TEST-KEY-MUST-NEVER-LEAK",
+  "errors": {
+    "serviceUnavailable": {
+      "code": "service_unavailable",
+      "message": "Service temporarily unavailable",
+      "requestId": "req_svc_unavail_001"
+    },
+    "invalidKeyFormat": {
+      "code": "invalid_key_format",
+      "message": "Product key format is invalid",
+      "requestId": "req_invalid_key_001"
+    },
+    "seatLimit": {
+      "code": "seat_limit",
+      "message": "All device seats are in use",
+      "requestId": "req_seat_limit_001"
+    },
+    "leaseExpired": {
+      "code": "lease_expired",
+      "message": "Device lease has expired",
+      "requestId": "req_lease_exp_001"
+    }
+  }
+}

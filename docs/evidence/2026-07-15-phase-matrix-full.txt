@@ -1,0 +1,69 @@
+# Phase matrix — implementable closeout (2026-07-15)
+
+**Honest claim:** All *code-only* overhaul residuals that do not need
+access/auth/paid CLI were advanced this session. Full codex_improve DoD is
+**not** met while access-blocked gates remain red.
+
+## Phase 0 — freeze claims + harnesses
+| Item | Status |
+|---|---|
+| Characterization / P0 tests | Done (suite green) |
+| Honest product claims | Done (docs + fail-closed defaults) |
+
+## Phase 1 — trust boundary
+| Item | Status |
+|---|---|
+| Electron hardening | Done (prior) |
+| Credential vault + redaction | Done — file AES vault + auto-migrate + settings.vault.scan/migrate IPC |
+| Secret canaries | Done (tests green) |
+| OS keychain mass purge | **Access-blocked** — needs explicit authorization |
+| Headless Grok degraded honesty | Done — fail-closed + degraded gates |
+
+## Phase 2 — durable task kernel
+| Item | Status |
+|---|---|
+| Run attempts / leases | Done (prior) |
+| Crash recovery | Done + pure plan (`crash-recovery-plan`) |
+| Operation receipts | Done (prior) |
+| Kill/restart full matrix edges | Partial — pure plans + recovery covered; live multi-instance residual |
+| Pause = stop CLI | Residual honesty (pause is queue/event only) |
+
+## Phase 3 — neutral runtime + ACP
+| Item | Status |
+|---|---|
+| agent-runtime + conformance | Done |
+| provider-grok ACP dual-path | Done — opt-in GROKDESK_ACP / preferProviderEngine |
+| Cutover readiness gates | Done (`evaluateDefaultCutoverReadiness`, no silent default) |
+| Product-default AgentProvider | **Not flipped** — headless grok not ready; default remains engine-grok |
+| Live ACP as production default | **Blocked** on readiness + real CLI proof (no paid burn) |
+
+## Phase 4 — remote v2 + prod relay
+| Item | Status |
+|---|---|
+| Protocol v2 / local tests | Done (prior; test:remote 115) |
+| Production relay / grok-landing | **Access-blocked** |
+
+## Phase 5 — commands + provider two
+| Item | Status |
+|---|---|
+| MCP doctor / preflight | Done (prior) |
+| Second provider | **Done** — `@grokdesk/provider-echo` registered at composition root |
+| Full typed command catalog | Residual (partial) |
+| Commercial second vendor | Non-goal (echo validates registry neutrality) |
+
+## Phase 6 — decomp + release
+| Item | Status |
+|---|---|
+| God-file pure extracts | Ongoing — home/runner/workspace/App advanced |
+| SBOM / notarization / canary | Residual ops |
+| Independent security review | **Access-blocked** (engagement) |
+
+## Do not claim
+Fully sandboxed · fully audited · provider-independent as product default ·
+production-relay verified · OS keychain-only secrets forever · pause stops all work
+
+## Gates
+- pnpm typecheck → SCRATCH/typecheck.txt
+- pnpm test → SCRATCH/test.txt
+- Skeptic follow-up: vaultStatus bound; vault IPC integration (`vault-settings-ipc.test`); cancel-outcome wired in tasks.cancel
+- test:remote skipped unless remote touched (not this closeout for relay)

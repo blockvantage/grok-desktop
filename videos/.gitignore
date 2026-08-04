@@ -1,0 +1,14 @@
+out/
+**/renders/
+assets/**/*.mp3
+assets/**/*.wav
+assets/**/*.mp4
+assets/**/*.png
+assets/**/*.jpg
+assets/**/*.xlsx
+scripts/**/assets/*.mp4
+scripts/**/assets/*.png
+scripts/**/assets/*.jpg
+assets/**/*.ogg
+scripts/**/assets/fonts/
+scripts/**/assets/gen

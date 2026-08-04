@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "signatureDomain": "GROKDESK-RELEASE-MANIFEST-V1",
+  "notes": "Fixture payloads for cross-repo resolver tests. Signatures are verified separately by the desktop manifest-verifier.",
+  "cases": [
+    {
+      "name": "stable-darwin-arm64-pair",
+      "payload": {
+        "schemaVersion": 1,
+        "sequence": 1,
+        "issuedAt": "2026-07-01T00:00:00.000Z",
+        "expiresAt": "2026-08-01T00:00:00.000Z",
+        "publishedTargets": ["darwin-arm64", "darwin-x64", "win32-x64"],
+        "channels": {
+          "stable": {
+            "desk": [
+              {
+                "artifactId": "desk-1.2.0-darwin-arm64",
+                "kind": "desk",
+                "version": "1.2.0",
+                "target": "darwin-arm64",
+                "channel": "stable",
+                "grantEndpoint": "/v1/download-grants",
+                "sizeBytes": 1024,
+                "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+                "provenance": {
+                  "source": "official",
+                  "retrievedAt": "2026-07-01T00:00:00.000Z"
+                },
+                "signingPolicy": {
+                  "requirePlatformSignature": true,
+                  "macTeamId": "TEAM123"
+                },
+                "capabilities": ["agent", "managed-no-self-update"]
+              }
+            ],
+            "grok": [
+              {
+                "artifactId": "grok-0.9.4-darwin-arm64",
+                "kind": "grok",
+                "version": "0.9.4",
+                "target": "darwin-arm64",
+                "channel": "stable",
+                "grantEndpoint": "/v1/download-grants",
+                "sizeBytes": 2048,
+                "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+                "provenance": {
+                  "source": "official",
+                  "retrievedAt": "2026-07-01T00:00:00.000Z"
+                },
+                "signingPolicy": {
+                  "requirePlatformSignature": true,
+                  "macTeamId": "TEAM123"
+                },
+                "capabilities": ["agent", "managed-no-self-update"]
+              }
+            ],
+            "pairs": [
+              {
+                "pairId": "stable-darwin-arm64-1.2.0-0.9.4",
+                "channel": "stable",
+                "target": "darwin-arm64",
+                "deskVersion": "1.2.0",
+                "grokVersion": "0.9.4",
+                "deskArtifactId": "desk-1.2.0-darwin-arm64",
+                "grokArtifactId": "grok-0.9.4-darwin-arm64",
+                "capabilities": ["agent", "managed-no-self-update"],
+                "recommended": true
+              }
+            ]
+          }
+        },
+        "rollout": {
+          "basisPoints": 10000,
+          "salt": "vector-salt-1"
+        },
+        "securityDeadline": null,
+        "revocations": [],
+        "authorizedDowngradeEdges": [],
+        "releaseNotesUrl": "https://example.com/notes",
+        "supportUrl": "https://example.com/support"
+      },
+      "expect": {
+        "resolveStableFrom1_1": {
+          "deskVersion": "1.2.0",
+          "grokVersion": "0.9.4"
+        }
+      }
+    },
+    {
+      "name": "win32-arm64-unpublished",
+      "payload": {
+        "schemaVersion": 1,
+        "sequence": 2,
+        "issuedAt": "2026-07-01T00:00:00.000Z",
+        "expiresAt": "2026-08-01T00:00:00.000Z",
+        "publishedTargets": ["darwin-arm64", "darwin-x64", "win32-x64"],
+        "channels": {
+          "stable": {
+            "desk": [],
+            "grok": [],
+            "pairs": []
+          }
+        },
+        "rollout": {
+          "basisPoints": 10000,
+          "salt": "vector-salt-2"
+        },
+        "securityDeadline": null,
+        "revocations": [],
+        "authorizedDowngradeEdges": []
+      },
+      "expect": {
+        "win32Arm64ResolvesNull": true
+      }
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+node_modules
+dist
+out
+.DS_Store
+*.log
+coverage
+.env
+.env.*
+*.tsbuildinfo
+apps/desktop/release
+.worktrees/
+/samples/readme-demo/
+
+# Brainstorm companion
+.superpowers/
+
+apps/mobile/.expo/
+apps/mobile/node_modules/
+
+# Accidental tsc-out at repo root (wrong cwd)
+/index.js
+apps/desktop/index.js

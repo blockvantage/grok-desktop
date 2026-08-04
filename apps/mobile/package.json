@@ -1,0 +1,47 @@
+{
+  "name": "@grokdesk/mobile",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@babel/runtime": "^8.0.0",
+    "@expo/metro-runtime": "~6.1.2",
+    "@expo/vector-icons": "^15.0.3",
+    "@grokdesk/shared": "workspace:*",
+    "@noble/ciphers": "^2.2.0",
+    "@noble/curves": "^2.2.0",
+    "@noble/hashes": "^2.2.0",
+    "expo": "~54.0.35",
+    "expo-camera": "~17.0.10",
+    "expo-clipboard": "~8.0.8",
+    "expo-haptics": "~15.0.8",
+    "expo-keep-awake": "~15.0.8",
+    "expo-local-authentication": "~17.0.8",
+    "expo-localization": "~17.0.9",
+    "expo-notifications": "~0.32.17",
+    "expo-secure-store": "~15.0.8",
+    "expo-splash-screen": "~31.0.13",
+    "expo-status-bar": "~3.0.9",
+    "lucide-react-native": "^1.24.0",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "react-native": "0.81.5",
+    "react-native-get-random-values": "~1.11.0",
+    "react-native-safe-area-context": "~5.6.0",
+    "react-native-svg": "15.12.1",
+    "react-native-web": "~0.21.0"
+  },
+  "devDependencies": {
+    "@types/react": "~19.1.10",
+    "typescript": "~5.9.2",
+    "vitest": "^2.1.4",
+    "ws": "^8.18.0"
+  }
+}

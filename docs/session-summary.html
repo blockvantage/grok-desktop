@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Grok Desk — Intelligence · Skills · Commerce session summary</title>
+  <style>
+    :root {
+      --bg: #0b0c0f;
+      --panel: #14161c;
+      --border: #2a2e38;
+      --text: #e8eaed;
+      --muted: #9aa0a6;
+      --accent: #7aa2ff;
+      --ok: #3dd68c;
+      --warn: #f5a524;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: radial-gradient(1200px 600px at 10% -10%, #1a2240 0%, transparent 50%), var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+    }
+    main { max-width: 920px; margin: 0 auto; padding: 48px 24px 80px; }
+    h1 { font-size: 1.85rem; letter-spacing: -0.03em; margin: 0 0 8px; }
+    h2 { font-size: 1.15rem; margin: 2rem 0 0.75rem; letter-spacing: -0.02em; }
+    h3 { font-size: 0.95rem; margin: 1.25rem 0 0.4rem; color: var(--accent); }
+    p, li { color: var(--text); }
+    .muted { color: var(--muted); }
+    .hero {
+      border: 1px solid var(--border);
+      background: linear-gradient(160deg, #171b28, var(--panel));
+      border-radius: 16px;
+      padding: 28px;
+      margin-bottom: 28px;
+    }
+    .pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .pill {
+      font-size: 12px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 4px 10px;
+      color: var(--muted);
+      background: rgba(255,255,255,0.03);
+    }
+    .pill.ok { color: var(--ok); border-color: rgba(61,214,140,0.35); }
+    .grid { display: grid; gap: 12px; grid-template-columns: 1fr; }
+    @media (min-width: 720px) { .grid.two { grid-template-columns: 1fr 1fr; } }
+    .card {
+      border: 1px solid var(--border);
+      background: var(--panel);
+      border-radius: 12px;
+      padding: 16px 18px;
+    }
+    code, .path {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.85em;
+      background: rgba(255,255,255,0.06);
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { color: var(--muted); font-weight: 500; }
+    ul { padding-left: 1.15rem; }
+    a { color: var(--accent); }
+    footer { margin-top: 40px; color: var(--muted); font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="hero">
+      <h1>Grok Desk overnight build</h1>
+      <p class="muted">
+        Intelligence layer · default skills · connector presets · smart automations ·
+        one-time license + download manifest for <strong>grokdesk.app</strong>
+      </p>
+      <div class="pills">
+        <span class="pill ok">Worktree: feat/intelligence-skills-commerce</span>
+        <span class="pill ok">All package tests passed</span>
+        <span class="pill">Primary tree left on main</span>
+      </div>
+    </div>
+
+    <h2>1. Current state analysis</h2>
+    <p>
+      Grok Desk is Electron (<code>apps/desktop</code>) over a local gateway
+      (<code>packages/gateway</code>) driving Grok Build via
+      <code>packages/engine-grok</code>. Before this work:
+    </p>
+    <ul>
+      <li><strong>Skills:</strong> user-only <code>skillsPaths</code>, default empty — no shipped SKILL.md packs.</li>
+      <li><strong>MCP:</strong> manual rows only; empty defaults; no curated connectors.</li>
+      <li><strong>Proactivity:</strong> inbox pings for needs-you / failed only.</li>
+      <li><strong>Commerce:</strong> no license keys, no update/download manifest for the site.</li>
+    </ul>
+    <p class="muted">Full write-up: <span class="path">docs/analysis/current-state.md</span></p>
+
+    <h2>2. Idea themes + SOTA takeaways</h2>
+    <div class="grid two">
+      <div class="card">
+        <h3>Default skills</h3>
+        <p>SOTA agents ship progressive skill trees and load defaults every session. Desk now merges a bundled <code>skills/</code> root on every run.</p>
+      </div>
+      <div class="card">
+        <h3>Connections</h3>
+        <p>SOTA is a connectors gallery over MCP. Desk ships curated presets + one-click enable into settings.</p>
+      </div>
+      <div class="card">
+        <h3>Smart automations</h3>
+        <p>SOTA pairs standing context with suggestion engines. Proactivity now emits memory-aware schedule drafts (no LLM required).</p>
+      </div>
+      <div class="card">
+        <h3>License + downloads</h3>
+        <p>SOTA one-time Electron apps use key activation + offline grace + static release manifests. Desk has both as a swappable foundation.</p>
+      </div>
+    </div>
+    <p class="muted">Notes: <span class="path">docs/analysis/sota-notes.md</span></p>
+
+    <h2>3. What shipped</h2>
+    <table>
+      <thead>
+        <tr><th>Feature</th><th>Where</th><th>How to try</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Bundled SKILL.md packs</td>
+          <td><code>skills/*</code> + <code>packages/shared/src/skills-resolve.ts</code></td>
+          <td>Empty user paths still resolve defaults; Settings shows bundled note</td>
+        </tr>
+        <tr>
+          <td>Connector gallery</td>
+          <td><code>connector-presets.ts</code> (12+ presets, categories, recommended), gateway <code>connectors.*</code>, Settings Tools gallery with filters + detail pane</td>
+          <td>Tools → Recommended / search → Enable free recommended or per-card Enable</td>
+        </tr>
+        <tr>
+          <td>Smart automations</td>
+          <td><code>automation-suggestions.ts</code>, extended <code>ProactivityService</code></td>
+          <td>Add standing memory with “priorities” → inbox suggestion appears</td>
+        </tr>
+        <tr>
+          <td>License activate/verify</td>
+          <td><code>packages/license</code> + gateway <code>license.*</code> + Settings License tab</td>
+          <td>Issue key via service; Activate in Settings or IPC</td>
+        </tr>
+        <tr>
+          <td>Download / update manifest</td>
+          <td><code>docs/releases/latest.json</code>, <code>updates.manifest</code> IPC</td>
+          <td>Call <code>updates.manifest</code> or read the JSON from the site</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>4. Architecture decisions</h2>
+    <ul>
+      <li><strong>Pure logic first:</strong> skill resolve, presets, suggestions, license crypto, and manifest parse are unit-tested without Electron.</li>
+      <li><strong>License service:</strong> HMAC keys <code>GD1.&lt;payload&gt;.&lt;sig&gt;</code>, machine-bound activation, 7-day offline grace; optional HTTP server for later hosting.</li>
+      <li><strong>Defaults never block users:</strong> bundled skills always merge; custom paths append.</li>
+      <li><strong>Worktree isolation:</strong> <code>~/blockvantage/worktrees/grok-desktop-intelligence</code> on branch <code>feat/intelligence-skills-commerce</code>.</li>
+    </ul>
+
+    <h2>5. Verification</h2>
+    <ul>
+      <li><code>pnpm test</code> — shared 46, license 4, engine 28, gateway 45, desktop 28 (all green).</li>
+      <li>Gateway integration: effective skills, connector enable persistence, license activate/verify, manifest URLs.</li>
+      <li>Clean build: <code>pnpm -r run build</code> after wiping all <code>dist/</code> succeeds twice; desktop scripts build <code>@grokdesk/license</code> before gateway.</li>
+      <li>OAuth safety: tests never open a SuperGrok browser — <code>shouldSkipBrowserLogin</code> / dry-run under Vitest.</li>
+      <li>Evidence artifacts: worktree list, pnpm-test.log, license.log, manifest-check.log, full-build.log, limits.txt.</li>
+    </ul>
+
+    <h2>6. Intentionally out of scope (for later)</h2>
+    <ul>
+      <li>Live Stripe/Lemon checkout, code signing, notarization, hard DRM.</li>
+      <li>Public CDN binary hosting (manifest URLs are ready for grokdesk.app).</li>
+      <li>Slack/Telegram bridges, cloud control plane, computer-use RPA.</li>
+    </ul>
+
+    <h2>7. Suggested next morning moves</h2>
+    <ol>
+      <li>Point grokdesk.app downloads at <code>docs/releases/latest.json</code> (or a hosted copy).</li>
+      <li>Host <code>@grokdesk/license</code> HTTP endpoints with a production <code>GROKDESK_LICENSE_SECRET</code>.</li>
+      <li>Wire payment webhook → <code>issueLicenseKey</code> email delivery.</li>
+      <li>Promote worktree branch → PR into main when ready.</li>
+    </ol>
+
+    <footer>
+      Generated for the overnight goal · branch
+      <code>feat/intelligence-skills-commerce</code> · monorepo version 0.1.0
+    </footer>
+  </main>
+</body>
+</html>

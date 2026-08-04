@@ -1,0 +1,49 @@
+{
+  "name": "@grokdesk/shared",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./remote": {
+      "types": "./dist/remote.d.ts",
+      "import": "./dist/remote.js",
+      "default": "./dist/remote.js"
+    },
+    "./node": {
+      "types": "./dist/node.d.ts",
+      "import": "./dist/node.js",
+      "default": "./dist/node.js"
+    },
+    "./ipc-channels": {
+      "types": "./dist/ipc-channels.d.ts",
+      "import": "./dist/ipc-channels.js",
+      "default": "./dist/ipc-channels.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@noble/ciphers": "^2.2.0",
+    "@noble/curves": "^2.2.0",
+    "@noble/hashes": "^2.2.0",
+    "cron-parser": "^4.9.0",
+    "semver": "^7.8.5",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "@types/semver": "^7.7.1",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.4"
+  }
+}

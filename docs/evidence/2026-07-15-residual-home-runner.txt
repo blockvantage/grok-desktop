@@ -1,0 +1,33 @@
+# Slice: residual extracts home + runner + finish-notify (2026-07-15)
+
+## Advanced
+- `planPostEngineExit` pure module wired into TaskRunner (post engine.run terminal plan)
+- Home: `home-composer-helpers` (project mentions, drop paths, active root, smart-start icon keys)
+- Home: `HomeRailCard` presentational extract
+- App: `task-finish-notify` pure gate + intents for OS completion notifications
+- Prior commits this session: vault migrate, engine-selection, preferProviderEngine UI toggle, task-workspace-parts
+
+## LOC (approx)
+| Surface | Before (session) | After |
+|---|---|---|
+| home-view | ~1192 | ~1151 |
+| task-workspace-view | ~2050 | ~1861 (+ parts ~213) |
+| App | ~1505 | ~1506 (logic extracted) |
+| runner | ~975 | ~975 (inline → planPostEngineExit) |
+
+## Gates
+- `pnpm typecheck` exit 0 — scratch typecheck.txt
+- `pnpm test` exit 0 — scratch test.txt / suite.txt
+- Dual-path / vault: engine-selection + secret-settings still green
+- `pnpm test:remote` skipped (remote code not touched)
+
+## Still blocked (do not claim DoD)
+- Product-default AgentProvider / live ACP without opt-in
+- Production relay / grok-landing (access)
+- OS keychain / safeStorage mass purge (auth)
+- Second real provider
+- Fully sandboxed / fully audited
+
+## Fail-honest defaults
+- Default engine remains engine-grok unless GROKDESK_PROVIDER_ENGINE or settings.preferProviderEngine
+- Client settings payloads redacted / vault refs only for secrets

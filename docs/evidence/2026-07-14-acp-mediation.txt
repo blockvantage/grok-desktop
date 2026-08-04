@@ -1,0 +1,38 @@
+Phase exit verification (2026-07-14) — ACP policy mediation slice + full suite
+
+Commands:
+  pnpm typecheck     → exit 0
+  pnpm test          → exit 0  TOTAL=796 (baseline 671)
+  pnpm test:remote   → exit 0  45+26+4+36=111
+  pnpm build         → exit 0
+  pnpm audit --prod  → 2 moderate (postcss, uuid) → docs/evidence/audit-exceptions.md
+  git diff --check   → exit 0
+
+Package breakdown (pnpm test):
+  agent-runtime 4
+  remote-relay 4
+  license 16
+  shared 193
+  mobile 36
+  engine-grok 63
+  provider-grok 24  (+acp-jsonrpc, acp-policy-broker, acp-session mediation)
+  gateway 159
+  desktop 297
+
+New invariants proven this slice:
+  - Fake ACP peer waits for permission response before tool execution
+  - Policy deny(shell) → outcome deny → toolsExecuted=[]
+  - Policy allow(shell) → toolsExecuted length 1 + tool_call event
+  - ask + human allow_once → tool executes
+  - ask without approver → fail closed deny
+  - GrokAgentProvider mode=acp reports policyEnforceable + provider-permission-rpc
+  - Gateway composition root can wire ACP + onAuthorizationReceipt
+  - Headless remains default; fail-closed on unenforceable policy still holds
+
+Still NOT claimed:
+  - Real `grok agent stdio` product cutover (default path is headless; GROKDESK_ACP + factory required)
+  - Production relay audit (grok-landing out of workspace)
+  - Durable OS vault purge of historical SQLite literals (authorization)
+  - Full Phase 6 structural split of gateway index/runner/renderer
+  - Second real provider
+

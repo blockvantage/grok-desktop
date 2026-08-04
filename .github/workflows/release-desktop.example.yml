@@ -1,0 +1,24 @@
+# EXAMPLE ONLY — historical stub.
+# Prefer the real skeleton: .github/workflows/release-desktop.yml
+# which enforces darwin-arm64 / darwin-x64 / win32-x64, blocks portable
+# Windows and win32-arm64 holdback, and runs typecheck/test/contract/smoke/hash.
+# Never put private keys in this file.
+
+name: release-desktop-example
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (e.g. v0.1.0)"
+        required: false
+        default: "v0.0.0-example"
+
+jobs:
+  point-at-real-workflow:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Use release-desktop.yml
+        run: |
+          echo "Use .github/workflows/release-desktop.yml for qualified releases."
+          echo "Assert: pnpm exec tsx scripts/assert-release-targets.ts"

@@ -1,0 +1,263 @@
+{
+  "description": "Device activation and lease-refresh proof vectors. Prefixes GROKDESK-ACTIVATE-V1 and GROKDESK-LEASE-REFRESH-V1. TEST ONLY keys.",
+  "fixedClock": "2026-07-01T12:00:00.000Z",
+  "prefixes": {
+    "activate": "GROKDESK-ACTIVATE-V1",
+    "refresh": "GROKDESK-LEASE-REFRESH-V1"
+  },
+  "keys": {
+    "device": {
+      "kid": "device-test-1",
+      "publicJwk": {
+        "crv": "Ed25519",
+        "x": "7TI0snbUztpX1ZutFPuvWnc8DzGMmZ3jpg1TxaWzTAU",
+        "kty": "OKP",
+        "kid": "device-test-1",
+        "alg": "EdDSA"
+      },
+      "privatePkcs8Base64": "MC4CAQAwBQYDK2VwBCIEINTU1NTU1NTU1NTU1NTU1NTU1NTU1NTU1NTU1NTU1NTU",
+      "label": "TEST ONLY — not for production"
+    },
+    "deviceWrong": {
+      "kid": "device-wrong",
+      "publicJwk": {
+        "crv": "Ed25519",
+        "x": "TmAIsBt05J442LETkr-szHtb_4bKIEjLsPeDYzph4t0",
+        "kty": "OKP",
+        "kid": "device-wrong",
+        "alg": "EdDSA"
+      },
+      "privatePkcs8Base64": "MC4CAQAwBQYDK2VwBCIEIOXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl",
+      "label": "TEST ONLY — not for production"
+    }
+  },
+  "deviceThumbprint": "eDIcCA6bICqxAGmOP0-mR7EXD9z6G9DY620Acv36jJM",
+  "cases": [
+    {
+      "name": "valid_activation",
+      "type": "valid",
+      "kind": "activation",
+      "input": {
+        "payload": {
+          "challengeId": "22222222-2222-4222-8222-222222222222",
+          "nonce": "challenge-nonce-fixed-001",
+          "deviceId": "33333333-3333-4333-8333-333333333333",
+          "devicePublicJwk": {
+            "kty": "OKP",
+            "crv": "Ed25519",
+            "x": "7TI0snbUztpX1ZutFPuvWnc8DzGMmZ3jpg1TxaWzTAU"
+          },
+          "deviceName": "Test MacBook",
+          "platform": "darwin",
+          "arch": "arm64",
+          "osVersion": "15.0.0",
+          "deskVersion": "1.0.0"
+        },
+        "signatureBase64Url": "lWvz3CEr6jrW-C4OdaTzDBCPs57SHVMDOzrcKpG1glgjPJL5FC09Jb43Dw6RzHfDmxy51Ju03UKzzt6hFKVjAA"
+      },
+      "expectedCanonicalHex": "7b2261726368223a2261726d3634222c226368616c6c656e67654964223a2232323232323232322d323232322d343232322d383232322d323232323232323232323232222c226465736b56657273696f6e223a22312e302e30222c226465766963654964223a2233333333333333332d333333332d343333332d383333332d333333333333333333333333222c226465766963654e616d65223a2254657374204d6163426f6f6b222c226465766963655075626c69634a776b223a7b22637276223a2245643235353139222c226b7479223a224f4b50222c2278223a2237544930736e62557a747058315a757446507576576e6338447a474d6d5a336a706731547861577a544155227d2c226e6f6e6365223a226368616c6c656e67652d6e6f6e63652d66697865642d303031222c226f7356657273696f6e223a2231352e302e30222c22706c6174666f726d223a2264617277696e227d",
+      "expectedSigningBytesHex": "47524f4b4445534b2d41435449564154452d56310a65794a68636d4e6f496a6f6959584a744e6a51694c434a6a61474673624756755a32564a5a434936496a49794d6a49794d6a49794c5449794d6a49744e4449794d6930344d6a49794c5449794d6a49794d6a49794d6a49794d694973496d526c633274575a584a7a61573975496a6f694d5334774c6a41694c434a6b5a585a705932564a5a434936496a4d7a4d7a4d7a4d7a4d7a4c544d7a4d7a4d744e444d7a4d7930344d7a4d7a4c544d7a4d7a4d7a4d7a4d7a4d7a4d7a4d794973496d526c646d6c6a5a553568625755694f694a555a584e304945316859304a76623273694c434a6b5a585a705932565164574a7361574e4b643273694f6e736959334a32496a6f69525751794e5455784f534973496d743065534936496b394c55434973496e67694f69493356456b77633235695658703063466778576e5630526c4231646c6475597a6845656b644e62566f7a616e426e4d5652345956643656454656496e3073496d3576626d4e6c496a6f69593268686247786c626d646c4c573576626d4e6c4c575a706547566b4c5441774d534973496d397a566d567963326c7662694936496a45314c6a41754d434973496e42735958526d62334a74496a6f695a47467964326c75496e30",
+      "expectedSignatureBase64Url": "lWvz3CEr6jrW-C4OdaTzDBCPs57SHVMDOzrcKpG1glgjPJL5FC09Jb43Dw6RzHfDmxy51Ju03UKzzt6hFKVjAA",
+      "expected": {
+        "result": "accept"
+      }
+    },
+    {
+      "name": "tampered_signature",
+      "type": "tampered",
+      "kind": "activation",
+      "input": {
+        "payload": {
+          "challengeId": "22222222-2222-4222-8222-222222222222",
+          "nonce": "challenge-nonce-fixed-001",
+          "deviceId": "33333333-3333-4333-8333-333333333333",
+          "devicePublicJwk": {
+            "kty": "OKP",
+            "crv": "Ed25519",
+            "x": "7TI0snbUztpX1ZutFPuvWnc8DzGMmZ3jpg1TxaWzTAU"
+          },
+          "deviceName": "Test MacBook",
+          "platform": "darwin",
+          "arch": "arm64",
+          "osVersion": "15.0.0",
+          "deskVersion": "1.0.0"
+        },
+        "signatureBase64Url": "aHmBt383jcTT6ghvMTkpE-rGLukfYP6t-tSizGR2rARUJMbMYniegRMJV9HipCAnCxIsjFgRcAXFodVpdGO6AQ"
+      },
+      "expected": {
+        "result": "reject",
+        "code": "device_signature_invalid"
+      }
+    },
+    {
+      "name": "wrong_device_key",
+      "type": "wrong_device",
+      "kind": "activation",
+      "input": {
+        "payload": {
+          "challengeId": "22222222-2222-4222-8222-222222222222",
+          "nonce": "challenge-nonce-fixed-001",
+          "deviceId": "33333333-3333-4333-8333-333333333333",
+          "devicePublicJwk": {
+            "kty": "OKP",
+            "crv": "Ed25519",
+            "x": "TmAIsBt05J442LETkr-szHtb_4bKIEjLsPeDYzph4t0"
+          },
+          "deviceName": "Test MacBook",
+          "platform": "darwin",
+          "arch": "arm64",
+          "osVersion": "15.0.0",
+          "deskVersion": "1.0.0"
+        },
+        "signatureBase64Url": "lWvz3CEr6jrW-C4OdaTzDBCPs57SHVMDOzrcKpG1glgjPJL5FC09Jb43Dw6RzHfDmxy51Ju03UKzzt6hFKVjAA"
+      },
+      "expected": {
+        "result": "reject",
+        "code": "device_signature_invalid"
+      }
+    },
+    {
+      "name": "challenge_expired",
+      "type": "expired",
+      "kind": "activation",
+      "input": {
+        "payload": {
+          "challengeId": "22222222-2222-4222-8222-222222222222",
+          "nonce": "challenge-nonce-fixed-001",
+          "deviceId": "33333333-3333-4333-8333-333333333333",
+          "devicePublicJwk": {
+            "kty": "OKP",
+            "crv": "Ed25519",
+            "x": "7TI0snbUztpX1ZutFPuvWnc8DzGMmZ3jpg1TxaWzTAU"
+          },
+          "deviceName": "Test MacBook",
+          "platform": "darwin",
+          "arch": "arm64",
+          "osVersion": "15.0.0",
+          "deskVersion": "1.0.0"
+        },
+        "signatureBase64Url": "lWvz3CEr6jrW-C4OdaTzDBCPs57SHVMDOzrcKpG1glgjPJL5FC09Jb43Dw6RzHfDmxy51Ju03UKzzt6hFKVjAA"
+      },
+      "options": {
+        "challengeExpiresAtMs": 1782907199999,
+        "nowMs": 1782907200000
+      },
+      "expected": {
+        "result": "reject",
+        "code": "challenge_expired"
+      }
+    },
+    {
+      "name": "challenge_replayed",
+      "type": "replayed",
+      "kind": "activation",
+      "input": {
+        "payload": {
+          "challengeId": "22222222-2222-4222-8222-222222222222",
+          "nonce": "challenge-nonce-fixed-001",
+          "deviceId": "33333333-3333-4333-8333-333333333333",
+          "devicePublicJwk": {
+            "kty": "OKP",
+            "crv": "Ed25519",
+            "x": "7TI0snbUztpX1ZutFPuvWnc8DzGMmZ3jpg1TxaWzTAU"
+          },
+          "deviceName": "Test MacBook",
+          "platform": "darwin",
+          "arch": "arm64",
+          "osVersion": "15.0.0",
+          "deskVersion": "1.0.0"
+        },
+        "signatureBase64Url": "lWvz3CEr6jrW-C4OdaTzDBCPs57SHVMDOzrcKpG1glgjPJL5FC09Jb43Dw6RzHfDmxy51Ju03UKzzt6hFKVjAA"
+      },
+      "options": {
+        "challengeConsumed": true
+      },
+      "expected": {
+        "result": "reject",
+        "code": "challenge_replayed"
+      }
+    },
+    {
+      "name": "clock_skew",
+      "type": "expired",
+      "kind": "activation",
+      "input": {
+        "payload": {
+          "challengeId": "22222222-2222-4222-8222-222222222222",
+          "nonce": "challenge-nonce-fixed-001",
+          "deviceId": "33333333-3333-4333-8333-333333333333",
+          "devicePublicJwk": {
+            "kty": "OKP",
+            "crv": "Ed25519",
+            "x": "7TI0snbUztpX1ZutFPuvWnc8DzGMmZ3jpg1TxaWzTAU"
+          },
+          "deviceName": "Test MacBook",
+          "platform": "darwin",
+          "arch": "arm64",
+          "osVersion": "15.0.0",
+          "deskVersion": "1.0.0"
+        },
+        "signatureBase64Url": "lWvz3CEr6jrW-C4OdaTzDBCPs57SHVMDOzrcKpG1glgjPJL5FC09Jb43Dw6RzHfDmxy51Ju03UKzzt6hFKVjAA"
+      },
+      "options": {
+        "clientTimeMs": 1782907800000,
+        "maxClockSkewMs": 120000,
+        "nowMs": 1782907200000
+      },
+      "expected": {
+        "result": "reject",
+        "code": "clock_skew"
+      }
+    },
+    {
+      "name": "valid_refresh",
+      "type": "valid",
+      "kind": "refresh",
+      "input": {
+        "payload": {
+          "challengeId": "44444444-4444-4444-8444-444444444444",
+          "nonce": "refresh-nonce-fixed-001",
+          "deviceId": "33333333-3333-4333-8333-333333333333",
+          "activationId": "55555555-5555-4555-8555-555555555555",
+          "devicePublicJwk": {
+            "kty": "OKP",
+            "crv": "Ed25519",
+            "x": "7TI0snbUztpX1ZutFPuvWnc8DzGMmZ3jpg1TxaWzTAU"
+          },
+          "priorLeaseJti": "lease-jti-fixed-001"
+        },
+        "signatureBase64Url": "d-dxyNsS517wuxOoe9MSWXzwcIPtnfYA2NT2FeqD6pigeQtXeERs9DDAbCvPJPIex1WGkyqY3c5xG_7oYZZtAw"
+      },
+      "expectedCanonicalHex": "7b2261637469766174696f6e4964223a2235353535353535352d353535352d343535352d383535352d353535353535353535353535222c226368616c6c656e67654964223a2234343434343434342d343434342d343434342d383434342d343434343434343434343434222c226465766963654964223a2233333333333333332d333333332d343333332d383333332d333333333333333333333333222c226465766963655075626c69634a776b223a7b22637276223a2245643235353139222c226b7479223a224f4b50222c2278223a2237544930736e62557a747058315a757446507576576e6338447a474d6d5a336a706731547861577a544155227d2c226e6f6e6365223a22726566726573682d6e6f6e63652d66697865642d303031222c227072696f724c656173654a7469223a226c656173652d6a74692d66697865642d303031227d",
+      "expectedSigningBytesHex": "47524f4b4445534b2d4c454153452d524546524553482d56310a65794a6859335270646d463061573975535751694f6949314e5455314e5455314e5330314e5455314c5451314e5455744f4455314e5330314e5455314e5455314e5455314e5455694c434a6a61474673624756755a32564a5a434936496a51304e4451304e4451304c5451304e4451744e4451304e4330344e4451304c5451304e4451304e4451304e4451304e434973496d526c646d6c6a5a556c6b496a6f694d7a4d7a4d7a4d7a4d7a4d744d7a4d7a4d7930304d7a4d7a4c54677a4d7a4d744d7a4d7a4d7a4d7a4d7a4d7a4d7a4d7a496977695a47563261574e6c5548566962476c6a536e6472496a7037496d4e7964694936496b566b4d6a55314d546b694c434a7264486b694f694a50533141694c434a34496a6f694e31524a4d484e75596c5636644842594d56703164455a5164585a58626d4d3452487048545731614d3270775a7a465565474658656c524256534a394c434a756232356a5a534936496e4a6c5a6e4a6c63326774626d3975593255745a6d6c345a5751744d4441784969776963484a7062334a4d5a57467a5a55703061534936496d786c59584e6c4c5770306153316d6158686c5a4330774d4445696651",
+      "expectedSignatureBase64Url": "d-dxyNsS517wuxOoe9MSWXzwcIPtnfYA2NT2FeqD6pigeQtXeERs9DDAbCvPJPIex1WGkyqY3c5xG_7oYZZtAw",
+      "expected": {
+        "result": "accept"
+      }
+    },
+    {
+      "name": "refresh_wrong_device",
+      "type": "wrong_device",
+      "kind": "refresh",
+      "input": {
+        "payload": {
+          "challengeId": "44444444-4444-4444-8444-444444444444",
+          "nonce": "refresh-nonce-fixed-001",
+          "deviceId": "33333333-3333-4333-8333-333333333333",
+          "activationId": "55555555-5555-4555-8555-555555555555",
+          "devicePublicJwk": {
+            "kty": "OKP",
+            "crv": "Ed25519",
+            "x": "TmAIsBt05J442LETkr-szHtb_4bKIEjLsPeDYzph4t0"
+          },
+          "priorLeaseJti": "lease-jti-fixed-001"
+        },
+        "signatureBase64Url": "d-dxyNsS517wuxOoe9MSWXzwcIPtnfYA2NT2FeqD6pigeQtXeERs9DDAbCvPJPIex1WGkyqY3c5xG_7oYZZtAw"
+      },
+      "expected": {
+        "result": "reject",
+        "code": "device_signature_invalid"
+      }
+    }
+  ]
+}

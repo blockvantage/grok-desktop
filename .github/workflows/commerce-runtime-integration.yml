@@ -1,0 +1,206 @@
+# Cross-repository entitlement contract + crypto vector gates (Gate C1).
+#
+# Desktop-only (default): pure checkContracts unit tests, desktop vector
+# suites, and script --dry-run digests.
+#
+# Dual-repo (when landing is available): checks out landing at an explicit
+# ref, runs the filesystem drift checker, and optionally starts PostgreSQL
+# for landing entitlement integration (landing-side vectors:check /
+# contract:check / migrations). Dual-repo requires either:
+#   - workflow_dispatch inputs: landing_repository + landing_ref
+#   - repository variables/secrets: LANDING_REPOSITORY (+ optional LANDING_REF)
+#   - or a sibling path via LANDING_PATH (self-hosted / composite only)
+#
+# Permissions: read-only contents. No write tokens.
+name: commerce-runtime-integration
+
+on:
+  push:
+    paths:
+      - "scripts/check-cross-repo-contracts.ts"
+      - "scripts/check-cross-repo-contracts.test.ts"
+      - "packages/shared/src/entitlements/**"
+      - "packages/license/testdata/crypto/**"
+      - "packages/license/src/**"
+      - ".github/workflows/commerce-runtime-integration.yml"
+      - "package.json"
+      - "pnpm-lock.yaml"
+  pull_request:
+    paths:
+      - "scripts/check-cross-repo-contracts.ts"
+      - "scripts/check-cross-repo-contracts.test.ts"
+      - "packages/shared/src/entitlements/**"
+      - "packages/license/testdata/crypto/**"
+      - "packages/license/src/**"
+      - ".github/workflows/commerce-runtime-integration.yml"
+      - "package.json"
+      - "pnpm-lock.yaml"
+  workflow_dispatch:
+    inputs:
+      landing_repository:
+        description: "Optional owner/name of grok-landing (enables dual-repo drift check)"
+        required: false
+        type: string
+        default: ""
+      landing_ref:
+        description: "Landing git ref/SHA when landing_repository is set"
+        required: false
+        type: string
+        default: "main"
+      landing_path:
+        description: "Optional pre-checked-out landing path (self-hosted). Overrides checkout."
+        required: false
+        type: string
+        default: ""
+      run_postgres:
+        description: "Start PostgreSQL service for landing entitlement migrate smoke"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: commerce-runtime-integration-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract-gates:
+    name: contract-gates (desktop + optional landing)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    # PostgreSQL only when explicitly requested and landing will be present.
+    # Full entitlement API bring-up remains landing-side (docker-compose /
+    # services/entitlement-api); this service is for migrate smoke only.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: entitlement
+          POSTGRES_PASSWORD: entitlement
+          POSTGRES_DB: entitlement
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U entitlement -d entitlement"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      LANDING_REPOSITORY: ${{ inputs.landing_repository || vars.LANDING_REPOSITORY || secrets.LANDING_REPOSITORY || '' }}
+      LANDING_REF: ${{ inputs.landing_ref || vars.LANDING_REF || 'main' }}
+      LANDING_PATH_INPUT: ${{ inputs.landing_path || secrets.LANDING_PATH || '' }}
+      RUN_POSTGRES: ${{ inputs.run_postgres || false }}
+      # Connection string for optional landing migrate smoke (unused when landing absent).
+      DATABASE_URL: postgresql://entitlement:entitlement@localhost:5432/entitlement
+
+    steps:
+      - name: Checkout desktop
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        # version comes from package.json packageManager (pnpm@9.6.0)
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install desktop dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Pure contract digest unit tests
+        run: pnpm exec vitest run scripts/check-cross-repo-contracts.test.ts
+
+      - name: Desktop-only digests dry-run
+        run: pnpm exec tsx scripts/check-cross-repo-contracts.ts --dry-run
+
+      - name: Build shared + license (vector suites)
+        run: |
+          pnpm --filter @grokdesk/shared build
+          pnpm --filter @grokdesk/license build
+
+      - name: Desktop crypto vector + OpenAPI pin tests
+        run: |
+          pnpm --filter @grokdesk/shared test -- src/entitlements/vectors.test.ts
+          pnpm --filter @grokdesk/license test -- src/product-key.test.ts src/device-proof.test.ts src/lease.test.ts src/release-manifest.test.ts
+
+      - name: Resolve dual-repo landing path
+        id: landing
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -n "${LANDING_PATH_INPUT}" ] && [ -d "${LANDING_PATH_INPUT}" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+            echo "path=${LANDING_PATH_INPUT}" >> "$GITHUB_OUTPUT"
+            echo "source=path-input" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ -n "${LANDING_REPOSITORY}" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+            echo "path=${{ github.workspace }}/grok-landing" >> "$GITHUB_OUTPUT"
+            echo "source=checkout" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "enabled=false" >> "$GITHUB_OUTPUT"
+          echo "path=" >> "$GITHUB_OUTPUT"
+          echo "source=none" >> "$GITHUB_OUTPUT"
+          echo "::notice::Landing not configured — running desktop-only gates. Set workflow_dispatch landing_repository, vars/secrets.LANDING_REPOSITORY, or LANDING_PATH to enable dual-repo drift."
+
+      - name: Checkout landing (optional)
+        if: steps.landing.outputs.source == 'checkout'
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.LANDING_REPOSITORY }}
+          ref: ${{ env.LANDING_REF }}
+          path: grok-landing
+          # Read-only: use default token for same-org public/private as permitted.
+          # For private cross-org, set secrets.LANDING_TOKEN and pass token: below.
+          token: ${{ secrets.LANDING_TOKEN || github.token }}
+
+      - name: Cross-repo drift checker
+        if: steps.landing.outputs.enabled == 'true'
+        env:
+          LANDING_ROOT: ${{ steps.landing.outputs.path }}
+        run: pnpm exec tsx scripts/check-cross-repo-contracts.ts
+
+      - name: Landing contract + vector gates
+        if: steps.landing.outputs.enabled == 'true'
+        working-directory: ${{ steps.landing.outputs.path }}/services/entitlement-api
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -f package.json ]; then
+            echo "::error::Landing entitlement-api package.json missing under ${{ steps.landing.outputs.path }}"
+            exit 1
+          fi
+          # Prefer npm ci when lockfile present (landing service is npm-based).
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
+          npm run contract:check
+          npm run vectors:check
+
+      - name: Landing migrate smoke (optional postgres)
+        if: steps.landing.outputs.enabled == 'true' && env.RUN_POSTGRES == 'true'
+        working-directory: ${{ steps.landing.outputs.path }}/services/entitlement-api
+        env:
+          DATABASE_URL: ${{ env.DATABASE_URL }}
+        run: npm run db:migrate
+
+      - name: Upload digest summary (always on dual-repo)
+        if: always() && steps.landing.outputs.enabled == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: cross-repo-contract-digests
+          path: |
+            packages/shared/src/entitlements/openapi-v1.sha256
+          if-no-files-found: ignore
+          retention-days: 14

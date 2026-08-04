@@ -1,0 +1,22 @@
+2026-07-14 mutation principal helpers + follow-up params extract
+
+pnpm typecheck → 0
+pnpm test → 0 TOTAL=877
+pnpm test:remote → 0
+pnpm build → 0
+git diff --check → 0
+
+Focused:
+  remote-idempotency (6) including extractClientMutationId + mutationPrincipalId
+  create-task-optimistic (7) including follow-up helpers
+  ui-structure (8)
+
+Proven:
+  - extractClientMutationId requires non-empty string
+  - mutationPrincipalId: remote→deviceId, desktop→"desktop", missing remote→"unknown"
+  - buildFollowUpTaskParams binds parentTaskId; inherits parent workspace roots
+  - canFollowUpOnTask rejects optimistic-* placeholders
+
+Gateway index ~1284 LOC
+
+Still blocked: default AgentProvider, live ACP default, grok-landing, vault purge, large UI

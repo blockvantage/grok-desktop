@@ -1,0 +1,22 @@
+2026-07-14 desk-mcp-planes + follow-up correlation
+
+pnpm typecheck → 0
+pnpm test → 0 TOTAL=858
+pnpm test:remote → 0
+pnpm build → 0
+git diff --check → 0
+
+Focused (focused/desk-followup.txt): 6 passed
+  desk-mcp-planes (5), followup-correlation (1)
+
+Proven:
+  - detectDeskControlPlanes requires MCP path existence
+  - buildDeskMcpPrepend desktop-before-browser; ELECTRON_RUN_AS_NODE when configured
+  - mergeDeskMcpServers drops stale desk entries
+  - Follow-up tasks.create reuses conversation_id; turns contain root+followup goals
+  - Distinct correlationIds on task.submit receipts (req-parent-1 vs req-child-2)
+  - Shared workspace root for follow-up; run attempts for both
+
+Gateway index ~1325 LOC
+
+Still blocked: default AgentProvider, live ACP default, grok-landing, vault purge, large UI

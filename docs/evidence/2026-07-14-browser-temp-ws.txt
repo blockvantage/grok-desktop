@@ -1,0 +1,19 @@
+2026-07-14 browser tool receipts + temp-workspace extract
+
+pnpm typecheck → 0
+pnpm test → 0 TOTAL=852
+pnpm test:remote → 0
+pnpm build → 0
+git diff --check → 0
+
+Focused (focused/browser-temp-ws.txt): 29 passed
+
+Proven:
+  - browser_open host success → operation receipt effect=executed executedBy=host
+  - browser_open host failure → decision=deny effect=host_failed
+  - ensureTempWorkspace under dataDir/workspaces is managed (isManagedWorkspaceRoot)
+  - resolveTaskWorkspaceRoots inherits parent; new chat managed primary + user secondary
+
+Gateway index ~1376 LOC
+
+Still blocked: default AgentProvider, live ACP default, grok-landing, vault purge, large UI

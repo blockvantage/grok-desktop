@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Adversarial review — intelligence / skills / commerce / i18n</title>
+  <style>
+    :root { --bg:#0b0c0f; --panel:#14161c; --border:#2a2e38; --text:#e8eaed; --muted:#9aa0a6; --ok:#3dd68c; --high:#f87171; --med:#fbbf24; --accent:#7aa2ff; }
+    body { margin:0; font-family: ui-sans-serif, system-ui, sans-serif; background: var(--bg); color: var(--text); line-height:1.55; }
+    main { max-width: 920px; margin: 0 auto; padding: 40px 20px 80px; }
+    h1 { font-size: 1.75rem; letter-spacing: -0.03em; }
+    h2 { font-size: 1.1rem; margin-top: 2rem; color: var(--accent); }
+    .muted { color: var(--muted); }
+    .card { border:1px solid var(--border); background:var(--panel); border-radius:12px; padding:16px 18px; margin:12px 0; }
+    .pill { display:inline-block; font-size:11px; border-radius:999px; padding:2px 8px; margin-right:6px; border:1px solid var(--border); }
+    .pill.ok { color: var(--ok); border-color: rgba(61,214,140,.35); }
+    .pill.high { color: var(--high); border-color: rgba(248,113,113,.4); }
+    .pill.med { color: var(--med); border-color: rgba(251,191,36,.4); }
+    table { width:100%; border-collapse: collapse; font-size: 0.9rem; }
+    th, td { text-align:left; padding:8px; border-bottom:1px solid var(--border); vertical-align:top; }
+    code { font-size: 0.85em; background: rgba(255,255,255,.06); padding:1px 5px; border-radius:4px; }
+    ul { padding-left: 1.2rem; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Adversarial review</h1>
+  <p class="muted">
+    Branch <code>feat/intelligence-skills-commerce</code> vs <code>main</code> ·
+    worktree <code>~/blockvantage/worktrees/grok-desktop-intelligence</code> ·
+    review pass after hardening (engine hot-reload, missing-env surfacing).
+  </p>
+
+  <div class="card">
+    <span class="pill ok">pnpm test green</span>
+    <span class="pill ok">shipped entry-points checked</span>
+    <span class="pill high">high fixed</span>
+    <span class="pill med">deferred polish only</span>
+  </div>
+
+  <h2>1. Themes reviewed</h2>
+  <table>
+    <thead><tr><th>Theme</th><th>Finding</th><th>Severity</th><th>Outcome</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Default skills</strong></td>
+        <td><code>resolveSkillsPaths([])</code> finds monorepo <code>skills/</code> with 5 SKILL.md packs; gateway uses <code>getEffectiveSkillsPaths()</code> at engine start.</td>
+        <td><span class="pill ok">none open</span></td>
+        <td>Proven by shared tests + skills-check.log</td>
+      </tr>
+      <tr>
+        <td><strong>Connector gallery</strong></td>
+        <td>17 presets, filter/recommended/enable paths work. Auth connectors left unresolved <code>${ENV}</code> silently.</td>
+        <td><span class="pill high">was high</span></td>
+        <td><strong>Fixed:</strong> <code>missingEnv</code> on enable + UI message; free recommended never enables github/slack</td>
+      </tr>
+      <tr>
+        <td><strong>MCP enable ≠ live engine</strong></td>
+        <td><code>settings.set</code> / connector enable persisted DB but engine still held startup MCP/skills until full restart.</td>
+        <td><span class="pill high">was high</span></td>
+        <td><strong>Fixed:</strong> <code>applyEngineSettings</code> + <code>TaskRunner.setEngine</code>; returns <code>engineReloaded</code>; toast “applied” vs restart</td>
+      </tr>
+      <tr>
+        <td><strong>Smart automations</strong></td>
+        <td>Proactivity emits memory-aware <code>suggestion</code> inbox items via <code>suggestAutomationsFromMemory</code>.</td>
+        <td><span class="pill ok">none open</span></td>
+        <td>gateway proactivity tests + proactivity-check.log</td>
+      </tr>
+      <tr>
+        <td><strong>License + manifest</strong></td>
+        <td>HMAC keys, activate/verify, offline grace, <code>docs/releases/latest.json</code> parse.</td>
+        <td><span class="pill ok">none open</span></td>
+        <td>license package + gateway integration tests</td>
+      </tr>
+      <tr>
+        <td><strong>Build wiring</strong></td>
+        <td>Desktop scripts build license before gateway; gateway tsconfig references license; tsbuildinfo under dist/.</td>
+        <td><span class="pill ok">none open</span></td>
+        <td>build-scripts.test.ts structural</td>
+      </tr>
+      <tr>
+        <td><strong>OAuth browser in tests</strong></td>
+        <td><code>shouldSkipBrowserLogin</code> under Vitest; auth.signIn dry-run.</td>
+        <td><span class="pill ok">none open</span></td>
+        <td>engine-grok + gateway auth tests</td>
+      </tr>
+      <tr>
+        <td><strong>i18n</strong></td>
+        <td>478 keys, parity across 7 locales; primary chrome translated (e.g. es nav.home=Inicio). Some non-es secondary strings still English.</td>
+        <td><span class="pill med">deferred</span></td>
+        <td>Key parity + chrome gate met; native-quality connector long-copy deferred</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>2. Material improvements shipped this pass</h2>
+  <ul>
+    <li><code>packages/gateway/src/services/engine-settings.ts</code> + tests — detect when engine must rebuild</li>
+    <li><code>TaskRunner.setEngine</code> / <code>setMaxConcurrent</code> — hot-swap without killing in-flight tasks</li>
+    <li>Gateway <code>settings.set</code> / <code>connectors.*</code> call <code>applyEngineSettings</code>; response includes <code>engineReloaded</code></li>
+    <li><code>listUnresolvedEnvPlaceholders</code> + UI connector message for missing API keys</li>
+    <li>Settings toast uses <code>settings.savedApplied</code> when engine reloaded (no false “restart required”)</li>
+  </ul>
+
+  <h2>3. Deferred (not high severity)</h2>
+  <ul>
+    <li>Native-speaker polish for every connector longDescription in fr/de/pt/ja/zh</li>
+    <li>Memory kind labels (Brand voice, etc.) still English in memory-view</li>
+    <li>One-click “create schedule from suggestion” inbox action</li>
+    <li>Live CDN / payment / Electron e2e tour</li>
+  </ul>
+
+  <h2>4. Evidence</h2>
+  <p class="muted">Scratch logs: worktree.txt, pnpm-test.log, skills-check.log, connectors-check.log, proactivity-check.log, license.log, manifest-check.log, i18n-check.log, engine-settings-check.log, limits.txt</p>
+
+  <footer class="muted" style="margin-top:2rem;font-size:0.85rem">
+    Generated for adversarial review goal · branch feat/intelligence-skills-commerce
+  </footer>
+</main>
+</body>
+</html>

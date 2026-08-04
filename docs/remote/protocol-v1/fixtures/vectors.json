@@ -1,0 +1,11 @@
+{
+  "v": 1,
+  "deskSk": "ERERERERERERERERERERERERERERERERERERERERERE",
+  "phoneSk": "IiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiI",
+  "pairSecret": "MzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzM",
+  "deskPub": "e06Qm75__kTEZaIgA31gjuNYl9Me-XLwf3SJLLD3PxM",
+  "phonePub": "D6poTtKIZ7l_Smot7l34zpdOdrcBjj8iocTPJnhXDyA",
+  "frameKey": "Jm1k8zAdLRP-BhctNhPOud2L7-fGrk5m41K2Xj0bbnk",
+  "qrSample": "grokdesk://pair/eyJ2IjoxLCJtaWQiOiJtYWNoaW5lLWZpeHR1cmUiLCJtcGsiOiJlMDZRbTc1X19rVEVaYUlnQTMxZ2p1TllsOU1lLVhMd2YzU0pMTEQzUHhNIiwic2VjcmV0IjoiTXpNek16TXpNek16TXpNek16TXpNek16TXpNek16TXpNek16TXpNek16TSIsInJlbGF5Ijoid3M6Ly8xMjcuMC4wLjE6ODc4NyIsImV4cCI6NDEwMjQ0NDgwMDAwMH0",
+  "relayDefault": "wss://grokdesk.app/relay"
+}

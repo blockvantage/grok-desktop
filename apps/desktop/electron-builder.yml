@@ -1,0 +1,99 @@
+appId: ai.x.grokdesk
+productName: Grok Desk
+copyright: Copyright © 2026 Grok Desk
+directories:
+  output: release
+  buildResources: build
+# Gateway child uses Electron-as-Node + better-sqlite3; native .node must be
+# rebuilt for Electron ABI before packaging (see scripts/rebuild-native-for-electron.mjs).
+# Do not set asarUnpack globs here — monorepo workspace packages live outside
+# apps/desktop and break electron-builder's relative path filter. Native
+# modules are still auto-unpacked by electron-builder.
+npmRebuild: true
+# Flip Electron security fuses after pack (electron-builder 25.x has no
+# native electronFuses key). See scripts/after-pack-fuses.mjs.
+# runAsNode stays enabled for gateway/MCP Electron-as-Node children.
+afterPack: scripts/after-pack-fuses.mjs
+files:
+  - out/**/*
+  - package.json
+# Ship default skill packs into Resources/skills so packaged apps resolve them.
+extraResources:
+  - from: ../../skills
+    to: skills
+    filter:
+      - "**/*"
+  # desk-browser MCP (stdio) for Grok → in-app agent browser
+  - from: resources/browser-mcp-server.mjs
+    to: browser-mcp-server.mjs
+  # desk-desktop MCP (stdio) for computer use
+  - from: resources/desktop-mcp-server.mjs
+    to: desktop-mcp-server.mjs
+mac:
+  category: public.app-category.productivity
+  icon: build/icon.icns
+  hardenedRuntime: true
+  notarize: true
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.inherit.plist
+  # Apple docs: CFBundleIconFile is the name without extension.
+  extendInfo:
+    CFBundleIconFile: icon
+    NSMicrophoneUsageDescription: Grok Desk uses the microphone for voice dictation of goals and follow-ups.
+    NSScreenCaptureUsageDescription: Grok Desk captures the screen so the coworker agent can see UI while desktop control is enabled.
+    NSAppleEventsUsageDescription: Grok Desk controls the mouse and keyboard when you allow desktop control on a task.
+  target:
+    - dmg
+    - zip
+# Custom DMG install window. Background pixel size MUST equal window size
+# (1:1). A 2× PNG is often treated as 1× by appdmg, which crops to the
+# top-left quadrant. Art is cover-scaled edge-to-edge (no letterbox bars).
+# Icons share one baseline along the light-arrow (app → Applications).
+# Window matches bg exactly; oversized windows leave empty scroll chrome.
+dmg:
+  # bg pixels = content size; window is taller so Finder titlebar does not create a scrollbar
+  background: build/installer-bg.png
+  window:
+    width: 660
+    height: 428
+  iconSize: 64
+  contents:
+    # Grok Desk.app — on the light-arrow stream (left-center)
+    - x: 200
+      y: 248
+      type: file
+    # /Applications alias — at the doorway (aligned y with app)
+    - x: 470
+      y: 248
+      type: link
+      path: /Applications
+win:
+  icon: build/icon.ico
+  # Shown in installer + file properties when present (signing still needed
+  # for "Verified publisher"; without a cert Windows shows unknown publisher
+  # and SmartScreen will block first-run of the NSIS installer).
+  legalTrademarks: Grok Desk
+  # Prefer NSIS only for free + paid publish paths (never portable).
+  target:
+    - nsis
+  # When Authenticode secrets are configured, electron-builder signs both the
+  # app exe and the NSIS wrapper. Without secrets the free CI path sets
+  # signAndEditExecutable=false so packaging still succeeds (unsigned).
+nsis:
+  # Per-user one-click: no UAC, installs under %LOCALAPPDATA%\Programs\Grok Desk.
+  # Silent install for CI smoke: installer.exe /S
+  oneClick: true
+  perMachine: false
+  allowToChangeInstallationDirectory: false
+  allowElevation: false
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Grok Desk
+  runAfterFinish: true
+  uninstallDisplayName: Grok Desk
+  installerIcon: build/icon.ico
+  uninstallerIcon: build/icon.ico
+  installerHeaderIcon: build/icon.ico
+  artifactName: ${productName}-Setup-${version}-${arch}.${ext}
+  # Keep uninstall entry discoverable under Apps & features.
+  deleteAppDataOnUninstall: false

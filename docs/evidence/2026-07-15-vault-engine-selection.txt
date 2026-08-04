@@ -1,0 +1,28 @@
+# Slice: vault migrate + engine selection (2026-07-15)
+
+## Goal
+Advance blocked items without prod mutation / paid CLI:
+1. SEC-02 vault migrate path (plaintext SQLite → vault refs)
+2. AgentProvider cutover selection made explicit + settings opt-in
+
+## Delivered
+- packages/shared secret-vault-migrate (scan / dry-run / migrate / resolve)
+- packages/gateway FileCredentialVault (AES-256-GCM under dataDir/credential-vault)
+- SettingsService: setCredentialVault, migrateLiteralsToVault, getMcpServersResolved
+- Gateway.start attaches vault + auto-migrates literals on boot
+- settings.set / enableConnectorPreset vaultize when vault present
+- settings.set IPC redacts mcpServers on mutate response
+- engine-selection: resolveEngineSelection + cutover readiness gates
+- settings.preferProviderEngine (default false) + env dual-path
+- Engine rebuild honors preferProviderEngine
+
+## Not claimed
+- Product-default AgentProvider cutover (still opt-in)
+- Live ACP as production default without GROKDESK_ACP=1
+- OS keychain / Electron safeStorage mass purge (auth-gated separately)
+- Production relay / grok-landing
+- Second real provider
+
+## Honest residual
+Durable OS vault purge of *external* keychain entries still needs explicit auth.
+File vault + SQLite literal purge (rewrite to refs) is implemented and tested.

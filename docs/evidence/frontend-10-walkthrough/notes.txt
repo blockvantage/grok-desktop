@@ -1,0 +1,22 @@
+browser=system chrome channel
+01-home: heading="Evening"
+sidebar-sign-in count=1
+sidebar-sign-in not solid primary: true
+sidebar-sign-in class: inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium tracking-tight transition-all duration-150 ease-premium focus-visible:o
+02-artifacts-empty: heading="Artifacts"
+artifacts type-rail=0 (expect 0)
+artifacts search-row=0 (expect 0)
+no artifacts empty copy: true
+03-settings-account: heading="Settings"
+Sign in required: true
+no raw Unknown engine status: true
+04-settings-preferences: heading="Settings"
+preferences-tab=0
+05-chats-empty: heading="Conversations"
+06-memory: heading="Memory"
+07-after-rapid-nav: heading="Evening"
+after rapid nav heading=Evening
+no settings ghost under home: true
+
+preferences-retry active=Preferences prefTestId=true defaultModel=true
+chrome={"sidebarW":256,"topbarH":56}

@@ -1,0 +1,31 @@
+# Slice: notify scheduler + runWithMemory + AgentProviderEngine (2026-07-14)
+
+## Changes
+- packages/gateway/src/services/notify-scheduler.ts (+test)
+- packages/gateway/src/services/run-with-memory.ts (+test)
+- packages/gateway/src/services/agent-provider-engine.ts (docs + stronger tests)
+- packages/gateway/src/index.ts wires DebouncedNotifyScheduler + runWithMemoryImpl
+
+## Focused tests
+- notify-scheduler: 4
+- run-with-memory: 3
+- agent-provider-engine: 12
+- notify integration: 3
+- Total focused: 22 pass
+
+## Suite
+- typecheck 0
+- test 892 (was 877)
+- test:remote 111
+- build 0
+- audit --prod: 2 moderate mobile transitive (documented)
+- git diff --check 0
+
+## Proven
+- Debounced server-push scheduling isolated; pending timers cleared on stop
+- RunContext assembly path unit-tested without Gateway
+- AgentProvider dual-path remains opt-in; Fake caps ⇒ executesOwnTools false
+
+## Not claimed
+- AgentProvider as default product executor
+- Live ACP / production relay / vault purge

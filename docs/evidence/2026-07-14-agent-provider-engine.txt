@@ -1,0 +1,17 @@
+2026-07-14 AgentProviderEngine dual-path + remote submission
+
+pnpm typecheck → 0
+pnpm test → 0 TOTAL=828
+pnpm test:remote → (suite/test-remote8)
+pnpm build → (suite/build8)
+git diff --check → 0
+
+Focused: agent-provider-engine.test.ts (4), remote-task-submission.test.ts (1)
+
+Proven:
+  - FakeAgentProvider completes TaskRunner via AgentProviderEngine
+  - runtimeEvent → NormalizedEngineEvent mapping (message/tool/done)
+  - GROKDESK_PROVIDER_ENGINE=1 composition path exists (default still engine-grok)
+  - Remote RequestContext tasks.create → run attempt + task.submit receipt with principal
+
+Not claimed: default cutover to AgentProvider; live ACP without env; prod relay; vault purge

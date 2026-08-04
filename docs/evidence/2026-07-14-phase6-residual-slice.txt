@@ -1,0 +1,29 @@
+# Phase 6 residual slice (2026-07-14 continue session)
+
+## Delivered
+1. DebouncedNotifyScheduler (+4 tests) — wired Gateway stop clear
+2. runWithMemory (+3 tests) — RunContext assembly path
+3. AgentProviderEngine (+9 tests net) — caps, session reuse, fail/done, dual-path contract docs
+4. task-list-sync (+5 tests) — App optimistic merge + finished detection
+5. applyEngineSettingsRebuild (+4 tests) — settings-driven engine replace
+6. ensureDeskPlanesEngine (+4 tests) — desk MCP re-inject orchestration
+7. chat-export thread/path helpers (+5 tests net) — thinner chats.exportMarkdown
+8. app-shortcuts (+8 tests) — pure keyboard intents wired into App
+9. role-pack-apply (+4 tests) — tasks.create pack merge
+
+## Verification
+- pnpm typecheck → 0
+- pnpm test → 922 (baseline 671)
+- pnpm test:remote → 111
+- pnpm build → 0
+- git diff --check → 0
+- pnpm audit --prod → 2 moderate mobile transitive (documented exceptions)
+
+## Authorization blockers (full DoD)
+- Production relay grok-landing audit
+- Durable vault purge of historical SQLite secrets
+- Paid live Grok ACP as product default (requires cutover decision + conformance)
+- Default AgentProvider cutover (currently opt-in env only)
+
+## Not claimed
+Full overhaul DoD complete / sandbox complete / provider-independent product path

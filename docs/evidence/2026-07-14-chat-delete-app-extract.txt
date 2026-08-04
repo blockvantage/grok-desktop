@@ -1,0 +1,20 @@
+2026-07-14 chat-deletion + App create-task extract
+
+pnpm typecheck → 0
+pnpm test → 0 TOTAL=839
+pnpm test:remote → 0
+pnpm build → 0
+git diff --check → 0
+
+Focused:
+  workspace-managed (5), chat-deletion (2), create-task-optimistic (4), dispatch (8)
+
+Proven:
+  - isManagedWorkspaceRoot rejects user projects and workspaces base
+  - deleteChatThread removes managed chat dirs only; user keep.txt survives
+  - cancel called for running members before delete
+  - optimistic create helpers: shell denied on placeholder; merge drops optimistic-*
+
+Sizes: gateway index ~1407, App.tsx ~1535
+
+Still blocked: default AgentProvider, live ACP default, grok-landing, vault purge, large task-workspace-view

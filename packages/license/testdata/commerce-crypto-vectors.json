@@ -1,0 +1,11 @@
+{
+  "description": "Manifest of byte-identical commerce crypto vectors (Contract Gate C1). Paths are relative to this file.",
+  "schemaVersion": 1,
+  "source": "grok-landing/services/entitlement-api/contracts/crypto/v1",
+  "vectors": {
+    "product-keys": "crypto/v1/product-keys.json",
+    "activation-challenges": "crypto/v1/activation-challenges.json",
+    "device-leases": "crypto/v1/device-leases.json",
+    "release-manifests": "crypto/v1/release-manifests.json"
+  }
+}

@@ -1,0 +1,384 @@
+# Free public installers for the marketing site.
+#
+# Builds the three free-download targets and publishes them to a GitHub Release
+# under the *stable* asset names used by grokdesk.app:
+#   GrokDesk-mac-arm64.dmg
+#   GrokDesk-mac-x64.dmg
+#   GrokDesk-win-x64.exe
+#
+# Site resolves:
+#   https://github.com/{repo}/releases/latest/download/{asset}
+#
+# Trigger: Actions → "release-free-github" → Run workflow
+#   - tag: v1.0.0  (creates/updates that release)
+#   - dry_run: true to build+stage without uploading
+#
+# Signing is optional: if CSC_* / APPLE_* secrets are missing, packages as
+# unsigned (Gatekeeper / SmartScreen may warn). For signed free builds, add
+# the same secrets used by release-desktop.yml.
+#
+# Does NOT bake GROKDESK_BAKE_DEV_UNLOCK. Public free builds for grokdesk.app.
+
+name: release-free-github
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (e.g. v1.0.0). Leave empty to use package.json version."
+        required: false
+        default: ""
+      dry_run:
+        description: "Build and stage only — do not create/upload GitHub Release"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-free-github-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  # Never bake entitlement unlock into free public builds.
+  GROKDESK_DEV_UNLOCK: ""
+  GROKDESK_BAKE_DEV_UNLOCK: ""
+
+jobs:
+  resolve-tag:
+    name: resolve-tag
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - id: tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -n "${{ inputs.tag }}" ]; then
+            echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            ver=$(node -p "require('./package.json').version")
+            echo "tag=v${ver}" >> "$GITHUB_OUTPUT"
+          fi
+          echo "Resolved tag: $(grep tag= "$GITHUB_OUTPUT" | cut -d= -f2)"
+
+  package:
+    name: package-${{ matrix.target }}
+    needs: resolve-tag
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: darwin-arm64
+            os: macos-14
+            platform: mac
+            arch: arm64
+            eb_args: "--mac --arm64 -c.mac.target=dmg"
+            stable: GrokDesk-mac-arm64.dmg
+          # Build x64 on Apple Silicon runners (macos-13 Intel is scarce/phased out).
+          - target: darwin-x64
+            os: macos-14
+            platform: mac
+            arch: x64
+            eb_args: "--mac --x64 -c.mac.target=dmg"
+            stable: GrokDesk-mac-x64.dmg
+          - target: win32-x64
+            os: windows-latest
+            platform: win
+            arch: x64
+            # npmRebuild=false: better-sqlite3 is rebuilt explicitly above.
+            # signAndEditExecutable is only disabled when no Authenticode cert
+            # is configured (see Package installer step) — never force-unsigned
+            # when WIN_CSC_* secrets are present.
+            eb_args: "--win --x64 --config.win.target=nsis --config.npmRebuild=false"
+            stable: GrokDesk-win-x64.exe
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      # version comes from package.json packageManager (pnpm@9.6.0)
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "20"
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Refuse entitlement unlock envs
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${GROKDESK_DEV_UNLOCK:-}" = "1" ] || [ "${GROKDESK_BAKE_DEV_UNLOCK:-}" = "1" ]; then
+            echo "Free release must not set unlock envs"
+            exit 1
+          fi
+
+      - name: Build workspace + desktop
+        shell: bash
+        run: |
+          set -euo pipefail
+          # desktop build script topo-builds workspace deps first
+          pnpm --filter @grokdesk/desktop build
+          main_js="apps/desktop/out/main/index.js"
+          test -f "$main_js"
+          # Soft check: unlock must not bake true
+          if grep -E 'function isBakedDevUnlock' -A6 "$main_js" | grep -q 'const v = true'; then
+            echo "FATAL: entitlement unlock baked true"
+            exit 1
+          fi
+
+      - name: Rebuild native modules for Electron
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ matrix.platform }}" = "win" ]; then
+            pnpm --filter @grokdesk/desktop exec node scripts/rebuild-native-for-electron.mjs --platform win32 --arch x64
+          else
+            pnpm --filter @grokdesk/desktop exec node scripts/rebuild-native-for-electron.mjs
+          fi
+
+      - name: Package installer
+        working-directory: apps/desktop
+        shell: bash
+        env:
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          extra=""
+          # macOS: unsigned free path when no Apple identity is configured
+          if [ "${{ matrix.platform }}" = "mac" ]; then
+            if [ -z "${CSC_LINK:-}" ]; then
+              export CSC_IDENTITY_AUTO_DISCOVERY=false
+              extra="-c.mac.notarize=false -c.mac.identity=null -c.mac.hardenedRuntime=false"
+            else
+              export CSC_IDENTITY_AUTO_DISCOVERY=true
+            fi
+          fi
+          # Windows: sign when WIN_CSC_* (or shared CSC_*) is present; otherwise
+          # disable rcedit/sign so electron-builder does not fail on missing certs.
+          # End users hit SmartScreen on unsigned builds — log loudly.
+          if [ "${{ matrix.platform }}" = "win" ]; then
+            if [ -n "${WIN_CSC_LINK:-}" ] || [ -n "${CSC_LINK:-}" ]; then
+              export CSC_IDENTITY_AUTO_DISCOVERY=true
+              echo "Windows Authenticode secrets present — signing NSIS installer"
+            else
+              export CSC_IDENTITY_AUTO_DISCOVERY=false
+              extra="$extra --config.win.signAndEditExecutable=false"
+              echo "::warning::Windows free build is UNSIGNED (no WIN_CSC_LINK). SmartScreen will block end-user installs until an Authenticode cert is configured."
+            fi
+          fi
+          # shellcheck disable=SC2086
+          pnpm exec electron-builder ${{ matrix.eb_args }} $extra --publish never
+
+      - name: Verify Windows package + silent install smoke
+        if: ${{ matrix.platform == 'win' }}
+        shell: pwsh
+        env:
+          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $release = 'apps/desktop/release'
+
+          $setup = @(
+            Get-ChildItem $release -Recurse -File -Filter '*Setup*.exe' |
+              Where-Object { $_.Name -notmatch 'uninstaller|Portable|__uninstaller' }
+          )
+          if ($setup.Count -eq 0) { throw 'No NSIS Setup installer found under apps/desktop/release' }
+          $installer = $setup[0]
+          Write-Host "Installer: $($installer.FullName) size=$($installer.Length)"
+
+          # better-sqlite3 must be a Windows PE image (gateway Electron-as-Node).
+          $node = Join-Path $release 'win-unpacked\resources\app.asar.unpacked\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+          if (-not (Test-Path $node)) { throw "Missing better_sqlite3.node at $node" }
+          $hdr = [System.IO.File]::ReadAllBytes($node)[0..1]
+          if (-not ($hdr[0] -eq 0x4D -and $hdr[1] -eq 0x5A)) {
+            throw 'better_sqlite3.node is not a Windows PE image (wrong platform packed)'
+          }
+
+          # Credential vault decision: never ship keytar.
+          $keytar = Join-Path $release 'win-unpacked\resources\app.asar.unpacked\node_modules\@github\keytar'
+          if (Test-Path $keytar) {
+            throw 'keytar must not be packaged (docs/decisions/2026-07-24-no-keychain.md)'
+          }
+
+          # Skills + MCP extraResources must land next to app.asar.
+          foreach ($rel in @(
+            'win-unpacked\resources\browser-mcp-server.mjs',
+            'win-unpacked\resources\desktop-mcp-server.mjs',
+            'win-unpacked\resources\skills\desk-defaults\SKILL.md'
+          )) {
+            $p = Join-Path $release $rel
+            if (-not (Test-Path $p)) { throw "Missing packaged resource: $p" }
+          }
+
+          $sig = Get-AuthenticodeSignature $installer.FullName
+          Write-Host "Authenticode status=$($sig.Status) subject=$($sig.SignerCertificate.Subject)"
+          $expectSigned = (-not [string]::IsNullOrEmpty($env:WIN_CSC_LINK)) -or (-not [string]::IsNullOrEmpty($env:CSC_LINK))
+          if ($expectSigned) {
+            if ($sig.Status -ne 'Valid') {
+              throw "Expected signed installer when CSC secrets present: status=$($sig.Status)"
+            }
+            if ($null -eq $sig.TimeStamperCertificate) {
+              throw "Missing Authenticode timestamp: $($installer.FullName)"
+            }
+          } else {
+            Write-Warning 'Installer is UNSIGNED — end users will see SmartScreen (More info → Run anyway). Configure WIN_CSC_LINK / WIN_CSC_KEY_PASSWORD to ship a Verified publisher build.'
+          }
+
+          # Silent per-user install (NSIS oneClick /S). Proves the pipeline is
+          # installable end-to-end on a clean Windows runner (MOTW/SmartScreen
+          # is a separate download reputation problem).
+          $appDir = Join-Path $env:LOCALAPPDATA 'Programs\Grok Desk'
+          $appExe = Join-Path $appDir 'Grok Desk.exe'
+          if (Test-Path $appDir) {
+            $prevUn = Get-ChildItem $appDir -Filter 'Uninstall*.exe' -ErrorAction SilentlyContinue | Select-Object -First 1
+            if ($null -ne $prevUn) {
+              Start-Process -FilePath $prevUn.FullName -ArgumentList '/S' -Wait
+            }
+          }
+          Start-Process -FilePath $installer.FullName -ArgumentList '/S' -Wait
+          if (-not (Test-Path $appExe)) {
+            throw "Silent install failed: missing $appExe"
+          }
+          $mainHdr = [System.IO.File]::ReadAllBytes($appExe)[0..1]
+          if (-not ($mainHdr[0] -eq 0x4D -and $mainHdr[1] -eq 0x5A)) {
+            throw "Installed Grok Desk.exe is not a PE image"
+          }
+
+          $proc = Start-Process -FilePath $appExe -PassThru
+          Start-Sleep -Seconds 15
+          if ($proc.HasExited -and $proc.ExitCode -ne 0) {
+            throw "App exited early after install with code $($proc.ExitCode)"
+          }
+          if (-not $proc.HasExited) {
+            Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+            Start-Sleep -Seconds 2
+          }
+
+          $un = Get-ChildItem $appDir -Filter 'Uninstall*.exe' -ErrorAction SilentlyContinue | Select-Object -First 1
+          if ($null -ne $un) {
+            Start-Process -FilePath $un.FullName -ArgumentList '/S' -Wait
+          }
+          Write-Host 'Windows silent install smoke passed'
+
+      - name: Scan free Windows installer with Microsoft Defender
+        if: ${{ matrix.platform == 'win' }}
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Update-MpSignature
+          Start-MpScan -ScanType CustomScan -ScanPath (Resolve-Path 'apps/desktop/release')
+          $threats = @(Get-MpThreatDetection | Where-Object { $_.Resources -match 'apps.desktop.release' })
+          if ($threats.Count -gt 0) {
+            $threats | Format-List | Out-String | Write-Error
+            throw 'Microsoft Defender detected a threat in free Windows release artifacts'
+          }
+
+      - name: Stage stable free asset name
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/stage-free-release-assets.mjs \
+            --target "${{ matrix.target }}" \
+            --release-dir apps/desktop/release \
+            --out-dir free-assets
+          ls -la free-assets/
+          test -f "free-assets/${{ matrix.stable }}"
+
+      - name: Upload staged free asset
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: free-${{ matrix.target }}
+          path: |
+            free-assets/${{ matrix.stable }}
+            free-assets/${{ matrix.stable }}.sha256
+          if-no-files-found: error
+
+  publish:
+    name: publish-github-release
+    needs: [resolve-tag, package]
+    runs-on: ubuntu-latest
+    if: ${{ needs.resolve-tag.result == 'success' }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Download all free assets
+        uses: actions/download-artifact@v4
+        with:
+          path: free-dist
+          pattern: free-*
+          merge-multiple: true
+
+      - name: List staged assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          find free-dist -type f -print
+          test -f free-dist/GrokDesk-mac-arm64.dmg
+          test -f free-dist/GrokDesk-mac-x64.dmg
+          test -f free-dist/GrokDesk-win-x64.exe
+          ls -lah free-dist/
+
+      - name: Publish GitHub Release (latest channel)
+        if: ${{ inputs.dry_run != 'true' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.resolve-tag.outputs.tag }}
+          name: Grok Desk ${{ needs.resolve-tag.outputs.tag }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: |
+            free-dist/GrokDesk-mac-arm64.dmg
+            free-dist/GrokDesk-mac-arm64.dmg.sha256
+            free-dist/GrokDesk-mac-x64.dmg
+            free-dist/GrokDesk-mac-x64.dmg.sha256
+            free-dist/GrokDesk-win-x64.exe
+            free-dist/GrokDesk-win-x64.exe.sha256
+          body: |
+            **Hand Grok the goal. Find the result on your desk.**
+
+            **Download on the product site:** [grokdesk.app](https://grokdesk.app/#download)
+
+            | Platform | Direct installer |
+            | --- | --- |
+            | Mac (Apple silicon) | [GrokDesk-mac-arm64.dmg](https://github.com/${{ github.repository }}/releases/latest/download/GrokDesk-mac-arm64.dmg) |
+            | Mac (Intel) | [GrokDesk-mac-x64.dmg](https://github.com/${{ github.repository }}/releases/latest/download/GrokDesk-mac-x64.dmg) |
+            | Windows x64 | [GrokDesk-win-x64.exe](https://github.com/${{ github.repository }}/releases/latest/download/GrokDesk-win-x64.exe) |
+
+            Requires [SuperGrok](https://x.ai) (sold separately).
+
+            - Site: https://grokdesk.app
+            - Support: https://grokdesk.app/support
+            - Feedback: https://grokdesk.app/feedback
+
+            SHA-256 checksums are attached next to each installer.
+
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Dry-run summary
+        if: ${{ inputs.dry_run == 'true' }}
+        run: |
+          echo "Dry run — assets staged but not uploaded to a GitHub Release."
+          echo "Tag would be: ${{ needs.resolve-tag.outputs.tag }}"
+          ls -lah free-dist/

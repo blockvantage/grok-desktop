@@ -1,0 +1,70 @@
+{
+  "expo": {
+    "name": "Grok Desk Remote",
+    "slug": "grok-desk-remote",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#050e21",
+    "sdkVersion": "54.0.0",
+    "splash": {
+      "image": "./assets/splash.png",
+      "backgroundColor": "#050e21",
+      "resizeMode": "contain"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "ai.x.grokdesk.remote",
+      "backgroundColor": "#050e21",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Scan the Grok Desk pairing QR code.",
+        "NSFaceIDUsageDescription": "Unlock Grok Desk Remote with Face ID.",
+        "NSLocalNetworkUsageDescription": "Grok Desk Remote connects to your computer on the local network to pair and control the desk.",
+        "NSAppTransportSecurity": {
+          "NSAllowsLocalNetworking": true
+        }
+      }
+    },
+    "android": {
+      "package": "ai.x.grokdesk.remote",
+      "usesCleartextTraffic": true,
+      "backgroundColor": "#050e21",
+      "permissions": [
+        "CAMERA",
+        "USE_BIOMETRIC",
+        "USE_FINGERPRINT",
+        "ACCESS_NETWORK_STATE",
+        "INTERNET"
+      ],
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "monochromeImage": "./assets/monochrome-icon.png",
+        "backgroundColor": "#050e21"
+      }
+    },
+    "androidStatusBar": {
+      "backgroundColor": "#050e21",
+      "barStyle": "light-content",
+      "translucent": true
+    },
+    "plugins": [
+      "expo-secure-store",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Grok Desk Remote to scan the desk pairing QR."
+        }
+      ],
+      "expo-local-authentication",
+      "expo-localization",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#050e21",
+          "resizeMode": "contain"
+        }
+      ]
+    ],
+    "icon": "./assets/icon.png"
+  }
+}

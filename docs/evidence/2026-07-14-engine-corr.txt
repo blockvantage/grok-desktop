@@ -1,0 +1,21 @@
+Slice verification 2026-07-14 — engine composition + correlation + crash recovery
+
+pnpm typecheck     → 0
+pnpm test          → 0  TOTAL=801
+pnpm test:remote   → 0  111
+pnpm build         → 0
+pnpm audit --prod  → 2 moderate (documented)
+git diff --check   → 0
+
+Focused (focused/engine-corr-crash.txt):
+  crash-recovery, engine-composition-boundary, task-submission-correlation,
+  run-attempts, dispatch, task-crash-recovery — 18 passed
+
+New files:
+  packages/gateway/src/engine-composition.ts
+  packages/gateway/src/engine-types.ts
+  packages/gateway/src/services/crash-recovery.ts (+test)
+  packages/gateway/src/p0/engine-composition-boundary.test.ts
+  packages/gateway/src/p0/task-submission-correlation.test.ts
+
+Still blocked for full DoD: live ACP default path, grok-landing, vault purge auth, large splits.

@@ -1,0 +1,20 @@
+2026-07-14 tool operation receipts + workspace-read extract
+
+pnpm typecheck → 0
+pnpm test → 0 TOTAL=846
+pnpm test:remote → 0
+pnpm build → 0
+git diff --check → 0
+
+Focused (focused/tool-receipts.txt): 22 passed
+  tool-operation-receipts (3), operation-receipts.redact (1), workspace-read-file (3), runner (15)
+
+Proven:
+  - tool:shell deny → decision deny; password=/token= redacted in detail
+  - strict write_file user reject → effect user_rejected
+  - autopilot host write_file → effect executed
+  - OperationReceiptService redacts apiKey keys + inline secret assignments
+
+Sizes: gateway index ~1381, runner ~937
+
+Still not claimed: full effect coverage for browser MCP path, default AgentProvider, live ACP, prod relay, vault purge

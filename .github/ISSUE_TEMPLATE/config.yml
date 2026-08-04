@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Product support & feedback
+    url: https://grokdesk.app/feedback
+    about: Feature ideas and product questions (preferred)
+  - name: Website & downloads
+    url: https://grokdesk.app
+    about: Installers, marketing site, and support hub
+  - name: Optional contribution
+    url: https://grokdesk.app/support
+    about: Support the product

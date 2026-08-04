@@ -1,0 +1,428 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Escape the Terminal — Grok Desk launch film</title>
+<style>
+  html, body { margin: 0; padding: 0; background: #000; }
+</style>
+</head>
+<body>
+<div data-composition-id="escape-the-terminal" data-start="0" data-duration="24.90" data-width="1920" data-height="1080" id="root-comp">
+
+  <!-- ============================================================
+       EDITORIAL GRAMMAR (payverge lineage): cinematic footage in
+       windows on a charcoal canvas · serif kinetic words on the
+       spoken word · product truth as small cream cards · canvas
+       rests at phrase ends · ONE full-bleed (the want-it beat).
+       ============================================================ -->
+
+  <!-- ACT 1 · THE CURSOR VOID (cold-open plate: 95% black = canvas) -->
+  <div id="void-plate">
+    <video class="clip" id="cursor-clip" data-start="0" data-media-start="0.2" data-duration="4.02" data-track-index="1" src="assets/gen/cursor-motion.mp4" muted playsinline data-layout-ignore></video>
+  </div>
+  <div class="kserif" id="k-seen" data-layout-allow-overlap>You've seen what Grok Build can do.</div>
+  <div id="k-terminal" data-layout-allow-overlap>&mdash; in a terminal.</div>
+
+  <!-- ACT 2 · THE SPILL & THE DESK -->
+  <div class="fwin" id="win-spill" data-layout-allow-overlap>
+    <video class="clip" id="spill-clip" data-start="4.02" data-media-start="1.0" data-duration="0.94" data-track-index="2" src="assets/gen/spill-motion.mp4" muted playsinline data-layout-ignore></video>
+  </div>
+  <div class="kserif kside" id="k-now" data-layout-allow-overlap>Now &mdash;</div>
+
+  <div class="fwin" id="win-desk" data-layout-allow-overlap>
+    <video class="clip" id="desk-clip" data-start="4.94" data-media-start="0.6" data-duration="2.06" data-track-index="3" src="assets/gen/desk-motion.mp4" muted playsinline data-layout-ignore></video>
+  </div>
+  <div class="kserif kside" id="k-desk" data-layout-allow-overlap>give it a desk.</div>
+  <div class="card" id="card-goal" data-layout-allow-overlap>
+    <div class="card-kick">One goal</div>
+    <div class="card-body">Research the competitors.<br/>Design the graphic. File it all.</div>
+  </div>
+
+  <!-- ACT 3 · CAPABILITY TRIPTYCH (fast windows, hard cuts) -->
+  <div class="fwin twin" id="win-x" data-layout-allow-overlap>
+    <video class="clip" id="x-clip" data-start="6.98" data-media-start="1.2" data-duration="0.92" data-track-index="4" src="assets/gen/x-motion.mp4" muted playsinline data-layout-ignore></video>
+  </div>
+  <div class="kserif ktri" id="k-x" data-layout-allow-overlap>searches&nbsp;X.</div>
+
+  <div class="fwin twin" id="win-imagine" data-layout-allow-overlap>
+    <img src="assets/gen/imagine-bloom_2.png" alt="" data-layout-ignore />
+  </div>
+  <div class="kserif ktri" id="k-imagine" data-layout-allow-overlap>imagines.</div>
+
+  <div class="fwin twin" id="win-code" data-layout-allow-overlap>
+    <img src="assets/gen/code-lattice_1.jpg" alt="" data-layout-ignore />
+  </div>
+  <div class="kserif ktri" id="k-code" data-layout-allow-overlap>runs code.</div>
+
+  <!-- ACT 4 · THREE TASKS (cards only — a rest from footage) -->
+  <div id="tasks-row" data-layout-allow-overlap>
+    <div class="card tcard" id="tcard-1"><span class="tdot"></span><div class="card-body">Research competitors</div></div>
+    <div class="card tcard" id="tcard-2"><span class="tdot"></span><div class="card-body">Launch graphic</div></div>
+    <div class="card tcard" id="tcard-3"><span class="tdot"></span><div class="card-body">File /Marketing</div></div>
+  </div>
+
+  <!-- ACT 5 · SCHEDULE -->
+  <div class="fwin" id="win-dawn" data-layout-allow-overlap>
+    <img src="assets/gen/dawn-sky_1.jpg" alt="" data-layout-ignore />
+  </div>
+  <div class="card" id="card-sched" data-layout-allow-overlap>
+    <div class="card-kick">Scheduled</div>
+    <div class="card-body">Every Monday &middot; 9:00</div>
+  </div>
+
+  <!-- ACT 6 · THE FULL-BLEED WANT-IT -->
+  <div id="handoff-bleed" data-layout-allow-overlap>
+    <video class="clip" id="handoff-clip" data-start="13.30" data-media-start="0.4" data-duration="2.74" data-track-index="5" src="assets/gen/handoff-motion.mp4" muted playsinline data-layout-ignore></video>
+  </div>
+  <div class="kserif" id="k-there" data-layout-allow-overlap>Just&hellip; there.</div>
+  <div class="card" id="card-files" data-layout-allow-overlap>
+    <div class="card-kick">Delivered</div>
+    <div class="card-body">brief.md &nbsp;&middot;&nbsp; competitors.xlsx &nbsp;&middot;&nbsp; launch-graphic.png</div>
+  </div>
+
+  <!-- ACT 7 · END CARD -->
+  <div id="outro" data-layout-allow-overlap>
+    <div id="outro-glow"></div>
+    <img id="outro-icon" src="assets/grok-desk-icon.png" alt="" />
+    <div id="outro-name">Grok Desk</div>
+    <div id="outro-line">The whole power of Grok Build &mdash; on your desk.</div>
+    <div id="outro-required">No terminal required.</div>
+    <div id="outro-wink">( it&rsquo;s still in there. )</div>
+  </div>
+
+  <!-- amber subtitles: ONLY for lines not carried by kinetic type -->
+  <div class="sub" id="sub-goal" data-layout-allow-overlap>one goal.</div>
+  <div class="sub" id="sub-three" data-layout-allow-overlap>three tasks at once &mdash;</div>
+  <div class="sub" id="sub-sched" data-layout-allow-overlap>on a schedule you set.</div>
+
+  <!-- texture -->
+  <div id="vignette"></div>
+  <div id="grain"></div>
+
+  <style>
+    @font-face { font-family: "DM Sans"; src: url("assets/fonts/DMSans-Variable.ttf"); font-weight: 100 1000; }
+    @font-face { font-family: "DM Serif Display"; src: url("assets/fonts/DMSerifDisplay-Regular.ttf"); font-weight: 400; }
+
+    #root-comp {
+      position: relative;
+      width: 1920px;
+      height: 1080px;
+      background: #0d0b09;
+      overflow: hidden;
+      font-family: "DM Sans", sans-serif;
+      --canvas: #0d0b09;
+      --cream: #f5f3ee;
+      --ink: #17130c;
+      --gold: hsl(38 55% 58%);
+      --cardbg: #f2efe7;
+    }
+
+    /* ---------- act 1: cursor void ---------- */
+    #root-comp #void-plate {
+      position: absolute; inset: 0;
+      background: #000;
+      opacity: 1;
+    }
+    #root-comp #void-plate video { width: 100%; height: 100%; object-fit: cover; display: block; }
+    #root-comp #k-terminal {
+      position: absolute;
+      left: 0; top: 700px; width: 1920px;
+      text-align: center;
+      font-family: "SF Mono", ui-monospace, Menlo, monospace;
+      font-size: 27px; letter-spacing: 0.04em;
+      color: var(--gold);
+      opacity: 0;
+      z-index: 30;
+    }
+
+    /* ---------- serif kinetic type ---------- */
+    #root-comp .kserif {
+      position: absolute;
+      left: 0; top: 268px; width: 1920px;
+      text-align: center;
+      font-family: "DM Serif Display", serif;
+      font-size: 72px; color: var(--cream);
+      letter-spacing: 0.005em;
+      text-shadow: 0 4px 40px rgba(0,0,0,0.65);
+      opacity: 0;
+      z-index: 30;
+    }
+    /* side words sit in the left column beside a right-side window */
+    #root-comp .kside {
+      left: 60px; top: 470px; width: 560px;
+      text-align: left;
+      font-size: 84px; line-height: 1.08;
+    }
+    /* triptych words: left column, consistent home for the fast run */
+    #root-comp .ktri {
+      left: 60px; top: 486px; width: 620px;
+      text-align: left;
+      font-size: 88px;
+    }
+    #root-comp #k-there {
+      top: 810px;
+      font-size: 92px;
+      text-shadow: 0 6px 60px rgba(0,0,0,0.85);
+      z-index: 45;
+    }
+
+    /* ---------- footage windows ---------- */
+    #root-comp .fwin {
+      position: absolute;
+      background: #060505;
+      border-radius: 6px;
+      overflow: hidden;
+      box-shadow: 0 40px 110px rgba(0,0,0,0.7), 0 4px 24px rgba(0,0,0,0.5);
+      opacity: 0;
+      z-index: 20;
+    }
+    #root-comp .fwin video, #root-comp .fwin img {
+      width: 100%; height: 100%;
+      object-fit: cover; display: block;
+    }
+    #root-comp #win-spill  { left: 1010px; top: 130px; width: 700px; height: 700px; }
+    #root-comp #win-desk   { left: 700px;  top: 120px; width: 1050px; height: 760px; }
+    #root-comp .twin       { left: 730px;  top: 200px; width: 1060px; height: 640px; }
+    #root-comp #win-dawn   { left: 320px;  top: 150px; width: 1280px; height: 620px; }
+
+    /* ---------- full-bleed want-it ---------- */
+    #root-comp #handoff-bleed {
+      position: absolute; inset: 0;
+      overflow: hidden;
+      background: #000;
+      opacity: 0;
+      transform-origin: 50% 50%;
+      z-index: 40;
+    }
+    #root-comp #handoff-bleed video { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+    /* ---------- cream cards (product truth) ---------- */
+    #root-comp .card {
+      position: absolute;
+      background: var(--cardbg);
+      border-radius: 14px;
+      box-shadow: 0 24px 70px rgba(0,0,0,0.55);
+      padding: 22px 30px;
+      opacity: 0;
+      z-index: 42;
+    }
+    #root-comp .card-kick {
+      font-size: 14px; font-weight: 700;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      color: #6d6557;
+      margin-bottom: 8px;
+    }
+    #root-comp .card-body {
+      font-size: 24px; line-height: 1.35; color: var(--ink);
+      font-weight: 500; letter-spacing: -0.005em;
+    }
+    #root-comp #card-goal  { left: 96px; top: 690px; }
+    #root-comp #card-sched { left: 800px; top: 560px; }
+    #root-comp #card-files { left: 0; right: 0; margin: 0 auto; top: 928px; width: 760px; text-align: center; }
+    #root-comp #card-files .card-body { font-size: 22px; }
+
+    /* three task cards */
+    #root-comp #tasks-row {
+      position: absolute;
+      left: 0; top: 468px; width: 1920px;
+      display: flex; gap: 28px; justify-content: center;
+      z-index: 42;
+    }
+    #root-comp .tcard {
+      position: relative;
+      display: flex; align-items: center; gap: 14px;
+      padding: 24px 34px;
+    }
+    #root-comp .tdot {
+      width: 11px; height: 11px; border-radius: 50%;
+      background: hsl(38 70% 50%);
+      flex: 0 0 auto;
+    }
+    #root-comp .tcard .card-body { font-size: 25px; white-space: nowrap; }
+
+    /* ---------- end card ---------- */
+    #root-comp #outro {
+      position: absolute; inset: 0;
+      background: var(--canvas);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      opacity: 0;
+      z-index: 60;
+    }
+    #root-comp #outro-glow {
+      position: absolute;
+      left: 50%; top: 45%;
+      width: 1100px; height: 1100px;
+      transform: translate(-50%, -50%);
+      background: radial-gradient(circle, rgba(216,178,120,0.17) 0%, rgba(216,178,120,0) 60%);
+      opacity: 0;
+    }
+    #root-comp #outro-icon {
+      width: 148px; height: 148px;
+      border-radius: 33px;
+      box-shadow: 0 30px 90px rgba(0,0,0,0.65), 0 0 80px rgba(226,178,100,0.13);
+      opacity: 0; z-index: 2;
+    }
+    #root-comp #outro-name {
+      margin-top: 38px;
+      font-family: "DM Serif Display", serif;
+      font-size: 92px; color: var(--cream);
+      opacity: 0; z-index: 2;
+    }
+    #root-comp #outro-line {
+      margin-top: 20px;
+      font-family: "DM Serif Display", serif;
+      font-size: 44px; color: var(--cream);
+      opacity: 0; z-index: 2;
+    }
+    #root-comp #outro-required {
+      margin-top: 46px;
+      font-size: 30px; font-weight: 600;
+      letter-spacing: 0.01em;
+      color: var(--gold);
+      opacity: 0; z-index: 2;
+    }
+    #root-comp #outro-wink {
+      margin-top: 16px;
+      font-family: "SF Mono", ui-monospace, Menlo, monospace;
+      font-size: 21px; color: #97927f;
+      opacity: 0; z-index: 2;
+    }
+
+    /* ---------- amber subtitles ---------- */
+    #root-comp .sub {
+      position: absolute;
+      left: 0; top: 962px; width: 1920px;
+      text-align: center;
+      font-size: 30px; font-weight: 500;
+      color: var(--gold);
+      text-shadow: 0 2px 20px rgba(0,0,0,0.8);
+      opacity: 0;
+      z-index: 50;
+    }
+
+    /* ---------- texture ---------- */
+    #root-comp #vignette {
+      position: absolute; inset: 0;
+      z-index: 85; pointer-events: none;
+      background: radial-gradient(ellipse 128% 106% at 50% 45%, rgba(13,11,9,0) 55%, rgba(3,2,2,0.62) 100%);
+    }
+    #root-comp #grain {
+      position: absolute; inset: 0;
+      z-index: 90; pointer-events: none;
+      opacity: 0.06;
+      background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='280'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='280' height='280' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+      background-size: 280px 280px;
+    }
+  </style>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    window.__timelines = window.__timelines || {};
+    var tl = gsap.timeline({ paused: true });
+
+    // ===================== LOCKED GRID (timing.md — George take 1 + 1.20s offset) =====================
+    var W = { seen: 1.20, terminal: 3.50, now: 4.02, desk: 4.94, goal: 5.60,
+              x: 6.98, imagines: 7.88, code: 8.94, three: 9.90, schedule: 11.64,
+              there: 13.74, files: 14.70, brand: 16.10, power: 17.06, required: 19.40 };
+    var VO_END = 20.40, DUR = 24.90;
+
+    // fade-out + hard kill (lint: gsap_exit_missing_hard_kill)
+    function exit(sel, tOut, dur) {
+      tl.to(sel, { opacity: 0, duration: dur || 0.2, ease: "power2.in" }, tOut);
+      tl.set(sel, { opacity: 0 }, tOut + (dur || 0.2) + 0.02);
+    }
+    // serif kinetic word: hard in on the spoken word, dies with the phrase
+    function kword(sel, tIn, tOut, rise) {
+      tl.fromTo(sel, { opacity: 0, y: rise || 14 }, { opacity: 1, y: 0, duration: 0.16, ease: "power2.out" }, tIn);
+      exit(sel, tOut, 0.18);
+    }
+    // amber subtitle (only when kinetic type is NOT speaking the line)
+    function sub(sel, tIn, tOut) {
+      tl.fromTo(sel, { opacity: 0 }, { opacity: 1, duration: 0.14, ease: "power1.out" }, tIn);
+      exit(sel, tOut, 0.14);
+    }
+
+    // ===================== ACT 1 · CURSOR VOID (0 – 4.02) =====================
+    // the plate IS the canvas: 95% black with one breathing amber cursor
+    kword("#k-seen", W.seen, W.terminal + 0.42);            // dies as "terminal." finishes
+    tl.fromTo("#k-terminal", { opacity: 0 }, { opacity: 1, duration: 0.14, ease: "power1.out" }, W.terminal - 0.28); // "in a" leads the word
+    exit("#k-terminal", W.now - 0.14, 0.12);
+    // plate hard-cuts away at the spill
+    tl.set("#void-plate", { opacity: 0 }, W.now);
+
+    // ===================== ACT 2 · SPILL → DESK (4.02 – 6.98) =====================
+    tl.fromTo("#win-spill", { opacity: 0, scale: 0.94 }, { opacity: 1, scale: 1, duration: 0.28, ease: "power3.out" }, W.now);
+    kword("#k-now", W.now, W.desk + 0.04);
+    // hard cut spill -> desk on the word "desk"
+    tl.set("#win-spill", { opacity: 0 }, W.desk);
+    tl.fromTo("#win-desk", { opacity: 0, scale: 0.965 }, { opacity: 1, scale: 1, duration: 0.3, ease: "power3.out" }, W.desk);
+    kword("#k-desk", W.desk, W.x - 0.24);
+    // goal card pops on the desk
+    tl.fromTo("#card-goal", { opacity: 0, y: 22, scale: 0.96 }, { opacity: 1, y: 0, scale: 1, duration: 0.32, ease: "back.out(1.5)" }, W.goal);
+    sub("#sub-goal", W.goal, W.goal + 1.1);
+    exit("#card-goal", W.x - 0.24, 0.18);
+    exit("#win-desk", W.x - 0.22, 0.18);
+
+    // ===================== ACT 3 · TRIPTYCH (6.98 – 9.7) — hard cuts =====================
+    tl.fromTo("#win-x", { opacity: 0, scale: 0.96 }, { opacity: 1, scale: 1, duration: 0.22, ease: "power3.out" }, W.x);
+    kword("#k-x", W.x, W.imagines - 0.06, 18);
+    tl.set("#win-x", { opacity: 0 }, W.imagines - 0.02);
+
+    tl.fromTo("#win-imagine", { opacity: 0, scale: 0.96 }, { opacity: 1, scale: 1, duration: 0.22, ease: "power3.out" }, W.imagines);
+    tl.fromTo("#win-imagine img", { scale: 1.0 }, { scale: 1.06, duration: 1.05, ease: "none" }, W.imagines); // breath on the still
+    kword("#k-imagine", W.imagines, W.code - 0.06, 18);
+    tl.set("#win-imagine", { opacity: 0 }, W.code - 0.02);
+
+    tl.fromTo("#win-code", { opacity: 0, scale: 0.96 }, { opacity: 1, scale: 1, duration: 0.22, ease: "power3.out" }, W.code);
+    tl.fromTo("#win-code img", { scale: 1.0 }, { scale: 1.05, duration: 0.95, ease: "none" }, W.code);
+    kword("#k-code", W.code, W.three - 0.2, 18);
+    exit("#win-code", W.three - 0.24, 0.18);
+
+    // ===================== ACT 4 · THREE TASKS (9.90 – 11.5) — cards on canvas =====================
+    tl.set("#tasks-row", { opacity: 1 }, W.three - 0.05);
+    ["#tcard-1", "#tcard-2", "#tcard-3"].forEach(function (s, k) {
+      tl.fromTo(s, { opacity: 0, y: 26, scale: 0.94 }, { opacity: 1, y: 0, scale: 1, duration: 0.3, ease: "back.out(1.6)" }, W.three + k * 0.11);
+    });
+    // dots pulse while the row lives
+    ["#tcard-1 .tdot", "#tcard-2 .tdot", "#tcard-3 .tdot"].forEach(function (s, k) {
+      tl.fromTo(s, { scale: 1 }, { scale: 1.45, duration: 0.42, ease: "sine.inOut", yoyo: true, repeat: 1 }, W.three + 0.5 + k * 0.14);
+    });
+    sub("#sub-three", W.three, W.schedule - 0.2);
+    ["#tcard-1", "#tcard-2", "#tcard-3"].forEach(function (s) { exit(s, W.schedule - 0.24, 0.18); });
+    tl.set("#tasks-row", { opacity: 0 }, W.schedule); // retire the container too (its text must never sit under the outro)
+
+    // ===================== ACT 5 · SCHEDULE (11.64 – 13.3) =====================
+    tl.fromTo("#win-dawn", { opacity: 0, scale: 0.965 }, { opacity: 1, scale: 1, duration: 0.3, ease: "power3.out" }, W.schedule);
+    tl.fromTo("#win-dawn img", { scale: 1.0 }, { scale: 1.05, duration: 1.7, ease: "none" }, W.schedule);
+    tl.fromTo("#card-sched", { opacity: 0, y: 18, scale: 0.96 }, { opacity: 1, y: 0, scale: 1, duration: 0.3, ease: "back.out(1.5)" }, W.schedule + 0.22);
+    sub("#sub-sched", W.schedule, W.schedule + 1.2);
+    exit("#card-sched", 13.18, 0.16);
+    exit("#win-dawn", 13.22, 0.16);
+
+    // ===================== ACT 6 · FULL-BLEED WANT-IT (13.30 – 16.02) =====================
+    tl.fromTo("#handoff-bleed", { opacity: 0, scale: 1.04 }, { opacity: 1, scale: 1, duration: 0.42, ease: "power2.inOut" }, 13.30);
+    kword("#k-there", W.there, W.files + 0.9, 20);
+    tl.fromTo("#card-files", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.3, ease: "power3.out" }, W.files);
+    exit("#card-files", W.brand - 0.26, 0.2);
+    tl.to("#handoff-bleed", { opacity: 0, duration: 0.36, ease: "power2.inOut" }, W.brand - 0.3);
+    tl.set("#handoff-bleed", { opacity: 0 }, W.brand + 0.08);
+
+    // ===================== ACT 7 · END CARD (16.10 – 24.90) =====================
+    tl.fromTo("#outro", { opacity: 0 }, { opacity: 1, duration: 0.4, ease: "sine.inOut" }, W.brand - 0.16);
+    tl.fromTo("#outro-glow", { opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1, duration: 1.0, ease: "sine.out" }, W.brand + 0.05);
+    tl.to("#outro-glow", { scale: 1.07, duration: 2.6, ease: "sine.inOut", yoyo: true, repeat: 2 }, W.brand + 1.1);
+    tl.fromTo("#outro-icon", { opacity: 0, scale: 0.84, y: 12 }, { opacity: 1, scale: 1, y: 0, duration: 0.44, ease: "back.out(1.5)" }, W.brand - 0.05);
+    tl.fromTo("#outro-name", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.3, ease: "power3.out" }, W.brand + 0.06);
+    tl.fromTo("#outro-line", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.34, ease: "power3.out" }, W.power);
+    tl.fromTo("#outro-required", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.3, ease: "power3.out" }, W.required);
+    // the wink, in mono — a callback to the cursor (after VO ends)
+    tl.fromTo("#outro-wink", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power1.out" }, 21.60);
+    // (no exit — holds to DUR 24.90)
+
+    window.__timelines["escape-the-terminal"] = tl;
+  </script>
+</div>
+</body>
+</html>

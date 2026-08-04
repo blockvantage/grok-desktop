@@ -1,0 +1,56 @@
+/**
+ * Browser-safe public surface of @grokdesk/shared.
+ * Node-only modules (fs, path walkers) live in ./node.js so the Electron
+ * renderer / Vite build never pulls node: builtins.
+ */
+export const GROKDESK_VERSION = "1.0.0";
+
+export * from "./types.js";
+export * from "./gateway-notify.js";
+export * from "./attachments.js";
+export * from "./paths.js";
+export * from "./policy.js";
+export * from "./browser-url.js";
+export * from "./browser-policy.js";
+export * from "./browser-host-policy.js";
+export * from "./ipc.js";
+export * from "./policy-to-grok-flags.js";
+export * from "./effective-protection.js";
+export * from "./acp-spawn-args.js";
+export * from "./folder-trust.js";
+export * from "./readiness-checklist.js";
+export * from "./approval-card.js";
+export * from "./run-budgets.js";
+export * from "./degraded-mode.js";
+export * from "./rewind-map.js";
+export * from "./recurrence.js";
+export * from "./role-packs.js";
+export * from "./connector-presets.js";
+export * from "./runtime-target.js";
+export * from "./compatibility-manifest.js";
+export * from "./compatibility-resolver.js";
+export * from "./update-status.js";
+export * from "./updates/index.js";
+export * from "./automation-suggestions.js";
+export * from "./settings-schema.js";
+export * from "./error-taxonomy.js";
+export * from "./takeaways.js";
+export * from "./desktop-types.js";
+export * from "./desktop-coords.js";
+export * from "./desktop-deny.js";
+export * from "./desktop-tool-schemas.js";
+export * from "./remote-crypto.js";
+export * from "./remote-protocol.js";
+export * from "./remote-allowlist.js";
+export * from "./telepresence.js";
+export * from "./remote-offline-queue.js";
+export * from "./remote-reconnect.js";
+export * from "./remote-errors.js";
+export * from "./secret-redact.js";
+export * from "./secret-vault-migrate.js";
+export * from "./command-registry.js";
+export * from "./remote-session-crypto.js";
+export * from "./mcp-doctor.js";
+export * from "./correlation.js";
+export * from "./entitlements/index.js";
+export * from "./feature-flags.js";

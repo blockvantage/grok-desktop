@@ -1,0 +1,21 @@
+2026-07-14 run-preamble + license-ops extracts
+
+pnpm typecheck → 0
+pnpm test → 0 TOTAL=866
+pnpm test:remote → 0
+pnpm build → 0
+git diff --check → 0
+
+Focused (focused/license-preamble.txt): 23 passed
+  run-preamble (4), license-ops (4), license.integration (6), followup-correlation (1), dispatch (8)
+
+Proven:
+  - assembleRunPreambleFromSources joins memory/attachments/transcript with provenance
+  - empty sections omitted
+  - licenseActivateOps persists only on success
+  - licenseStatusOps reports activated/valid from store
+  - license.integration still green through Gateway
+
+Gateway index ~1320 LOC
+
+Still blocked: default AgentProvider, live ACP default, grok-landing, vault purge, large UI

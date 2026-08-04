@@ -1,0 +1,17 @@
+2026-07-14 correlation + title/tray extract
+
+pnpm typecheck → 0
+pnpm test → 0 TOTAL=809
+pnpm test:remote → 0 (111)
+pnpm build → 0
+git diff --check → 0
+
+Focused (focused/corr-title-tray.txt): 20 passed
+  fail-closed (incl. correlationId on deny receipt)
+  tray-status, title-generation, run-context, dispatch, engine-boundary
+
+Invariants proven this slice:
+  - RunContext.requestId lands on policy.provider_gate deny receipt.correlationId
+  - tasks.create passes correlation into runWithMemory → setRunContext
+  - computeTrayStatus pure: paused / needs_you / working / idle
+  - autoTitleTask does not overwrite existing titles; swallows generator errors

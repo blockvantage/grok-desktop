@@ -1,0 +1,6 @@
+{
+  "t": "req",
+  "id": "req-1",
+  "method": "tasks.list",
+  "params": {}
+}

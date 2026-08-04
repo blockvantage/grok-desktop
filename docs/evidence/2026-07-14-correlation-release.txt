@@ -1,0 +1,20 @@
+2026-07-14 correlation-stamp + release-manifest
+
+pnpm typecheck → 0
+pnpm test → 0 TOTAL=872
+pnpm test:remote → 0
+pnpm build → 0
+git diff --check → 0
+
+Focused (focused/corr-release.txt): 16 passed
+  correlation-stamp (3), release-manifest (3), remote-task-submission, followup-correlation, dispatch
+
+Proven:
+  - stampDetailWithCorrelation preserves existing detail keys; fills requestId/taskId/runAttemptId
+  - chainFromIds omits nulls; log-safe ids only
+  - task.submit receipts use stamp (source transport + correlation ids)
+  - loadReleaseManifestFromDisk prefers dataDir override; honest placeholder when missing
+
+Gateway index ~1297 LOC
+
+Still blocked: default AgentProvider, live ACP default, grok-landing, vault purge, large UI

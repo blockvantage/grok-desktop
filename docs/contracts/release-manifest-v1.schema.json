@@ -1,0 +1,244 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://grokdesk.app/contracts/release-manifest-v1.schema.json",
+  "title": "Grok Desk release manifest v1",
+  "description": "Signed compatibility envelope and payload for coordinated Desk/Grok releases.",
+  "oneOf": [
+    { "$ref": "#/$defs/SignedCompatibilityEnvelope" },
+    { "$ref": "#/$defs/CompatibilityManifestPayload" }
+  ],
+  "$defs": {
+    "CanonicalRuntimeTarget": {
+      "type": "string",
+      "enum": ["darwin-arm64", "darwin-x64", "win32-x64", "win32-arm64"]
+    },
+    "ReleaseChannel": {
+      "type": "string",
+      "enum": ["stable", "beta"]
+    },
+    "Sha256": {
+      "type": "string",
+      "pattern": "^[a-fA-F0-9]{64}$"
+    },
+    "Provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "retrievedAt"],
+      "properties": {
+        "source": { "type": "string", "minLength": 1 },
+        "retrievedAt": { "type": "string", "minLength": 1 },
+        "officialUrl": { "type": "string", "format": "uri" }
+      }
+    },
+    "SigningPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requirePlatformSignature"],
+      "properties": {
+        "requirePlatformSignature": { "type": "boolean" },
+        "macTeamId": { "type": "string", "minLength": 1 },
+        "macDesignatedRequirement": { "type": "string", "minLength": 1 },
+        "windowsSubject": { "type": "string", "minLength": 1 },
+        "windowsThumbprint": { "type": "string", "minLength": 1 }
+      }
+    },
+    "ReleaseArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifactId",
+        "kind",
+        "version",
+        "target",
+        "channel",
+        "grantEndpoint",
+        "sizeBytes",
+        "sha256",
+        "provenance",
+        "signingPolicy"
+      ],
+      "properties": {
+        "artifactId": { "type": "string", "minLength": 1 },
+        "kind": { "type": "string", "enum": ["desk", "grok"] },
+        "version": { "type": "string", "minLength": 1 },
+        "target": { "$ref": "#/$defs/CanonicalRuntimeTarget" },
+        "channel": { "$ref": "#/$defs/ReleaseChannel" },
+        "grantEndpoint": { "type": "string", "minLength": 1 },
+        "sizeBytes": { "type": "integer", "minimum": 0 },
+        "sha256": { "$ref": "#/$defs/Sha256" },
+        "provenance": { "$ref": "#/$defs/Provenance" },
+        "signingPolicy": { "$ref": "#/$defs/SigningPolicy" },
+        "capabilities": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "notes": { "type": "string" }
+      }
+    },
+    "CompatibilityPair": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "pairId",
+        "channel",
+        "target",
+        "deskVersion",
+        "grokVersion",
+        "deskArtifactId",
+        "grokArtifactId",
+        "capabilities"
+      ],
+      "properties": {
+        "pairId": { "type": "string", "minLength": 1 },
+        "channel": { "$ref": "#/$defs/ReleaseChannel" },
+        "target": { "$ref": "#/$defs/CanonicalRuntimeTarget" },
+        "deskVersion": { "type": "string", "minLength": 1 },
+        "grokVersion": { "type": "string", "minLength": 1 },
+        "deskArtifactId": { "type": "string", "minLength": 1 },
+        "grokArtifactId": { "type": "string", "minLength": 1 },
+        "capabilities": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "recommended": { "type": "boolean" }
+      }
+    },
+    "ChannelCatalog": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["desk", "grok", "pairs"],
+      "properties": {
+        "desk": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ReleaseArtifact" }
+        },
+        "grok": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ReleaseArtifact" }
+        },
+        "pairs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/CompatibilityPair" }
+        }
+      }
+    },
+    "RolloutPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["basisPoints", "salt"],
+      "properties": {
+        "basisPoints": { "type": "integer", "minimum": 0, "maximum": 10000 },
+        "salt": { "type": "string", "minLength": 1 }
+      }
+    },
+    "Revocation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "id", "revokedAt"],
+      "properties": {
+        "kind": { "type": "string", "enum": ["version", "artifact", "pair"] },
+        "id": { "type": "string", "minLength": 1 },
+        "reason": { "type": "string" },
+        "revokedAt": { "type": "string", "minLength": 1 }
+      }
+    },
+    "AuthorizedDowngradeEdge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fromDeskVersion", "toDeskVersion", "target", "channel"],
+      "properties": {
+        "fromDeskVersion": { "type": "string", "minLength": 1 },
+        "toDeskVersion": { "type": "string", "minLength": 1 },
+        "fromGrokVersion": { "type": "string", "minLength": 1 },
+        "toGrokVersion": { "type": "string", "minLength": 1 },
+        "target": { "$ref": "#/$defs/CanonicalRuntimeTarget" },
+        "channel": { "$ref": "#/$defs/ReleaseChannel" },
+        "reason": { "type": "string" }
+      }
+    },
+    "CompatibilityManifestPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "sequence",
+        "issuedAt",
+        "expiresAt",
+        "publishedTargets",
+        "channels",
+        "rollout",
+        "revocations",
+        "authorizedDowngradeEdges"
+      ],
+      "properties": {
+        "schemaVersion": { "const": 1 },
+        "sequence": { "type": "integer", "minimum": 0 },
+        "issuedAt": { "type": "string", "minLength": 1 },
+        "expiresAt": { "type": "string", "minLength": 1 },
+        "publishedTargets": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/CanonicalRuntimeTarget" }
+        },
+        "channels": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["stable"],
+          "properties": {
+            "stable": { "$ref": "#/$defs/ChannelCatalog" },
+            "beta": { "$ref": "#/$defs/ChannelCatalog" }
+          }
+        },
+        "rollout": { "$ref": "#/$defs/RolloutPolicy" },
+        "securityDeadline": {
+          "type": ["string", "null"],
+          "minLength": 1
+        },
+        "revocations": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Revocation" }
+        },
+        "authorizedDowngradeEdges": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/AuthorizedDowngradeEdge" }
+        },
+        "releaseNotesUrl": { "type": "string", "format": "uri" },
+        "supportUrl": { "type": "string", "format": "uri" },
+        "minDeskVersion": { "type": "string", "minLength": 1 },
+        "maxDeskVersion": { "type": "string", "minLength": 1 },
+        "recommendedDeskVersion": { "type": "string", "minLength": 1 },
+        "minGrokVersion": { "type": "string", "minLength": 1 },
+        "recommendedGrokVersion": { "type": "string", "minLength": 1 }
+      }
+    },
+    "ManifestSignature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["algorithm", "keyId", "signatureBase64Url"],
+      "properties": {
+        "algorithm": { "const": "Ed25519" },
+        "keyId": { "type": "string", "minLength": 1 },
+        "signatureBase64Url": { "type": "string", "minLength": 1 }
+      }
+    },
+    "SignedCompatibilityEnvelope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "payloadBase64Url", "signatures"],
+      "properties": {
+        "schemaVersion": { "const": 1 },
+        "payloadBase64Url": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Base64url of exact RFC 8785 UTF-8 manifest payload bytes."
+        },
+        "signatures": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/ManifestSignature" },
+          "description": "Each signature covers ASCII: GROKDESK-RELEASE-MANIFEST-V1\\n<payloadBase64Url>"
+        }
+      }
+    }
+  }
+}

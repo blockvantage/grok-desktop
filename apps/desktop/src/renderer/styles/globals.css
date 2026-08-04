@@ -1,0 +1,1285 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  Grok Desk tokens — Deep Navy + Ice (dark product chrome).
+  Parity with landing brand hex; app stays midnight/navy, ice scarce.
+  Refs: Material 3 tonal elevation, Atmos dark-theme rules,
+  Linear/Raycast density, Apple HIG macOS body scale, shadcn token layer.
+*/
+
+@layer base {
+  :root {
+    /*
+      Brand palette (hex) — match landing exactly at the brand layer.
+      Prefer these for new semantic surfaces; shadcn roles below map into them.
+    */
+    --color-midnight: #050e21;
+    --color-navy: #07142c;
+    --color-ink: #0b1736;
+    --color-panel: #10213f;
+    --color-ice: #9fddff;
+    --color-electric: #4c8bff;
+    --color-frost: #d7e6ff;
+    --color-cloud: #f3f7fb;
+    --color-white: #ffffff;
+    --color-slate: #5f6d84;
+    --color-mist: #8794a8;
+    --color-border: #d7dee8;
+    --color-success: #67d9b5;
+    --color-approval: #f2b96b;
+    --color-danger: #f47c88;
+    --color-disabled: #8290a5;
+
+    /*
+      Phase 5 motion language (see lib/motion-system.ts).
+      Durations/easing only — prefer transform/opacity; reduced-motion kills below.
+    */
+    --motion-duration-instant: 0ms;
+    --motion-duration-micro: 120ms;
+    --motion-duration-fast: 150ms;
+    --motion-duration-content: 160ms;
+    --motion-duration-normal: 200ms;
+    --motion-duration-nav: 260ms;
+    --motion-duration-reveal: 280ms;
+    --motion-duration-compose: 320ms;
+    --motion-ease-premium: cubic-bezier(0.16, 1, 0.3, 1);
+    --motion-ease-spring: cubic-bezier(0.34, 1.3, 0.64, 1);
+
+    /*
+      Neutrals: deep navy stack (not pure black).
+      Elevation rises toward light (M3 / Atmos) rather than pure shadow.
+      HSL channels for hsl(var(--token)) consumption.
+    */
+    --background: 221 74% 7%;
+    --foreground: 218 100% 94%;
+
+    --surface-0: 221 74% 7%;
+    --surface-1: 219 73% 10%;
+    --surface-2: 223 66% 13%;
+    --surface-3: 218 59% 15%;
+
+    --card: 219 73% 10%;
+    --card-foreground: 218 100% 94%;
+
+    --popover: 223 66% 13%;
+    --popover-foreground: 218 100% 94%;
+
+    /*
+      Primary = Ice brand (scarce: CTAs, active nav, key emphasis).
+      Ink label on ice fill for WCAG AA on navy product chrome.
+    */
+    --primary: 201 100% 81%;
+    --primary-foreground: 221 74% 7%;
+    /* DS-13: hover stays in token layer so re-tuning --primary stays in sync */
+    --primary-hover: 201 100% 86%;
+
+    --secondary: 218 45% 14%;
+    --secondary-foreground: 218 80% 92%;
+
+    --muted: 221 50% 11%;
+    /* Mist/slate secondary — verify ≥ ~4.5:1 on midnight */
+    --muted-foreground: 216 16% 64%;
+
+    --accent: 218 45% 14%;
+    --accent-foreground: 218 100% 94%;
+
+    /* Functional status — distinct roles; never color-only in UI */
+    --destructive: 354 70% 55%;
+    --destructive-foreground: 0 0% 98%;
+    /* DS-11: text-on-dark destructive (brighter than fill) */
+    --destructive-text: 354 75% 72%;
+    --success: 161 55% 55%;
+    /* Approval waiting — maps to --color-approval amber */
+    --warning: 35 84% 62%;
+    --scroll-thumb: 218 30% 28%;
+
+    --border: 218 40% 16%;
+    --input: 218 45% 14%;
+    /* Focus ring = electric */
+    --ring: 219 100% 65%;
+
+    /* 12px base radius — Apple-ish soft, not pill-everything */
+    --radius: 0.75rem;
+
+    --sidebar: 221 78% 5.5%;
+    --sidebar-foreground: 218 80% 92%;
+    --sidebar-border: 221 50% 10%;
+    --sidebar-accent: 219 60% 9%;
+    --sidebar-accent-foreground: 218 100% 96%;
+
+    /* Hairline ladder — only three levels (quiet / default / strong) */
+    --hairline-quiet: 0 0% 100% / 0.05;
+    --hairline: 0 0% 100% / 0.08;
+    --hairline-strong: 0 0% 100% / 0.12;
+    /* Soft ice/electric glow — scarce accent, not a wash */
+    --glow-primary: 201 100% 70% / 0.18;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html,
+  body,
+  #root {
+    @apply h-full;
+  }
+
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    /* Apple HIG: system fonts, ~13pt product body */
+    font-family:
+      "SF Pro Text",
+      "SF Pro Display",
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      system-ui,
+      sans-serif;
+    font-size: 13.5px;
+    line-height: 1.45;
+    font-feature-settings: "ss01" 1, "ss02" 1, "cv01" 1, "rlig" 1, "calt" 1;
+    letter-spacing: -0.012em;
+    /* Transparent base so macOS sidebar vibrancy shows through the translucent
+       rail; the window's backgroundColor (#050e21 midnight) is the fallback fill. */
+    background-color: transparent;
+    /* Cool ice/electric ambient — scarce, not a neon wash */
+    background-image:
+      radial-gradient(
+        100% 70% at 50% -15%,
+        hsl(201 80% 40% / 0.1),
+        transparent 52%
+      ),
+      radial-gradient(
+        60% 40% at 100% 0%,
+        hsl(219 70% 30% / 0.14),
+        transparent 45%
+      );
+    /* No background-attachment: fixed — nothing scrolls at the body level
+       (inner ScrollAreas do), and it forces Chromium off the fast paint path. */
+  }
+
+  /* Micro grain — depth cue, not texture showcase */
+  body::after {
+    content: "";
+    pointer-events: none;
+    position: fixed;
+    inset: 0;
+    /* DS-6: under floating layers (Radix portals are z-50); was painting over dialogs */
+    z-index: 1;
+    opacity: 0.022;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  @media (prefers-reduced-transparency: reduce) {
+    body::after {
+      display: none;
+    }
+  }
+
+  /* DS-9: webkit pseudo scrollbar is inert under scrollbar-width in Chromium 121+
+     DS-14: one thumb token shared with ScrollArea */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--scroll-thumb)) transparent;
+  }
+
+  ::selection {
+    background: hsl(var(--primary) / 0.35);
+    color: hsl(var(--primary-foreground));
+  }
+
+  /* Keyboard focus always visible (Atmos #6) */
+  :focus-visible {
+    outline: none;
+    box-shadow:
+      0 0 0 2px hsl(var(--background)),
+      0 0 0 4px hsl(var(--ring) / 0.55);
+  }
+
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.028em;
+    font-weight: 600;
+    text-wrap: balance;
+  }
+  /* Optical sizing: large display text prefers SF Pro Display's tighter cut */
+  h1 {
+    font-family: "SF Pro Display", "SF Pro Text", -apple-system,
+      BlinkMacSystemFont, system-ui, sans-serif;
+  }
+
+  /* Form rhythm — label above control (HIG / SaaS forms) */
+  label {
+    @apply text-sm font-medium tracking-tight text-foreground/90;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+/*
+  View transitions (Chromium 130+ / Electron 33).
+  Global pseudo-elements — deliberately outside @layer so they aren't purged.
+  Reduced-motion users get an instant swap (JS falls back before starting one).
+*/
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: var(--motion-duration-nav);
+    animation-timing-function: var(--motion-ease-premium);
+  }
+  ::view-transition-old(root) {
+    animation-name: vt-fade-out;
+  }
+  ::view-transition-new(root) {
+    animation-name: vt-fade-in;
+  }
+  /* Shared-element morph: Home compose box <-> task result strip */
+  ::view-transition-group(compose-surface) {
+    animation-duration: var(--motion-duration-compose);
+    animation-timing-function: var(--motion-ease-premium);
+  }
+  /* Sidebar active-nav bar glides between items */
+  ::view-transition-group(nav-indicator) {
+    animation-duration: var(--motion-duration-nav);
+    animation-timing-function: var(--motion-ease-spring);
+  }
+  /* Main content pane crossfade (home ↔ tasks ↔ memory …) — short to avoid ghost */
+  ::view-transition-group(content-surface) {
+    animation-duration: var(--motion-duration-content);
+    animation-timing-function: var(--motion-ease-premium);
+  }
+  ::view-transition-old(content-surface),
+  ::view-transition-new(content-surface) {
+    animation-duration: 160ms;
+    animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  ::view-transition-old(content-surface) {
+    animation-name: vt-content-fade-out;
+  }
+  ::view-transition-new(content-surface) {
+    animation-name: vt-content-fade-in;
+  }
+}
+@keyframes vt-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes vt-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+/* Content-only: opacity only (no translate) so rapid nav doesn't ghost */
+@keyframes vt-content-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes vt-content-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@layer components {
+  .titlebar-drag {
+    -webkit-app-region: drag;
+  }
+  .titlebar-no-drag {
+    -webkit-app-region: no-drag;
+  }
+
+  /* Names the element as a shared morph target across a view transition. */
+  .vt-compose {
+    view-transition-name: compose-surface;
+  }
+
+  /* Main content column — soft continuity between shell surfaces.
+     Opaque background prevents previous-surface ghosting during VT. */
+  .vt-content {
+    view-transition-name: content-surface;
+    background-color: hsl(var(--background));
+  }
+
+  /* Phase 5 motion surface hooks (token markers; behavior via durations above). */
+  /* .motion-nav marks the content column; VT duration is on content-surface. */
+  .motion-palette {
+    animation-duration: var(--motion-duration-normal);
+    animation-timing-function: var(--motion-ease-spring);
+  }
+  .motion-palette-overlay {
+    animation-duration: var(--motion-duration-fast);
+    animation-timing-function: var(--motion-ease-premium);
+  }
+  .motion-intent-chip {
+    transition-duration: var(--motion-duration-fast);
+    transition-timing-function: var(--motion-ease-premium);
+  }
+  .motion-work-graph,
+  .motion-work-graph-stage {
+    transition-duration: var(--motion-duration-fast);
+    transition-timing-function: var(--motion-ease-premium);
+  }
+  .motion-artifact-reveal {
+    animation-duration: var(--motion-duration-reveal);
+    animation-timing-function: var(--motion-ease-premium);
+  }
+  .motion-approval {
+    transition-duration: var(--motion-duration-normal);
+    transition-timing-function: var(--motion-ease-premium);
+  }
+  .motion-reduce-static {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  /* Browser split open: subtle connected chrome (no layout thrash) */
+  .browser-split-open [data-browser-pane] {
+    box-shadow: inset 1px 0 0 0 hsl(0 0% 100% / 0.04);
+  }
+
+  /*
+    Surface ladder (M3-inspired tonal elevation):
+    quiet < default < raised < float
+  */
+  .surface-quiet {
+    background: hsl(var(--surface-1) / 0.55);
+    border: 1px solid hsl(0 0% 100% / 0.045);
+    border-radius: var(--radius);
+    box-shadow: inset 0 1px 0 0 hsl(0 0% 100% / 0.025);
+  }
+
+  .surface {
+    background: hsl(var(--surface-1) / 0.88);
+    border: 1px solid hsl(0 0% 100% / 0.06);
+    border-radius: var(--radius);
+    box-shadow:
+      inset 0 1px 0 0 hsl(0 0% 100% / 0.035),
+      0 12px 40px -18px hsl(0 0% 0% / 0.55);
+    backdrop-filter: blur(10px);
+  }
+
+  .surface-raised {
+    background: hsl(var(--surface-2) / 0.92);
+    border: 1px solid hsl(0 0% 100% / 0.07);
+    border-radius: var(--radius);
+    box-shadow:
+      inset 0 1px 0 0 hsl(0 0% 100% / 0.04),
+      0 16px 48px -16px hsl(0 0% 0% / 0.6);
+  }
+
+  .surface-float {
+    /* Opaque, no backdrop-filter: on the vibrancy (transparent) window
+       backdrop-filter breaks compositing and the background never paints. */
+    background: hsl(var(--surface-3));
+    border: 1px solid hsl(0 0% 100% / 0.09);
+    border-radius: calc(var(--radius) + 2px);
+    box-shadow:
+      inset 0 1px 0 0 hsl(0 0% 100% / 0.05),
+      0 20px 56px -12px hsl(0 0% 0% / 0.72);
+  }
+
+  /* Primary focal ring — soft ice, not neon */
+  .glow-ring {
+    box-shadow:
+      0 0 0 1px hsl(var(--primary) / 0.32),
+      inset 0 1px 0 0 hsl(0 0% 100% / 0.05),
+      0 20px 56px -22px hsl(var(--ring) / 0.28),
+      0 0 72px -28px hsl(var(--primary) / 0.22);
+    transition: box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  /* Compose box breathes brighter while it holds focus */
+  .glow-ring:focus-within {
+    box-shadow:
+      0 0 0 1px hsl(var(--primary) / 0.5),
+      inset 0 1px 0 0 hsl(0 0% 100% / 0.06),
+      0 22px 60px -20px hsl(var(--ring) / 0.35),
+      0 0 96px -26px hsl(var(--primary) / 0.32);
+  }
+
+  /* One-time ice light sweep — plays when a task lands "done" */
+  .sweep-once {
+    position: relative;
+    overflow: hidden;
+  }
+  .sweep-once::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(
+      105deg,
+      transparent 30%,
+      hsl(var(--primary) / 0.16) 48%,
+      transparent 66%
+    );
+    transform: translateX(-120%);
+    animation: sweep 1.15s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes sweep {
+    to {
+      transform: translateX(120%);
+    }
+  }
+
+  /* Needs-you surfaces arrive once, then remain stable for comfortable reading. */
+  .approval-arrive {
+    animation: approval-arrive 280ms var(--motion-ease-premium) both;
+  }
+  @keyframes approval-arrive {
+    from {
+      opacity: 0;
+      transform: translateY(5px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .approval-arrive {
+      animation: none;
+    }
+    .dot-live::after {
+      animation: none;
+      display: none;
+    }
+  }
+
+  /* DS-2 / DS-9: one status-dot recipe — size + soft glow; .dot-live adds radar ping */
+  .dot-status {
+    display: inline-block;
+    width: 0.375rem;
+    height: 0.375rem;
+    flex-shrink: 0;
+    border-radius: 9999px;
+    box-shadow: 0 0 8px currentColor;
+  }
+  .dot-live {
+    position: relative;
+  }
+  .dot-live::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: inherit;
+    animation: dot-ping 1.9s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+  @keyframes dot-ping {
+    0% {
+      transform: scale(1);
+      opacity: 0.55;
+    }
+    70%,
+    100% {
+      transform: scale(2.6);
+      opacity: 0;
+    }
+  }
+
+  /* Chat turn entrance — soft rise, honors reduced-motion via base rule */
+  .chat-msg-in {
+    animation: chat-msg-in 0.34s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  @keyframes chat-msg-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* "Grok is working" — electric/ice light sweeps across status text. */
+  .thinking-shimmer {
+    background: linear-gradient(
+      100deg,
+      hsl(var(--muted-foreground) / 0.8) 22%,
+      hsl(var(--ring) / 0.95) 50%,
+      hsl(var(--muted-foreground) / 0.8) 78%
+    );
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    animation: thinking-shimmer 1.9s linear infinite;
+  }
+  @keyframes thinking-shimmer {
+    from {
+      background-position: 180% 0;
+    }
+    to {
+      background-position: -180% 0;
+    }
+  }
+  /* M-13: the sweep's trough dims below AA and the gradient itself is
+     motion — reduced-motion users get a static, fully-opaque muted label
+     instead of a frozen mid-animation frame that may land on the trough. */
+  @media (prefers-reduced-motion: reduce) {
+    .thinking-shimmer {
+      animation: none;
+      background: none;
+      -webkit-background-clip: initial;
+      background-clip: initial;
+      -webkit-text-fill-color: currentColor;
+      color: hsl(var(--muted-foreground));
+    }
+  }
+
+  /* Three little dots that bounce in sequence beside the thinking label. */
+  .think-dots {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+  }
+  .think-dots > i {
+    width: 3px;
+    height: 3px;
+    border-radius: 9999px;
+    /* Electric activity cue while processing */
+    background: hsl(var(--ring) / 0.9);
+    animation: think-bounce 1.25s ease-in-out infinite;
+  }
+  .think-dots > i:nth-child(2) {
+    animation-delay: 0.15s;
+  }
+  .think-dots > i:nth-child(3) {
+    animation-delay: 0.3s;
+  }
+  @keyframes think-bounce {
+    0%,
+    75%,
+    100% {
+      transform: translateY(0);
+      opacity: 0.4;
+    }
+    35% {
+      transform: translateY(-3px);
+      opacity: 1;
+    }
+  }
+
+  /* Gentle opacity swap for text that changes in place (rotating status). */
+  .chat-fade-in {
+    animation: chat-fade-in 0.45s ease-out;
+  }
+  @keyframes chat-fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  /* Voice / attach send burst on mic button */
+  .animate-send-burst {
+    animation: send-burst 0.55s ease-out;
+  }
+  @keyframes send-burst {
+    0% {
+      box-shadow: 0 0 0 0 hsl(var(--primary) / 0.55);
+      transform: scale(1);
+    }
+    40% {
+      transform: scale(1.08);
+    }
+    100% {
+      box-shadow: 0 0 0 14px hsl(var(--primary) / 0);
+      transform: scale(1);
+    }
+  }
+
+  /* Sidebar chat title: one line, ellipsis at rest; on hover a too-long title
+     scrolls end-to-end and back ("rolling"). Distance/duration set inline via
+     --marquee-x / --marquee-dur. The wrap clips; the inner block is full width
+     and its text spills past the right edge, so a leftward translate reveals
+     the tail. Only rows flagged .is-overflow roll. */
+  .marquee-wrap {
+    overflow: hidden;
+  }
+  .marquee-inner {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .chat-row:hover .marquee-inner.is-overflow {
+    overflow: visible;
+    text-overflow: clip;
+    animation: marquee-roll var(--marquee-dur, 4s) ease-in-out infinite alternate;
+  }
+  @keyframes marquee-roll {
+    0%,
+    14% {
+      transform: translateX(0);
+    }
+    86%,
+    100% {
+      transform: translateX(var(--marquee-x, 0));
+    }
+  }
+
+  /* Folder group being dragged to a new position in the recents list. */
+  .folder-drop-target {
+    box-shadow: inset 0 2px 0 0 hsl(var(--primary) / 0.7);
+  }
+
+  /* Chat history first paint — a quiet scan line across a transcript-shaped skeleton. */
+  .conversation-loading-sheen {
+    transform: translateX(-110%);
+    animation: conversation-loading-sheen 1.65s var(--motion-ease-premium)
+      infinite;
+  }
+  @keyframes conversation-loading-sheen {
+    0% {
+      transform: translateX(-110%);
+      opacity: 0;
+    }
+    18% {
+      opacity: 0.75;
+    }
+    82% {
+      opacity: 0.75;
+    }
+    100% {
+      transform: translateX(300%);
+      opacity: 0;
+    }
+  }
+
+  .boot-mark-arrive {
+    animation: boot-mark-arrive 420ms var(--motion-ease-premium) both;
+  }
+  .boot-progress-fill {
+    transition: width 360ms var(--motion-ease-premium);
+  }
+  @keyframes boot-mark-arrive {
+    from {
+      opacity: 0;
+      transform: translateY(8px) scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  /* Soft ice ring that breathes around Grok's avatar while a turn is in
+     flight — the smallest cue that something is happening right now. */
+  .avatar-working::after {
+    content: "";
+    position: absolute;
+    inset: -3px;
+    border-radius: inherit;
+    border: 1.5px solid hsl(var(--ring) / 0.55);
+    animation: avatar-working 1.9s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+  }
+  @keyframes avatar-working {
+    0% {
+      transform: scale(0.86);
+      opacity: 0.7;
+    }
+    70%,
+    100% {
+      transform: scale(1.45);
+      opacity: 0;
+    }
+  }
+
+  /* CH-12: caret trails last typeset block, not a blank line under it */
+  .stream-caret .typeset > :last-child::after {
+    content: "";
+    display: inline-block;
+    width: 2px;
+    height: 1.05em;
+    margin-left: 2px;
+    vertical-align: text-bottom;
+    border-radius: 1px;
+    background: hsl(var(--primary));
+    animation: stream-caret 1.05s steps(1) infinite;
+  }
+  /* ── First launch (full-window app open — not main shell / chat) ───
+     Marketing-adjacent gate: midnight canvas + scarce ice/electric orbs.
+     Ice never washes the full window — soft stage light only. */
+  .first-launch {
+    background: hsl(var(--background));
+    color: hsl(var(--foreground));
+  }
+  .first-launch-ambience {
+    pointer-events: none;
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    /* Cool product-stage wash (landing hero-light, dark product density) */
+    background:
+      radial-gradient(
+        110% 55% at 72% -8%,
+        hsl(var(--primary) / 0.1),
+        transparent 56%
+      ),
+      radial-gradient(
+        70% 40% at 18% -4%,
+        hsl(var(--ring) / 0.08),
+        transparent 62%
+      );
+  }
+  .first-launch-orb {
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(72px);
+    will-change: transform;
+  }
+  .first-launch-orb-a {
+    width: min(55vw, 560px);
+    height: min(55vw, 560px);
+    left: -12%;
+    top: -18%;
+    background: radial-gradient(
+      circle,
+      hsl(var(--primary) / 0.2),
+      transparent 70%
+    );
+    animation: first-launch-drift-a 20s ease-in-out infinite alternate;
+  }
+  .first-launch-orb-b {
+    width: min(48vw, 480px);
+    height: min(48vw, 480px);
+    right: -10%;
+    bottom: -8%;
+    background: radial-gradient(
+      circle,
+      hsl(var(--ring) / 0.18),
+      transparent 72%
+    );
+    animation: first-launch-drift-b 24s ease-in-out infinite alternate;
+  }
+  .first-launch-vignette {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      ellipse 80% 70% at 50% 45%,
+      transparent 0%,
+      hsl(var(--background) / 0.72) 100%
+    );
+  }
+  .first-launch-brand {
+    position: relative;
+  }
+  .first-launch-brand::after {
+    content: "";
+    position: absolute;
+    inset: -18px;
+    border-radius: 28px;
+    background: radial-gradient(
+      circle,
+      hsl(var(--primary) / 0.38),
+      transparent 68%
+    );
+    z-index: -1;
+    filter: blur(10px);
+  }
+
+  /* License / empty marketing panels — soft ice edge without purple glow */
+  .panel-brand {
+    border: 1px solid hsl(var(--primary) / 0.18);
+    background: hsl(var(--surface-1) / 0.92);
+    border-radius: calc(var(--radius) + 4px);
+    box-shadow:
+      inset 0 1px 0 0 hsl(var(--primary) / 0.08),
+      0 20px 56px -20px hsl(0 0% 0% / 0.65),
+      0 0 48px -28px hsl(var(--ring) / 0.2);
+  }
+  .first-launch-scene {
+    animation: first-launch-scene-in 380ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .first-launch-exit {
+    animation: first-launch-exit 420ms cubic-bezier(0.4, 0, 0.2, 1) both;
+    pointer-events: none;
+  }
+
+  @keyframes first-launch-drift-a {
+    from {
+      transform: translate(0, 0) scale(1);
+    }
+    to {
+      transform: translate(8%, 10%) scale(1.08);
+    }
+  }
+  @keyframes first-launch-drift-b {
+    from {
+      transform: translate(0, 0) scale(1);
+    }
+    to {
+      transform: translate(-10%, -6%) scale(1.06);
+    }
+  }
+  @keyframes first-launch-scene-in {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @keyframes first-launch-exit {
+    to {
+      opacity: 0;
+      transform: scale(1.02);
+      filter: blur(4px);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .conversation-loading-sheen,
+    .boot-mark-arrive {
+      animation: none;
+    }
+    .boot-progress-fill {
+      transition: none;
+    }
+    .first-launch-orb,
+    .first-launch-scene,
+    .first-launch-exit {
+      animation: none !important;
+    }
+    .first-launch-scene {
+      opacity: 1;
+      transform: none;
+    }
+    .first-launch-exit {
+      opacity: 0;
+    }
+  }
+
+  /* Shared view-transition name when leaving first launch → main shell */
+  .first-launch {
+    view-transition-name: first-launch-root;
+  }
+
+  @keyframes stream-caret {
+    0%,
+    45% {
+      opacity: 1;
+    }
+    46%,
+    100% {
+      opacity: 0;
+    }
+  }
+
+  .nav-item {
+    @apply relative flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-sm font-medium transition-all duration-150;
+  }
+  /* Active nav = ice/electric selected (scarce brand) */
+  .nav-item-active {
+    background: hsl(var(--primary) / 0.1);
+    color: hsl(var(--foreground));
+    box-shadow: inset 0 0 0 1px hsl(var(--primary) / 0.16);
+  }
+  .nav-item-active::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    height: 1rem;
+    width: 2px;
+    transform: translateY(-50%);
+    border-radius: 999px;
+    background: hsl(var(--primary));
+    box-shadow: 0 0 10px hsl(var(--glow-primary));
+    /* Only one nav item is active at a time, so the bar glides between items
+       during the nav view transition instead of teleporting. */
+    view-transition-name: nav-indicator;
+  }
+  .nav-item-idle {
+    @apply text-muted-foreground hover:text-foreground/90;
+  }
+  .nav-item-idle:hover {
+    background: hsl(0 0% 100% / 0.035);
+  }
+
+  .kbd {
+    @apply inline-flex items-center rounded-md border border-white/10 bg-white/[0.04] px-1.5 py-0.5 font-mono text-2xs font-medium text-muted-foreground;
+  }
+
+  /* Form field stack — 8pt grid */
+  .field {
+    @apply flex flex-col gap-1.5;
+  }
+}
+
+/*
+  Typeset — prose rendering for agent markdown (chat + file previews).
+  Modeled on the shadcn typeset scale, retuned to Deep Navy + Ice
+  and macOS body rhythm. Scoped under .typeset so it only styles
+  rendered markdown, never app chrome. Outside @layer so nested element
+  selectors keep predictable specificity over Tailwind resets.
+*/
+.typeset {
+  color: hsl(var(--foreground) / 0.92);
+  font-size: 14.5px;
+  line-height: 1.72;
+  letter-spacing: -0.006em;
+  overflow-wrap: anywhere;
+}
+.typeset > :first-child {
+  margin-top: 0;
+}
+.typeset > :last-child {
+  margin-bottom: 0;
+}
+.typeset p {
+  margin: 0.85em 0;
+}
+.typeset strong {
+  font-weight: 600;
+  color: hsl(var(--foreground));
+}
+.typeset em {
+  font-style: italic;
+}
+.typeset a {
+  color: hsl(var(--primary));
+  text-decoration: underline;
+  text-decoration-color: hsl(var(--primary) / 0.35);
+  text-underline-offset: 2px;
+  transition: text-decoration-color 0.15s ease;
+}
+.typeset a:hover {
+  text-decoration-color: hsl(var(--primary) / 0.75);
+}
+.typeset h1,
+.typeset h2,
+.typeset h3,
+.typeset h4 {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: hsl(var(--foreground));
+  text-wrap: balance;
+}
+.typeset h1 {
+  font-size: 1.5em;
+  margin: 1.2em 0 0.6em;
+}
+.typeset h2 {
+  font-size: 1.28em;
+  margin: 1.25em 0 0.55em;
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid hsl(0 0% 100% / 0.06);
+}
+.typeset h3 {
+  font-size: 1.12em;
+  margin: 1.1em 0 0.45em;
+}
+.typeset h4 {
+  font-size: 1em;
+  margin: 1em 0 0.4em;
+  color: hsl(var(--foreground) / 0.85);
+}
+.typeset ul,
+.typeset ol {
+  margin: 0.8em 0;
+  padding-left: 1.35em;
+}
+.typeset ul {
+  list-style: none;
+}
+.typeset ul > li {
+  position: relative;
+}
+.typeset ul > li::before {
+  content: "";
+  position: absolute;
+  left: -0.95em;
+  top: 0.72em;
+  height: 5px;
+  width: 5px;
+  border-radius: 999px;
+  background: hsl(var(--primary) / 0.7);
+}
+.typeset ol {
+  list-style: decimal;
+}
+.typeset ol > li::marker {
+  color: hsl(var(--muted-foreground));
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+.typeset li {
+  margin: 0.32em 0;
+  padding-left: 0.15em;
+}
+.typeset li > ul,
+.typeset li > ol {
+  margin: 0.3em 0;
+}
+.typeset blockquote {
+  margin: 1em 0;
+  padding: 0.15em 0 0.15em 1em;
+  border-left: 2px solid hsl(var(--primary) / 0.5);
+  color: hsl(var(--foreground) / 0.72);
+  font-style: italic;
+}
+.typeset blockquote p {
+  margin: 0.4em 0;
+}
+.typeset hr {
+  margin: 1.6em 0;
+  border: 0;
+  border-top: 1px solid hsl(0 0% 100% / 0.07);
+}
+.typeset img.md-img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 1em 0;
+  border-radius: 10px;
+  border: 1px solid hsl(0 0% 100% / 0.08);
+  background: hsl(var(--surface-1));
+}
+.typeset .md-img-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  padding: 0.5em 0.75em;
+  margin: 0.5em 0;
+  font-size: 0.85em;
+  color: hsl(var(--muted-foreground));
+  border: 1px dashed hsl(0 0% 100% / 0.12);
+  border-radius: 8px;
+}
+/* Inline code — a quiet pill, distinct from block code */
+.typeset :not(pre) > code {
+  font-family: "SF Mono", ui-monospace, "JetBrains Mono", Menlo, monospace;
+  font-size: 0.86em;
+  padding: 0.12em 0.4em;
+  border-radius: 5px;
+  background: hsl(0 0% 100% / 0.06);
+  border: 1px solid hsl(0 0% 100% / 0.05);
+  color: hsl(var(--primary) / 0.92);
+  overflow-wrap: break-word;
+}
+/* GFM tables */
+.typeset table {
+  width: 100%;
+  margin: 1em 0;
+  border-collapse: collapse;
+  font-size: 0.92em;
+  display: block;
+  overflow-x: auto;
+}
+.typeset thead {
+  border-bottom: 1px solid hsl(0 0% 100% / 0.1);
+}
+.typeset th {
+  text-align: left;
+  font-weight: 600;
+  padding: 0.5em 0.85em;
+  color: hsl(var(--foreground));
+  white-space: nowrap;
+}
+.typeset td {
+  padding: 0.5em 0.85em;
+  border-top: 1px solid hsl(0 0% 100% / 0.05);
+  color: hsl(var(--foreground) / 0.85);
+}
+.typeset tbody tr:hover {
+  background: hsl(0 0% 100% / 0.02);
+}
+.typeset .md-task {
+  list-style: none;
+  margin-left: -0.2em;
+}
+/* DS-9: class applied by markdown.tsx task list checkboxes */
+.typeset .md-task-check,
+.typeset .md-task input {
+  margin-right: 0.5em;
+  accent-color: hsl(var(--primary));
+}
+
+/*
+  Code block chrome — header (language + copy) over a tonal surface.
+  The token colors below are the highlight.js theme, desaturated to match
+  the palette (DESIGN.md: no neon; chromatics muted on dark).
+*/
+.code-block {
+  margin: 1em 0;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid hsl(0 0% 100% / 0.07);
+  background: hsl(var(--surface-0));
+}
+.code-block-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.4em 0.65em 0.4em 0.85em;
+  background: hsl(0 0% 100% / 0.025);
+  border-bottom: 1px solid hsl(0 0% 100% / 0.055);
+}
+.code-block-lang {
+  font-family: "SF Mono", ui-monospace, Menlo, monospace;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: hsl(var(--muted-foreground) / 0.85);
+}
+.code-block-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  padding: 0.2em 0.5em;
+  border-radius: 6px;
+  font-size: 11px;
+  color: hsl(var(--muted-foreground));
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+.code-block-copy:hover {
+  background: hsl(0 0% 100% / 0.06);
+  color: hsl(var(--foreground));
+}
+.code-block pre {
+  margin: 0;
+  padding: 0.85em 1em;
+  max-height: 28rem;
+  overflow-x: auto;
+  overflow-y: auto;
+  font-size: 12.75px;
+  line-height: 1.6;
+}
+/* CHAT-7: expand lifts the CH-9 max-height clamp. */
+.code-block.code-block-expanded pre {
+  max-height: none;
+}
+.code-block code,
+.typeset pre code {
+  font-family: "SF Mono", ui-monospace, "JetBrains Mono", Menlo, monospace;
+  background: none;
+  border: 0;
+  padding: 0;
+  color: hsl(var(--foreground) / 0.9);
+  white-space: pre;
+}
+
+/* highlight.js token palette — muted Deep Navy + Ice */
+.hljs-comment,
+.hljs-quote {
+  color: hsl(216 12% 54%);
+  font-style: italic;
+}
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-meta-keyword,
+.hljs-doctag,
+.hljs-section {
+  color: hsl(var(--primary) / 0.95);
+}
+.hljs-string,
+.hljs-regexp,
+.hljs-addition {
+  color: hsl(var(--success) / 0.95);
+}
+.hljs-number,
+.hljs-literal,
+.hljs-symbol,
+.hljs-bullet {
+  color: hsl(var(--warning) / 0.9);
+}
+.hljs-title,
+.hljs-title.function_,
+.hljs-function .hljs-title {
+  color: hsl(var(--ring) / 0.92);
+}
+.hljs-built_in,
+.hljs-class .hljs-title,
+.hljs-type {
+  color: hsl(201 70% 72%);
+}
+.hljs-attr,
+.hljs-attribute,
+.hljs-property,
+.hljs-variable,
+.hljs-template-variable {
+  color: hsl(200 50% 72%);
+}
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-tag {
+  color: hsl(var(--destructive-text));
+}
+.hljs-deletion {
+  color: hsl(var(--destructive-text));
+}
+.hljs-emphasis {
+  font-style: italic;
+}
+.hljs-strong {
+  font-weight: 600;
+}
+.hljs-link {
+  text-decoration: underline;
+}
+
+@layer utilities {
+  /* Soft top/bottom fade so scrolling lists dissolve instead of hard-clipping */
+  .mask-fade-y {
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      transparent 0,
+      black 14px,
+      black calc(100% - 14px),
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to bottom,
+      transparent 0,
+      black 14px,
+      black calc(100% - 14px),
+      transparent 100%
+    );
+  }
+  .text-balance {
+    text-wrap: balance;
+  }
+  .tracking-display {
+    letter-spacing: -0.032em;
+  }
+}

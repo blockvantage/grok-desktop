@@ -1,0 +1,44 @@
+name: ci
+on:
+  push:
+  pull_request:
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      # version comes from package.json packageManager (pnpm@9.6.0)
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install
+      # Topo-build desktop workspace deps (shared, license, agent-runtime,
+      # engine-*, providers, gateway, entitlement-client, …).
+      - run: pnpm --filter "@grokdesk/desktop^..." run build
+      # Typecheck before tests so broken renderer/TS fails the gate (not only vitest).
+      - run: pnpm --filter @grokdesk/shared typecheck
+      - run: pnpm --filter @grokdesk/license typecheck
+      - run: pnpm --filter @grokdesk/agent-runtime typecheck
+      - run: pnpm --filter @grokdesk/engine-grok typecheck
+      - run: pnpm --filter @grokdesk/engine-testkit typecheck
+      - run: pnpm --filter @grokdesk/provider-echo typecheck
+      - run: pnpm --filter @grokdesk/provider-grok typecheck
+      - run: pnpm --filter @grokdesk/entitlement-client typecheck
+      - run: pnpm --filter @grokdesk/gateway typecheck
+      - run: pnpm --filter @grokdesk/desktop typecheck
+      - run: pnpm --filter @grokdesk/shared test
+      - run: pnpm --filter @grokdesk/license test
+      - run: pnpm --filter @grokdesk/agent-runtime test
+      - run: pnpm --filter @grokdesk/engine-grok test
+      - run: pnpm --filter @grokdesk/engine-testkit test
+      - run: pnpm --filter @grokdesk/provider-echo test
+      - run: pnpm --filter @grokdesk/provider-grok test
+      - run: pnpm --filter @grokdesk/entitlement-client test
+      - run: pnpm --filter @grokdesk/gateway test
+      - run: pnpm --filter @grokdesk/desktop test
+      - run: pnpm --filter @grokdesk/desktop build

@@ -1,0 +1,49 @@
+{
+  "name": "grok-desktop",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Grok Desk — desktop workspace for SuperGrok. Hand Grok the goal; find the result on your desk.",
+  "homepage": "https://grokdesk.app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/blockvantage/grok-desktop.git"
+  },
+  "bugs": {
+    "url": "https://github.com/blockvantage/grok-desktop/issues",
+    "email": "support@x.ai"
+  },
+  "packageManager": "pnpm@9.6.0",
+  "scripts": {
+    "build": "pnpm -r run build",
+    "test": "pnpm -r run test",
+    "dev": "pnpm --filter @grokdesk/desktop dev",
+    "typecheck": "pnpm -r run typecheck",
+    "relay:dev": "pnpm --filter @grokdesk/remote-relay dev",
+    "mobile:start": "pnpm --filter @grokdesk/mobile start",
+    "test:remote": "pnpm --filter @grokdesk/shared test -- src/remote src/telepresence && pnpm --filter @grokdesk/gateway test -- src/services/remote src/services/telepresence src/remote-e2e src/telepresence-e2e src/remote-p2-e2e && pnpm --filter @grokdesk/remote-relay test && pnpm --filter @grokdesk/mobile test",
+    "contracts:check": "tsx scripts/check-cross-repo-contracts.ts",
+    "contracts:test": "vitest run scripts/check-cross-repo-contracts.test.ts",
+    "contracts:dry-run": "tsx scripts/check-cross-repo-contracts.ts --dry-run"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "vitest": "^2.1.4"
+  },
+  "engines": {
+    "node": "20.x"
+  },
+  "volta": {
+    "node": "20.19.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "brace-expansion@<1.1.18": "1.1.18",
+      "brace-expansion@>=2.0.0 <2.1.4": "2.1.4",
+      "brace-expansion@>=4.0.0 <5.0.9": "5.0.9",
+      "postcss@<8.5.23": "8.5.25",
+      "tar@>=7.0.0 <7.5.21": "7.5.22",
+      "undici@>=6.0.0 <6.28.0": "6.28.0",
+      "uuid@>=7.0.0 <11.1.1": "11.1.1"
+    }
+  }
+}

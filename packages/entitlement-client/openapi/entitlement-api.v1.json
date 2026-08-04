@@ -1,0 +1,4185 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Grok Desk Entitlement API",
+    "version": "1.0.0",
+    "description": "Authoritative entitlement, activation, lease, portal, download, and release contracts for Grok Desk. Error bodies are always { code, message, requestId } without raw details."
+  },
+  "servers": [
+    {
+      "url": "https://entitlements.example.invalid",
+      "description": "Placeholder; replace with PUBLIC_ISSUER_URL"
+    }
+  ],
+  "tags": [
+    {
+      "name": "public",
+      "description": "Desktop-facing public endpoints"
+    },
+    {
+      "name": "health",
+      "description": "Liveness and readiness"
+    },
+    {
+      "name": "internal",
+      "description": "Landing-service endpoints protected by rotating internal HMAC"
+    }
+  ],
+  "paths": {
+    "/.well-known/grokdesk-keys.json": {
+      "get": {
+        "operationId": "getWellKnownGrokdeskKeys",
+        "summary": "Public verification key set",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicKeySet"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "public"
+        ]
+      }
+    },
+    "/healthz": {
+      "get": {
+        "operationId": "getHealthz",
+        "summary": "Liveness probe",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthStatus"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/readyz": {
+      "get": {
+        "operationId": "getReadyz",
+        "summary": "Readiness probe",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthStatus"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/v1/activations/challenges": {
+      "post": {
+        "operationId": "createActivationChallenge",
+        "summary": "Create a short-lived activation challenge",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivationChallengeResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "public"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActivationChallengeRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/activations": {
+      "post": {
+        "operationId": "createActivation",
+        "summary": "Activate a device with a GD3 product key",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "public"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActivationRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/legacy/gd2/exchange": {
+      "post": {
+        "operationId": "exchangeLegacyGd2",
+        "summary": "Exchange an allowlisted GD2 key and activate the requesting device",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicLegacyGd2ExchangeResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "public"
+        ],
+        "security": [],
+        "description": "Public migration path for desktop clients. Obtain a challenge from /v1/activations/challenges, sign the standard GROKDESK-ACTIVATE-V1 device proof, and submit it with the GD2 bearer. Internal HMAC credentials are never used by the client.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicLegacyGd2ExchangeRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/activations/deactivation-challenges": {
+      "post": {
+        "operationId": "createDeactivationChallenge",
+        "summary": "Create a challenge to deactivate the current device",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivationChallengeResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "public"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeactivationChallengeRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/activations/current": {
+      "delete": {
+        "operationId": "deleteCurrentActivation",
+        "summary": "Deactivate the current device",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeactivationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "public"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeactivationRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/leases/challenges": {
+      "post": {
+        "operationId": "createLeaseChallenge",
+        "summary": "Create a short-lived lease refresh challenge",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeaseChallengeResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "public"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LeaseChallengeRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/leases/refresh": {
+      "post": {
+        "operationId": "refreshLease",
+        "summary": "Refresh a device-bound lease",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeaseRefreshResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "public"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LeaseRefreshRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/releases/manifest": {
+      "get": {
+        "operationId": "getReleaseManifest",
+        "summary": "Fetch the signed release manifest",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignedReleaseManifest"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "public"
+        ],
+        "parameters": [
+          {
+            "name": "channel",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "stable",
+                "beta"
+              ]
+            }
+          },
+          {
+            "name": "target",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "darwin-arm64",
+                "darwin-x64",
+                "win32-x64",
+                "win32-arm64"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "/v1/releases/resolve": {
+      "post": {
+        "operationId": "resolveRelease",
+        "summary": "Resolve a compatible Desk/Grok release pair",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseResolveResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "public"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReleaseResolveRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/download-grants": {
+      "post": {
+        "operationId": "createDownloadGrant",
+        "summary": "Create a one-use download grant",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DownloadGrantResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "public"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DownloadGrantRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/downloads/redeem": {
+      "get": {
+        "operationId": "redeemDownload",
+        "summary": "Redeem a download grant",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DownloadRedeemResponse"
+                }
+              }
+            }
+          },
+          "302": {
+            "description": "Redirect to short-lived object URL",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string",
+                  "format": "uri"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "public"
+        ],
+        "parameters": [
+          {
+            "name": "grant",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ]
+      }
+    },
+    "/internal/v1/stripe/events": {
+      "post": {
+        "operationId": "postInternalStripeEvents",
+        "summary": "Ingest a Stripe event (idempotent by event id)",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcceptedResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "internal"
+        ],
+        "security": [
+          {
+            "internalHmac": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StripeEventEnvelope"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/internal/v1/fulfillment/exchange": {
+      "post": {
+        "operationId": "postInternalFulfillmentExchange",
+        "summary": "Exchange a checkout session for a fulfillment session",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FulfillmentExchangeResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "internal"
+        ],
+        "security": [
+          {
+            "internalHmac": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FulfillmentExchangeRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/internal/v1/legacy/gd2/exchange": {
+      "post": {
+        "operationId": "postInternalLegacyGd2Exchange",
+        "summary": "Exchange an allowlisted legacy GD2 key for reconstructed GD3 claims (measured migration window)",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LegacyGd2ExchangeResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "internal"
+        ],
+        "security": [
+          {
+            "internalHmac": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LegacyGd2ExchangeRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/internal/v1/fulfillment/key/reveal": {
+      "post": {
+        "operationId": "postInternalFulfillmentKeyReveal",
+        "summary": "Reveal the reconstructed GD3 key for a fulfillment session",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KeyRevealResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "internal"
+        ],
+        "security": [
+          {
+            "internalHmac": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FulfillmentKeyRevealRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/internal/v1/fulfillment/download-grants": {
+      "post": {
+        "operationId": "postInternalFulfillmentDownloadGrants",
+        "summary": "Create a download grant for a fulfillment session",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DownloadGrantResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "internal"
+        ],
+        "security": [
+          {
+            "internalHmac": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FulfillmentDownloadGrantRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/internal/v1/portal/recovery": {
+      "post": {
+        "operationId": "postInternalPortalRecovery",
+        "summary": "Start passwordless portal recovery (enumeration-safe)",
+        "responses": {
+          "202": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcceptedResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "internal"
+        ],
+        "security": [
+          {
+            "internalHmac": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PortalRecoveryRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/internal/v1/portal/magic/exchange": {
+      "post": {
+        "operationId": "postInternalPortalMagicExchange",
+        "summary": "Exchange a magic link token for a portal session",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortalSessionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "internal"
+        ],
+        "security": [
+          {
+            "internalHmac": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PortalMagicExchangeRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/internal/v1/portal/account": {
+      "get": {
+        "operationId": "getInternalPortalAccount",
+        "summary": "Fetch portal account summary",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortalAccountResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "internal"
+        ],
+        "security": [
+          {
+            "internalHmac": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "x-portal-session",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/internal/v1/portal/key/reveal": {
+      "post": {
+        "operationId": "postInternalPortalKeyReveal",
+        "summary": "Reveal reconstructed product key in portal",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KeyRevealResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "internal"
+        ],
+        "security": [
+          {
+            "internalHmac": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PortalKeyRevealRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/internal/v1/portal/key/resend": {
+      "post": {
+        "operationId": "postInternalPortalKeyResend",
+        "summary": "Queue a product-key recovery email",
+        "responses": {
+          "202": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcceptedResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "internal"
+        ],
+        "security": [
+          {
+            "internalHmac": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PortalKeyResendRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/internal/v1/portal/key/rotate": {
+      "post": {
+        "operationId": "postInternalPortalKeyRotate",
+        "summary": "Rotate a compromised product key",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KeyRevealResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "internal"
+        ],
+        "security": [
+          {
+            "internalHmac": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PortalKeyRotateRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/internal/v1/portal/activations/{id}": {
+      "patch": {
+        "operationId": "patchInternalPortalActivation",
+        "summary": "Rename a portal-managed activation",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortalActivationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "internal"
+        ],
+        "security": [
+          {
+            "internalHmac": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PortalActivationPatchRequest"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteInternalPortalActivation",
+        "summary": "Deactivate a portal-managed activation",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeactivationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "internal"
+        ],
+        "security": [
+          {
+            "internalHmac": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PortalActivationDeleteRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/internal/v1/portal/download-grants": {
+      "post": {
+        "operationId": "postInternalPortalDownloadGrants",
+        "summary": "Create a portal download grant",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DownloadGrantResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "internal"
+        ],
+        "security": [
+          {
+            "internalHmac": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PortalDownloadGrantRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/internal/v1/portal/logout": {
+      "post": {
+        "operationId": "postInternalPortalLogout",
+        "summary": "Invalidate a portal session",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcceptedResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Stable error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "internal"
+        ],
+        "security": [
+          {
+            "internalHmac": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PortalLogoutRequest"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "internalHmac": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-grokdesk-signature",
+        "description": "Rotating HMAC over GROKDESK-INTERNAL-V1 canonical bytes. Also requires x-grokdesk-key-id, x-grokdesk-timestamp, and x-grokdesk-nonce for mutations."
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "code",
+          "message",
+          "requestId"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Stable error code. Public clients must only branch on known codes.",
+            "enum": [
+              "invalid_key_format",
+              "invalid_key_signature",
+              "key_rotated",
+              "entitlement_suspended",
+              "entitlement_refunded",
+              "entitlement_revoked",
+              "seat_limit",
+              "challenge_expired",
+              "challenge_replayed",
+              "device_signature_invalid",
+              "clock_skew",
+              "unsupported_client",
+              "unsupported_architecture",
+              "device_deactivated",
+              "lease_expired",
+              "lease_device_mismatch",
+              "grant_expired",
+              "grant_used",
+              "grant_binding_mismatch",
+              "legacy_key_unsupported",
+              "legacy_key_not_allowlisted",
+              "legacy_exchange_closed",
+              "fulfillment_pending",
+              "service_unavailable"
+            ]
+          },
+          "message": {
+            "type": "string",
+            "description": "Safe human-readable message without raw internal details."
+          },
+          "requestId": {
+            "type": "string",
+            "description": "Request correlation id."
+          }
+        }
+      },
+      "HealthStatus": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "status"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "ready",
+              "not_ready"
+            ]
+          }
+        }
+      },
+      "PublicKeySet": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "keys"
+        ],
+        "properties": {
+          "keys": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicJwk"
+            }
+          }
+        }
+      },
+      "PublicJwk": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kty",
+          "crv",
+          "x",
+          "kid",
+          "use",
+          "alg"
+        ],
+        "properties": {
+          "kty": {
+            "type": "string",
+            "enum": [
+              "OKP"
+            ]
+          },
+          "crv": {
+            "type": "string",
+            "enum": [
+              "Ed25519"
+            ]
+          },
+          "x": {
+            "type": "string"
+          },
+          "kid": {
+            "type": "string"
+          },
+          "use": {
+            "type": "string",
+            "enum": [
+              "sig"
+            ]
+          },
+          "alg": {
+            "type": "string",
+            "enum": [
+              "EdDSA"
+            ]
+          },
+          "purpose": {
+            "type": "string",
+            "enum": [
+              "product",
+              "lease",
+              "release"
+            ]
+          }
+        }
+      },
+      "ActivationChallengeRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "deskVersion": {
+            "type": "string"
+          },
+          "platform": {
+            "type": "string"
+          },
+          "arch": {
+            "type": "string"
+          }
+        }
+      },
+      "ActivationChallengeResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "challengeId",
+          "nonce",
+          "expiresAt",
+          "serverTime"
+        ],
+        "properties": {
+          "challengeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nonce": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "serverTime": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ActivationRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "productKey",
+          "challengeId",
+          "deviceId",
+          "devicePublicJwk",
+          "deviceName",
+          "platform",
+          "arch",
+          "osVersion",
+          "deskVersion",
+          "signature"
+        ],
+        "properties": {
+          "productKey": {
+            "type": "string",
+            "description": "GD3 product key"
+          },
+          "challengeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "deviceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "devicePublicJwk": {
+            "$ref": "#/components/schemas/DevicePublicJwk"
+          },
+          "deviceName": {
+            "type": "string"
+          },
+          "platform": {
+            "type": "string"
+          },
+          "arch": {
+            "type": "string"
+          },
+          "osVersion": {
+            "type": "string"
+          },
+          "deskVersion": {
+            "type": "string"
+          },
+          "signature": {
+            "type": "string",
+            "description": "Ed25519 signature over GROKDESK-ACTIVATE-V1\\n<base64url(RFC8785 payload)>"
+          }
+        }
+      },
+      "DevicePublicJwk": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kty",
+          "crv",
+          "x"
+        ],
+        "properties": {
+          "kty": {
+            "type": "string",
+            "enum": [
+              "OKP"
+            ]
+          },
+          "crv": {
+            "type": "string",
+            "enum": [
+              "Ed25519"
+            ]
+          },
+          "x": {
+            "type": "string"
+          }
+        }
+      },
+      "ActivationResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "activationId",
+          "entitlementId",
+          "seatSlot",
+          "lease",
+          "serverTime"
+        ],
+        "properties": {
+          "activationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "entitlementId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "seatSlot": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "lease": {
+            "type": "string",
+            "description": "Compact JWS device lease"
+          },
+          "serverTime": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PublicLegacyGd2ExchangeRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Proof-bound GD2 migration request. gd2 proves purchase ownership; the remaining fields are the standard activation device proof.",
+        "required": [
+          "gd2",
+          "challengeId",
+          "deviceId",
+          "devicePublicJwk",
+          "deviceName",
+          "platform",
+          "arch",
+          "osVersion",
+          "deskVersion",
+          "signature"
+        ],
+        "properties": {
+          "gd2": {
+            "type": "string",
+            "description": "Legacy product key (must be GD2.*)"
+          },
+          "challengeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "deviceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "devicePublicJwk": {
+            "$ref": "#/components/schemas/DevicePublicJwk"
+          },
+          "deviceName": {
+            "type": "string"
+          },
+          "platform": {
+            "type": "string"
+          },
+          "arch": {
+            "type": "string"
+          },
+          "osVersion": {
+            "type": "string"
+          },
+          "deskVersion": {
+            "type": "string"
+          },
+          "signature": {
+            "type": "string",
+            "description": "Ed25519 signature over the normal GROKDESK-ACTIVATE-V1 payload for the supplied challenge and device"
+          }
+        }
+      },
+      "PublicLegacyGd2ExchangeResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "gd3",
+          "lease",
+          "entitlementId",
+          "activationId",
+          "seatSlot",
+          "serverTime",
+          "alreadyExchanged"
+        ],
+        "properties": {
+          "gd3": {
+            "type": "string",
+            "description": "Reconstructed GD3 product key"
+          },
+          "lease": {
+            "type": "string",
+            "description": "Compact JWS device lease"
+          },
+          "entitlementId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "activationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "seatSlot": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "serverTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "alreadyExchanged": {
+            "type": "boolean",
+            "description": "True when the legacy allowlist exchange had already been recorded"
+          }
+        }
+      },
+      "DeactivationChallengeRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "activationId",
+          "deviceId"
+        ],
+        "properties": {
+          "activationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "deviceId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "DeactivationRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "challengeId",
+          "activationId",
+          "deviceId",
+          "signature"
+        ],
+        "properties": {
+          "challengeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "activationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "deviceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "signature": {
+            "type": "string"
+          }
+        }
+      },
+      "DeactivationResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "deactivated",
+          "activationId"
+        ],
+        "properties": {
+          "deactivated": {
+            "type": "boolean"
+          },
+          "activationId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "LeaseChallengeRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "activationId",
+          "deviceId"
+        ],
+        "properties": {
+          "activationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "deviceId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "LeaseChallengeResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "challengeId",
+          "nonce",
+          "expiresAt",
+          "serverTime"
+        ],
+        "properties": {
+          "challengeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nonce": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "serverTime": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "LeaseRefreshRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "challengeId",
+          "activationId",
+          "deviceId",
+          "priorLeaseJti",
+          "signature"
+        ],
+        "properties": {
+          "challengeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "activationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "deviceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "priorLeaseJti": {
+            "type": "string"
+          },
+          "signature": {
+            "type": "string",
+            "description": "Ed25519 signature over GROKDESK-LEASE-REFRESH-V1\\n<base64url(RFC8785 payload)>"
+          }
+        }
+      },
+      "LeaseRefreshResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "lease",
+          "serverTime"
+        ],
+        "properties": {
+          "lease": {
+            "type": "string"
+          },
+          "serverTime": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "SignedReleaseManifest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "payloadBase64Url",
+          "signatures"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "type": "integer",
+            "enum": [
+              1
+            ]
+          },
+          "payloadBase64Url": {
+            "type": "string"
+          },
+          "signatures": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "algorithm",
+                "keyId",
+                "signatureBase64Url"
+              ],
+              "properties": {
+                "algorithm": {
+                  "type": "string",
+                  "enum": [
+                    "Ed25519"
+                  ]
+                },
+                "keyId": {
+                  "type": "string"
+                },
+                "signatureBase64Url": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "ReleaseResolveRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "target",
+          "channel"
+        ],
+        "properties": {
+          "target": {
+            "type": "string",
+            "enum": [
+              "darwin-arm64",
+              "darwin-x64",
+              "win32-x64",
+              "win32-arm64"
+            ]
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "stable",
+              "beta"
+            ]
+          },
+          "installedDeskVersion": {
+            "type": "string"
+          },
+          "installedGrokVersion": {
+            "type": "string"
+          },
+          "cohortId": {
+            "type": "string"
+          }
+        }
+      },
+      "ReleaseResolveResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "deskVersion",
+          "grokVersion",
+          "target",
+          "channel"
+        ],
+        "properties": {
+          "deskVersion": {
+            "type": "string"
+          },
+          "grokVersion": {
+            "type": "string"
+          },
+          "target": {
+            "type": "string",
+            "enum": [
+              "darwin-arm64",
+              "darwin-x64",
+              "win32-x64",
+              "win32-arm64"
+            ]
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "stable",
+              "beta"
+            ]
+          },
+          "deskArtifactId": {
+            "type": "string"
+          },
+          "grokArtifactId": {
+            "type": "string"
+          }
+        }
+      },
+      "DownloadGrantRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "artifactId",
+          "target"
+        ],
+        "properties": {
+          "artifactId": {
+            "type": "string"
+          },
+          "target": {
+            "type": "string",
+            "enum": [
+              "darwin-arm64",
+              "darwin-x64",
+              "win32-x64",
+              "win32-arm64"
+            ]
+          },
+          "productKey": {
+            "type": "string"
+          },
+          "activationId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "DownloadGrantResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "grant",
+          "expiresAt",
+          "redeemPath"
+        ],
+        "properties": {
+          "grant": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "redeemPath": {
+            "type": "string"
+          }
+        }
+      },
+      "DownloadRedeemResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "url",
+          "expiresAt"
+        ],
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "AcceptedResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "accepted"
+        ],
+        "properties": {
+          "accepted": {
+            "type": "boolean"
+          }
+        }
+      },
+      "StripeEventEnvelope": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": [
+          "id",
+          "type"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        }
+      },
+      "FulfillmentExchangeRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "checkoutSessionId"
+        ],
+        "properties": {
+          "checkoutSessionId": {
+            "type": "string"
+          }
+        }
+      },
+      "FulfillmentExchangeResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "fulfillmentSessionId",
+          "expiresAt",
+          "entitlementState",
+          "downloadArtifacts"
+        ],
+        "properties": {
+          "fulfillmentSessionId": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "entitlementState": {
+            "type": "string",
+            "enum": [
+              "active",
+              "suspended",
+              "chargeback_pending",
+              "refunded",
+              "revoked",
+              "manual_review"
+            ]
+          },
+          "maskedKeyHint": {
+            "type": "string"
+          },
+          "downloadArtifacts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QualifiedDownloadArtifact"
+            }
+          }
+        }
+      },
+      "LegacyGd2ExchangeRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Submit a legacy GD2 key for allowlist fingerprint exchange. Raw key is hashed server-side and never stored. GD1/H1 always rejected. Closed after LEGACY_GD2_EXCHANGE_SUNSET.",
+        "properties": {
+          "legacyKey": {
+            "type": "string",
+            "description": "Legacy product key (must be GD2.*)"
+          },
+          "gd2": {
+            "type": "string",
+            "description": "Alias for legacyKey"
+          }
+        }
+      },
+      "LegacyGd2ExchangeResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "productKey",
+          "keyVersion",
+          "entitlementId",
+          "entitlementState",
+          "activationRequired",
+          "alreadyExchanged"
+        ],
+        "properties": {
+          "productKey": {
+            "type": "string",
+            "description": "Reconstructed GD3 product key"
+          },
+          "keyVersion": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "entitlementId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "entitlementState": {
+            "type": "string",
+            "enum": [
+              "active",
+              "suspended",
+              "chargeback_pending",
+              "refunded",
+              "revoked",
+              "manual_review"
+            ]
+          },
+          "activationRequired": {
+            "type": "boolean",
+            "description": "Always true — device must still complete activation after exchange"
+          },
+          "alreadyExchanged": {
+            "type": "boolean",
+            "description": "True when the allowlist row was already marked exchanged (idempotent replay)"
+          }
+        }
+      },
+      "FulfillmentKeyRevealRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "fulfillmentSessionId"
+        ],
+        "properties": {
+          "fulfillmentSessionId": {
+            "type": "string"
+          }
+        }
+      },
+      "FulfillmentDownloadGrantRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "fulfillmentSessionId",
+          "artifactId",
+          "target"
+        ],
+        "properties": {
+          "fulfillmentSessionId": {
+            "type": "string"
+          },
+          "artifactId": {
+            "type": "string"
+          },
+          "target": {
+            "type": "string",
+            "enum": [
+              "darwin-arm64",
+              "darwin-x64",
+              "win32-x64",
+              "win32-arm64"
+            ]
+          }
+        }
+      },
+      "KeyRevealResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "productKey",
+          "keyVersion",
+          "entitlementId"
+        ],
+        "properties": {
+          "productKey": {
+            "type": "string"
+          },
+          "keyVersion": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "entitlementId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "PortalRecoveryRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "email"
+        ],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          }
+        }
+      },
+      "PortalMagicExchangeRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "token"
+        ],
+        "properties": {
+          "token": {
+            "type": "string"
+          }
+        }
+      },
+      "PortalSessionResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "sessionToken",
+          "expiresAt",
+          "csrfToken"
+        ],
+        "properties": {
+          "sessionToken": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "csrfToken": {
+            "type": "string"
+          }
+        }
+      },
+      "PortalAccountResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "entitlements",
+          "downloadArtifacts"
+        ],
+        "properties": {
+          "entitlements": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PortalEntitlementSummary"
+            }
+          },
+          "downloadArtifacts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QualifiedDownloadArtifact"
+            }
+          }
+        }
+      },
+      "QualifiedDownloadArtifact": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "artifactId",
+          "target",
+          "version"
+        ],
+        "properties": {
+          "artifactId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "target": {
+            "type": "string",
+            "enum": [
+              "darwin-arm64",
+              "darwin-x64",
+              "win32-x64",
+              "win32-arm64"
+            ]
+          },
+          "version": {
+            "type": "string"
+          }
+        }
+      },
+      "PortalEntitlementSummary": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "entitlementId",
+          "state",
+          "seatLimit",
+          "updatePolicy",
+          "activations"
+        ],
+        "properties": {
+          "entitlementId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "active",
+              "suspended",
+              "chargeback_pending",
+              "refunded",
+              "revoked",
+              "manual_review"
+            ]
+          },
+          "seatLimit": {
+            "type": "integer",
+            "enum": [
+              3
+            ]
+          },
+          "updatePolicy": {
+            "type": "string",
+            "enum": [
+              "lifetime_stable"
+            ]
+          },
+          "keyVersion": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "activations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PortalActivationResponse"
+            }
+          }
+        }
+      },
+      "PortalActivationResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "activationId",
+          "seatSlot",
+          "deviceName",
+          "platform",
+          "arch",
+          "status"
+        ],
+        "properties": {
+          "activationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "seatSlot": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "deviceName": {
+            "type": "string"
+          },
+          "platform": {
+            "type": "string"
+          },
+          "arch": {
+            "type": "string"
+          },
+          "deskVersion": {
+            "type": "string"
+          },
+          "lastSeenAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "deactivated"
+            ]
+          }
+        }
+      },
+      "PortalKeyRevealRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "entitlementId",
+          "csrfToken"
+        ],
+        "properties": {
+          "entitlementId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "csrfToken": {
+            "type": "string"
+          }
+        }
+      },
+      "PortalKeyResendRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "entitlementId",
+          "csrfToken"
+        ],
+        "properties": {
+          "entitlementId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "csrfToken": {
+            "type": "string"
+          }
+        }
+      },
+      "PortalKeyRotateRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "entitlementId",
+          "csrfToken",
+          "reason"
+        ],
+        "properties": {
+          "entitlementId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "csrfToken": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "PortalActivationPatchRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "csrfToken",
+          "deviceName"
+        ],
+        "properties": {
+          "csrfToken": {
+            "type": "string"
+          },
+          "deviceName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          }
+        }
+      },
+      "PortalActivationDeleteRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "csrfToken"
+        ],
+        "properties": {
+          "csrfToken": {
+            "type": "string"
+          }
+        }
+      },
+      "PortalDownloadGrantRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "entitlementId",
+          "artifactId",
+          "target",
+          "csrfToken"
+        ],
+        "properties": {
+          "entitlementId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "artifactId": {
+            "type": "string"
+          },
+          "target": {
+            "type": "string",
+            "enum": [
+              "darwin-arm64",
+              "darwin-x64",
+              "win32-x64",
+              "win32-arm64"
+            ]
+          },
+          "csrfToken": {
+            "type": "string"
+          }
+        }
+      },
+      "PortalLogoutRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "csrfToken"
+        ],
+        "properties": {
+          "csrfToken": {
+            "type": "string"
+          }
+        }
+      },
+      "EntitlementState": {
+        "type": "string",
+        "enum": [
+          "active",
+          "suspended",
+          "chargeback_pending",
+          "refunded",
+          "revoked",
+          "manual_review"
+        ]
+      },
+      "CanonicalTarget": {
+        "type": "string",
+        "enum": [
+          "darwin-arm64",
+          "darwin-x64",
+          "win32-x64",
+          "win32-arm64"
+        ]
+      },
+      "StableErrorCode": {
+        "type": "string",
+        "enum": [
+          "invalid_key_format",
+          "invalid_key_signature",
+          "key_rotated",
+          "entitlement_suspended",
+          "entitlement_refunded",
+          "entitlement_revoked",
+          "seat_limit",
+          "challenge_expired",
+          "challenge_replayed",
+          "device_signature_invalid",
+          "clock_skew",
+          "unsupported_client",
+          "unsupported_architecture",
+          "device_deactivated",
+          "lease_expired",
+          "lease_device_mismatch",
+          "grant_expired",
+          "grant_used",
+          "grant_binding_mismatch",
+          "legacy_key_unsupported",
+          "legacy_key_not_allowlisted",
+          "legacy_exchange_closed",
+          "fulfillment_pending",
+          "service_unavailable"
+        ],
+        "description": "invalid_key_format: Product key format is invalid; invalid_key_signature: Product key signature is invalid; key_rotated: Product key has been rotated; entitlement_suspended: Entitlement is suspended; entitlement_refunded: Entitlement has been refunded; entitlement_revoked: Entitlement has been revoked; seat_limit: All device seats are in use; challenge_expired: Challenge has expired; challenge_replayed: Challenge has already been used; device_signature_invalid: Device signature is invalid; clock_skew: Client clock is too far from server time; unsupported_client: Client version is not supported; unsupported_architecture: Architecture is not supported; device_deactivated: Device has been deactivated; lease_expired: Device lease has expired; lease_device_mismatch: Lease is not bound to this device; grant_expired: Download grant has expired; grant_used: Download grant has already been used; grant_binding_mismatch: Download grant binding mismatch; legacy_key_unsupported: This legacy key type cannot be exchanged; use recovery or support; legacy_key_not_allowlisted: Legacy key is not eligible for automatic exchange; legacy_exchange_closed: Legacy key exchange window has closed; fulfillment_pending: Purchase fulfillment is still processing; service_unavailable: Service temporarily unavailable"
+      }
+    }
+  },
+  "x-grokdesk-contract": {
+    "stableErrorCodes": [
+      "invalid_key_format",
+      "invalid_key_signature",
+      "key_rotated",
+      "entitlement_suspended",
+      "entitlement_refunded",
+      "entitlement_revoked",
+      "seat_limit",
+      "challenge_expired",
+      "challenge_replayed",
+      "device_signature_invalid",
+      "clock_skew",
+      "unsupported_client",
+      "unsupported_architecture",
+      "device_deactivated",
+      "lease_expired",
+      "lease_device_mismatch",
+      "grant_expired",
+      "grant_used",
+      "grant_binding_mismatch",
+      "legacy_key_unsupported",
+      "legacy_key_not_allowlisted",
+      "legacy_exchange_closed",
+      "fulfillment_pending",
+      "service_unavailable"
+    ],
+    "entitlementStates": [
+      "active",
+      "suspended",
+      "chargeback_pending",
+      "refunded",
+      "revoked",
+      "manual_review"
+    ],
+    "canonicalTargets": [
+      "darwin-arm64",
+      "darwin-x64",
+      "win32-x64",
+      "win32-arm64"
+    ],
+    "internalAuth": {
+      "prefix": "GROKDESK-INTERNAL-V1",
+      "maxSkewSeconds": 300,
+      "maxBodyBytes": 1048576,
+      "headers": [
+        "x-grokdesk-key-id",
+        "x-grokdesk-timestamp",
+        "x-grokdesk-signature",
+        "x-grokdesk-nonce"
+      ],
+      "mutationNonceRequired": true
+    },
+    "productKey": {
+      "format": "GD3.<base64url(RFC8785 claims)>.<base64url(Ed25519 signature)>",
+      "signingInput": "GD3.<claimsBase64Url>"
+    },
+    "deviceProof": {
+      "activatePrefix": "GROKDESK-ACTIVATE-V1",
+      "refreshPrefix": "GROKDESK-LEASE-REFRESH-V1"
+    },
+    "deviceLease": {
+      "alg": "EdDSA",
+      "typ": "grokdesk-lease+jwt"
+    },
+    "releaseManifest": {
+      "signingInput": "GROKDESK-RELEASE-MANIFEST-V1\\n<payloadBase64Url>"
+    }
+  }
+}
