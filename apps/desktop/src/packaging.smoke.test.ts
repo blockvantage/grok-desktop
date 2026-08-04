@@ -611,4 +611,131 @@ describe("packaging smoke", () => {
     expect(deps["@github/keytar"]).toBeUndefined();
     expect(deps.keytar).toBeUndefined();
   });
+
+  it("pins a host Node version supported by the native rebuild toolchain", () => {
+    const rootPkg = JSON.parse(
+      fs.readFileSync(path.join(repoRoot, "package.json"), "utf8"),
+    ) as {
+      engines?: { node?: string };
+      volta?: { node?: string };
+    };
+    expect(rootPkg.engines?.node).toBe(">=22.12.0 <23");
+    expect(rootPkg.volta?.node).toMatch(/^22\./);
+    expect(fs.readFileSync(path.join(repoRoot, ".nvmrc"), "utf8").trim()).toBe(
+      "22",
+    );
+
+    const workflows = [
+      ".github/workflows/ci.yml",
+      ".github/workflows/commerce-runtime-integration.yml",
+      ".github/workflows/release-desktop.yml",
+      ".github/workflows/release-free-github.yml",
+    ];
+    for (const relative of workflows) {
+      const workflow = fs.readFileSync(path.join(repoRoot, relative), "utf8");
+      expect(workflow, relative).not.toMatch(/node-version:\s*["']?20["']?/);
+      expect(workflow, relative).toMatch(/node-version:\s*["']?22["']?/);
+    }
+  });
+
+  it("keeps local directory packaging independent of ambient signing identities", () => {
+    const pkg = JSON.parse(
+      fs.readFileSync(path.join(desktopRoot, "package.json"), "utf8"),
+    ) as { scripts?: Record<string, string> };
+    const pack = pkg.scripts?.pack ?? "";
+    expect(pack).toMatch(/--config\.mac\.identity=null/);
+    expect(pack).toMatch(/--config\.mac\.notarize=false/);
+    expect(pack).toMatch(/--config\.win\.signAndEditExecutable=false/);
+  });
+
+  it("resolved desktop toolchain meets advisory-patched floors", async () => {
+    // Guard the full-audit floors that previously produced the 41-finding backlog.
+    // Resolves real installed package.json versions (not ranges) from node_modules.
+    const { createRequire } = await import("node:module");
+    const requireFromDesktop = createRequire(
+      path.join(desktopRoot, "package.json"),
+    );
+    // pnpm nests electron-builder deps; resolve nested packages from that edge.
+    const electronBuilderPkg = requireFromDesktop.resolve(
+      "electron-builder/package.json",
+    );
+    const requireFromBuilder = createRequire(electronBuilderPkg);
+
+    function installedVersion(name: string): string {
+      let pkgJson: string;
+      try {
+        pkgJson = requireFromDesktop.resolve(`${name}/package.json`);
+      } catch {
+        pkgJson = requireFromBuilder.resolve(`${name}/package.json`);
+      }
+      const ver = (
+        JSON.parse(fs.readFileSync(pkgJson, "utf8")) as { version: string }
+      ).version;
+      return ver;
+    }
+
+    /** Compare dotted numeric prefixes (a.b.c); returns true if a >= b. */
+    function gte(actual: string, floor: string): boolean {
+      const parse = (v: string) =>
+        v
+          .replace(/^v/, "")
+          .split(/[-+]/)[0]
+          .split(".")
+          .map((n) => Number.parseInt(n, 10) || 0);
+      const a = parse(actual);
+      const b = parse(floor);
+      const len = Math.max(a.length, b.length);
+      for (let i = 0; i < len; i++) {
+        const x = a[i] ?? 0;
+        const y = b[i] ?? 0;
+        if (x > y) return true;
+        if (x < y) return false;
+      }
+      return true;
+    }
+
+    // Advisory and support floors reviewed during the toolchain upgrade.
+    const floors: Array<[string, string]> = [
+      ["electron", "43.2.0"],
+      ["vite", "6.4.3"],
+      ["vitest", "3.2.6"],
+      ["@playwright/test", "1.55.1"],
+      ["electron-builder", "26.15.0"],
+      ["app-builder-lib", "26.15.0"],
+      ["builder-util-runtime", "9.7.0"],
+      ["electron-vite", "3.1.0"],
+    ];
+
+    for (const [name, floor] of floors) {
+      const ver = installedVersion(name);
+      expect(gte(ver, floor), `${name}@${ver} must be >= ${floor}`).toBe(true);
+    }
+
+    // Manifest pins must declare the same floors (ranges, not exact resolves).
+    const pkg = JSON.parse(
+      fs.readFileSync(path.join(desktopRoot, "package.json"), "utf8"),
+    ) as { devDependencies: Record<string, string> };
+    const dev = pkg.devDependencies;
+    expect(dev.electron).toMatch(/\^?43\.|>=?43\./);
+    expect(dev.vite).toMatch(/\^?6\.|>=?6\./);
+    expect(dev.vitest).toMatch(/\^?3\.|>=?3\./);
+    expect(dev["@playwright/test"]).toMatch(/\^?1\.(5[5-9]|[6-9])|>=?1\.5[5-9]/);
+    expect(dev["electron-builder"]).toMatch(/\^?26\.|>=?26\./);
+    expect(dev["electron-vite"]).toMatch(/\^?[3-9]\.|>=?[3-9]\./);
+
+    // Root overrides must force tar / ip-address / esbuild past advisory floors.
+    const rootPkg = JSON.parse(
+      fs.readFileSync(path.join(repoRoot, "package.json"), "utf8"),
+    ) as { pnpm?: { overrides?: Record<string, string> } };
+    const overrides = rootPkg.pnpm?.overrides ?? {};
+    const overrideBlob = JSON.stringify(overrides);
+    expect(overrideBlob).toMatch(/tar/);
+    expect(overrideBlob).toMatch(/7\.5\.2[2-9]|7\.[6-9]|[89]\./);
+    expect(overrideBlob).toMatch(/ip-address/);
+    expect(overrideBlob).toMatch(/esbuild/);
+
+    // Prove nested builder packages actually resolved (not skipped).
+    expect(installedVersion("app-builder-lib")).toMatch(/^26\./);
+    expect(installedVersion("builder-util-runtime")).toMatch(/^9\.7\./);
+  });
 });

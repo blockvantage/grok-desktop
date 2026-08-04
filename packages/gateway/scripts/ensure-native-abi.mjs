@@ -3,7 +3,8 @@
  * local Node during `pnpm install`. If the running Node MODULE_VERSION does
  * not match the built binary, rebuild so gateway vitest can open the DB.
  *
- * Dev Node is pinned to 20.x (see root .nvmrc / engines) to match Electron 33.
+ * Dev Node is pinned to 22.x (see root .nvmrc / engines), which is supported
+ * by the Electron 43 native rebuild toolchain.
  */
 import { createRequire } from "node:module";
 import { spawnSync } from "node:child_process";

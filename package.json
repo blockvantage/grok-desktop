@@ -27,13 +27,13 @@
   },
   "devDependencies": {
     "tsx": "^4.19.0",
-    "vitest": "^2.1.4"
+    "vitest": "^3.2.6"
   },
   "engines": {
-    "node": "20.x"
+    "node": ">=22.12.0 <23"
   },
   "volta": {
-    "node": "20.19.0"
+    "node": "22.23.2"
   },
   "pnpm": {
     "overrides": {
@@ -41,9 +41,14 @@
       "brace-expansion@>=2.0.0 <2.1.4": "2.1.4",
       "brace-expansion@>=4.0.0 <5.0.9": "5.0.9",
       "postcss@<8.5.23": "8.5.25",
-      "tar@>=7.0.0 <7.5.21": "7.5.22",
+      "tar@<7.5.22": "7.5.22",
+      "ip-address@<10.3.1": "10.4.0",
+      "esbuild@<0.25.0": "0.25.12",
       "undici@>=6.0.0 <6.28.0": "6.28.0",
-      "uuid@>=7.0.0 <11.1.1": "11.1.1"
+      "uuid@>=7.0.0 <11.1.1": "11.1.1",
+      "builder-util-runtime@<9.7.0": "9.7.0",
+      "electron-builder-squirrel-windows": "26.15.3",
+      "app-builder-lib": "26.15.3"
     }
   }
 }

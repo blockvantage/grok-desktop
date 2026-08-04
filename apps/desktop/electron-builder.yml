@@ -10,8 +10,8 @@ directories:
 # apps/desktop and break electron-builder's relative path filter. Native
 # modules are still auto-unpacked by electron-builder.
 npmRebuild: true
-# Flip Electron security fuses after pack (electron-builder 25.x has no
-# native electronFuses key). See scripts/after-pack-fuses.mjs.
+# Flip Electron security fuses after pack with our explicit policy. See
+# scripts/after-pack-fuses.mjs.
 # runAsNode stays enabled for gateway/MCP Electron-as-Node children.
 afterPack: scripts/after-pack-fuses.mjs
 files:

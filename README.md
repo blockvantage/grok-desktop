@@ -117,7 +117,7 @@ The release notes state the signing/notarization status for each build. Unsigned
 
 ## For builders
 
-Prerequisites: Node.js 20.x, pnpm 9.x, and the platform toolchain described in the packaging guides.
+Prerequisites: Node.js 22.12 or newer in the Node 22 line, pnpm 9.x, and the platform toolchain described in the packaging guides.
 
 ```bash
 pnpm install

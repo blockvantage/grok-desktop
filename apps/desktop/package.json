@@ -22,7 +22,7 @@
     "rebuild:electron": "node scripts/rebuild-native-for-electron.mjs",
     "rebuild:electron:win": "node scripts/rebuild-native-for-electron.mjs --platform win32 --arch x64",
     "rebuild:node": "node scripts/rebuild-native-for-node.mjs",
-    "pack": "pnpm run build && node scripts/rebuild-native-for-electron.mjs && electron-builder --dir",
+    "pack": "pnpm run build && node scripts/rebuild-native-for-electron.mjs && electron-builder --dir --config.mac.notarize=false --config.mac.identity=null --config.win.signAndEditExecutable=false",
     "dist": "pnpm run build && node scripts/rebuild-native-for-electron.mjs && electron-builder",
     "dist:mac": "pnpm run build && node scripts/rebuild-native-for-electron.mjs && electron-builder --mac --publish never",
     "dist:win": "pnpm run build && node scripts/rebuild-native-for-electron.mjs --platform win32 --arch x64 && CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win --x64 --publish never --config.npmRebuild=false --config.win.signAndEditExecutable=false && node scripts/rebuild-native-for-electron.mjs",
@@ -71,7 +71,7 @@
   "devDependencies": {
     "@electron/fuses": "^1.8.0",
     "@electron/rebuild": "^4.2.0",
-    "@playwright/test": "1.49.1",
+    "@playwright/test": "^1.55.1",
     "@types/dompurify": "^3.2.0",
     "@types/node": "^26.1.1",
     "@types/qrcode": "^1.5.6",
@@ -79,16 +79,17 @@
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.3",
     "autoprefixer": "^10.5.2",
-    "electron": "^33.2.0",
-    "electron-builder": "^25.1.8",
-    "electron-vite": "^2.3.0",
+    "electron": "^43.2.0",
+    "electron-builder": "^26.15.0",
+    "electron-builder-squirrel-windows": "26.15.3",
+    "electron-vite": "^3.1.0",
     "jose": "^6.0.10",
     "jsdom": "^26.1.0",
     "postcss": "^8.5.16",
     "tailwindcss": "3",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "^5.6.3",
-    "vite": "^5.4.10",
-    "vitest": "^2.1.4"
+    "vite": "^6.4.3",
+    "vitest": "^3.2.6"
   }
 }

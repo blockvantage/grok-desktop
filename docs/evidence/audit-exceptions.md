@@ -1,22 +1,21 @@
 # Production dependency audit exceptions
 
-**Last reviewed:** 2026-07-14  
-**Command:** `pnpm audit --prod`
+**Last reviewed:** 2026-08-04
+**Command:** `pnpm audit --prod` (also full `pnpm audit`)
 
 ## Active exceptions
 
-| Advisory | Package | Severity | Path | Exploitability note | Expires | Owner |
-|---|---|---|---|---|---|---|
-| GHSA related to postcss | `postcss` &lt; 8.5.10 | moderate | apps/mobile → Expo toolchain | Transitive via Expo/Metro; not in desktop main process. Mobile bundler-only. | 2026-10-14 | desk-platform |
-| GHSA-w5hq-g745-h8pq | `uuid` &lt; 11.1.1 | moderate | apps/mobile → expo → xcode → uuid@7 | Buffer bounds check in v3/v5/v6 when `buf` provided; Expo CLI path, not shipped desktop secret path. | 2026-10-14 | desk-platform |
+None. Both `pnpm audit --prod` and full `pnpm audit` report **no known vulnerabilities** after the 2026-08-04 toolchain upgrade (Electron 43.x, Vite 6.4.x, Vitest 3.2.x, electron-builder 26.15.x, and related overrides).
+
+Historical mobile Expo exceptions (postcss/uuid) from 2026-07-14 are **cleared** by the current lockfile/overrides; re-open rows here only if a future audit reintroduces them.
 
 ## Process
 
-1. Re-run `pnpm audit --prod` on each release candidate.
-2. Prefer upgrading Expo when a compatible release removes the advisories.
+1. Re-run `pnpm audit --prod` and full `pnpm audit` on each release candidate.
+2. Prefer direct version bumps; use `pnpm.overrides` only for deep transitives parents have not patched.
 3. Do not silence advisories in desktop/main or gateway production graphs without a new review.
 4. Exception expiry forces re-review; extend only with written exploitability analysis.
 
-## Not claimed
+## Residual full-audit policy
 
-Clean `pnpm audit --prod` is **not** claimed until these exceptions are resolved or renewed with evidence.
+If a future full audit cannot reach zero without an unshipped upstream fix, record package path, severity, exploitability, owner, and expiry in the table above before claiming release readiness.

@@ -1,14 +1,15 @@
 # Node version for local development
 
-Grok Desk desktop ships with **Electron 33**, which bundles a Node 20 ABI
-(MODULE_VERSION 115). `better-sqlite3` in `packages/gateway` is therefore
-built for Node **20.x**.
+Grok Desk desktop ships with **Electron 43**, which bundles Node 24. Packaging
+rebuilds `better-sqlite3` against Electron's Node ABI. Local gateway unit tests
+still run under the host Node pin below; pretest rebuilds the native module when
+the host ABI differs from the last build.
 
 ## Pin
 
-- Root `.nvmrc` → `20`
-- `package.json` `engines.node` → `20.x` (Volta pin optional)
-- If you run gateway tests under a different Node (e.g. 24),
+- Root `.nvmrc` → `22`
+- `package.json` `engines.node` → `>=22.12.0 <23` (Volta pin optional)
+- If you run gateway tests under a different Node (e.g. 22/24),
   `packages/gateway` pretest rebuilds `better-sqlite3` when the ABI mismatches.
 
 ## Commands
