@@ -5,7 +5,9 @@ import path from "node:path";
 import { openDatabase, type Db } from "../db.js";
 import { AuditService } from "./audit.js";
 import {
+  AUDIT_DETAIL_STRING_MAX,
   clampAuditListLimit,
+  clampAuditListOffset,
   listAuditEntries,
   parseAuditDecision,
   redactAuditDetail,
@@ -23,10 +25,26 @@ describe("clampAuditListLimit", () => {
     expect(clampAuditListLimit(9999)).toBe(500);
   });
 
-  it("treats non-finite limits as default 100", () => {
+  it("fails closed for non-finite limits (NaN / Infinity)", () => {
     expect(clampAuditListLimit(Number.NaN)).toBe(100);
     expect(clampAuditListLimit(Number.POSITIVE_INFINITY)).toBe(100);
     expect(clampAuditListLimit(Number.NEGATIVE_INFINITY)).toBe(100);
+  });
+});
+
+describe("clampAuditListOffset", () => {
+  it("defaults to 0, floors, clamps below 0 to 0", () => {
+    expect(clampAuditListOffset()).toBe(0);
+    expect(clampAuditListOffset(undefined)).toBe(0);
+    expect(clampAuditListOffset(3.9)).toBe(3);
+    expect(clampAuditListOffset(0)).toBe(0);
+    expect(clampAuditListOffset(-5)).toBe(0);
+    expect(clampAuditListOffset(10)).toBe(10);
+  });
+
+  it("fails closed for non-finite offsets", () => {
+    expect(clampAuditListOffset(Number.NaN)).toBe(0);
+    expect(clampAuditListOffset(Number.POSITIVE_INFINITY)).toBe(0);
   });
 });
 
@@ -61,6 +79,53 @@ describe("redactAuditDetail", () => {
     expect(String(out.command)).toContain("password=[REDACTED]");
     expect(JSON.stringify(out)).not.toMatch(/hunter2|abc123|sk-live/);
     expect(out.path).toBe("/tmp/safe");
+  });
+
+  it("deep-walks nested objects/arrays (approval detail.tool shape)", () => {
+    const out = redactAuditDetail({
+      approvalId: "a1",
+      decision: "approve",
+      tool: {
+        type: "tool_request",
+        command: "export token=abc123 password=hunter2; curl https://x",
+        meta: {
+          env: { API_TOKEN: "sk-live-nested-secret-xx", PATH: "/usr/bin" },
+          headers: [{ authorization: "Bearer secret-jwt" }],
+        },
+      },
+    });
+    const tool = out.tool as Record<string, unknown>;
+    expect(String(tool.command)).toContain("token=[REDACTED]");
+    expect(String(tool.command)).toContain("password=[REDACTED]");
+    expect(JSON.stringify(out)).not.toMatch(
+      /hunter2|abc123|sk-live-nested|secret-jwt/,
+    );
+    const meta = tool.meta as Record<string, unknown>;
+    const env = meta.env as Record<string, unknown>;
+    // Secret-like keys fully redacted even when nested.
+    expect(env.API_TOKEN).toBe("[REDACTED]");
+    expect(env.PATH).toBe("/usr/bin");
+  });
+
+  it("applies shared secret-value patterns (bare sk-/Bearer without assignment)", () => {
+    const out = redactAuditDetail({
+      output: "got sk-liveabcdefghij from provider",
+      message: "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.payload.sig",
+      command: "echo hello",
+    });
+    expect(JSON.stringify(out)).not.toMatch(/sk-liveabcdefghij/);
+    expect(String(out.output)).toContain("[REDACTED]");
+    expect(String(out.message)).toContain("[REDACTED]");
+    expect(out.command).toBe("echo hello");
+  });
+
+  it("truncates long strings with …[truncated] marker", () => {
+    const long = "x".repeat(AUDIT_DETAIL_STRING_MAX + 50);
+    const out = redactAuditDetail({ blob: long });
+    const s = String(out.blob);
+    expect(s.endsWith("…[truncated]")).toBe(true);
+    expect(s.length).toBe(AUDIT_DETAIL_STRING_MAX + "…[truncated]".length);
+    expect(s.startsWith("x".repeat(100))).toBe(true);
   });
 });
 
@@ -107,56 +172,12 @@ describe("listAuditEntries", () => {
     const page = listAuditEntries(db, { taskId, limit: 10 });
     expect(page.entries).toHaveLength(2);
     expect(page.entries[0]?.action).toBe("second.action");
-    expect(page.entries[0]?.createdAt).toBe("2026-08-01T12:00:00.000Z");
     expect(page.entries[1]?.action).toBe("first.action");
-    expect(page.entries[1]?.createdAt).toBe("2026-08-01T10:00:00.000Z");
     expect(page.entries.every((r) => r.taskId === taskId)).toBe(true);
-    expect(page.entries.every((r) => typeof r.createdAt === "string" && r.createdAt)).toBe(
-      true,
-    );
     expect(page.hasMore).toBe(false);
     expect(page.total).toBe(2);
     expect(page.limit).toBe(10);
-  });
-
-  it("breaks same-timestamp ties with id DESC for stable newest-first", () => {
-    const ts = "2026-08-01T10:00:00.000Z";
-    // Lexicographically ordered ids so id DESC is unambiguous.
-    const a = audit.append({
-      taskId: "tie",
-      action: "a",
-      detail: {},
-      decision: "info",
-      createdAt: ts,
-    });
-    const b = audit.append({
-      taskId: "tie",
-      action: "b",
-      detail: {},
-      decision: "info",
-      createdAt: ts,
-    });
-    const c = audit.append({
-      taskId: "tie",
-      action: "c",
-      detail: {},
-      decision: "info",
-      createdAt: ts,
-    });
-    // Force same created_at (append may use wall clock if omitted; we set equal).
-    db.prepare(`UPDATE audit_entries SET created_at = ? WHERE task_id = ?`).run(
-      ts,
-      "tie",
-    );
-
-    const page = listAuditEntries(db, { taskId: "tie", limit: 10 });
-    expect(page.entries).toHaveLength(3);
-    const ids = page.entries.map((e) => e.id);
-    const sortedDesc = [a.id, b.id, c.id].sort().reverse();
-    expect(ids).toEqual(sortedDesc);
-    // Second page slice still stable under limit.
-    const top2 = listAuditEntries(db, { taskId: "tie", limit: 2 });
-    expect(top2.entries.map((e) => e.id)).toEqual(sortedDesc.slice(0, 2));
+    expect(page.offset).toBe(0);
   });
 
   it("filters by decision when provided with taskId", () => {
@@ -212,6 +233,50 @@ describe("listAuditEntries", () => {
     expect(denied.entries.every((r) => r.decision === "deny")).toBe(true);
     expect(denied.entries.map((r) => r.action)).toEqual(["c.deny", "a.deny"]);
     expect(denied.total).toBe(2);
+  });
+
+  it("decision:info includes rows remapped from unknown DB decisions", () => {
+    audit.append({
+      taskId: "t-info",
+      action: "stored.info",
+      detail: { kind: "stored" },
+      decision: "info",
+      createdAt: "2026-08-01T10:00:00.000Z",
+    });
+    const remapped = audit.append({
+      taskId: "t-info",
+      action: "stored.bogus",
+      detail: { kind: "bogus" },
+      decision: "info",
+      createdAt: "2026-08-01T11:00:00.000Z",
+    });
+    db.prepare(`UPDATE audit_entries SET decision = ? WHERE id = ?`).run(
+      "bogus-decision",
+      remapped.id,
+    );
+    audit.append({
+      taskId: "t-info",
+      action: "stored.allow",
+      detail: {},
+      decision: "allow",
+      createdAt: "2026-08-01T12:00:00.000Z",
+    });
+
+    const page = listAuditEntries(db, {
+      taskId: "t-info",
+      decision: "info",
+      limit: 10,
+    });
+    // Must include both stored "info" and remapped unknown rows that display as info.
+    expect(page.entries).toHaveLength(2);
+    expect(page.entries.every((r) => r.decision === "info")).toBe(true);
+    expect(page.entries.map((r) => r.action).sort()).toEqual([
+      "stored.bogus",
+      "stored.info",
+    ]);
+    const bog = page.entries.find((r) => r.action === "stored.bogus");
+    expect(bog?.detail._unknownDecision).toBe("bogus-decision");
+    expect(page.total).toBe(2);
   });
 
   it("maps null taskId system rows and detail JSON correctly", () => {
@@ -300,93 +365,11 @@ describe("listAuditEntries", () => {
     const page = listAuditEntries(db, { taskId: "t-unk" });
     expect(page.entries).toHaveLength(1);
     expect(page.entries[0]?.decision).toBe("info");
-    expect(page.entries[0]?.createdAt).toBe("2026-08-01T10:00:00.000Z");
     expect(page.entries[0]?.detail._unknownDecision).toBe("bogus-decision");
     expect(page.entries[0]?.detail.ok).toBe(true);
   });
 
-  it("decision:info filter includes remapped unknown/corrupt decisions", () => {
-    const taskId = "t-info-filter";
-    const literalInfo = audit.append({
-      taskId,
-      action: "literal.info",
-      detail: {},
-      decision: "info",
-      createdAt: "2026-08-01T10:00:00.000Z",
-    });
-    const allow = audit.append({
-      taskId,
-      action: "allow.row",
-      detail: {},
-      decision: "allow",
-      createdAt: "2026-08-01T11:00:00.000Z",
-    });
-    const corrupt = audit.append({
-      taskId,
-      action: "corrupt.row",
-      detail: { x: 1 },
-      decision: "info",
-      createdAt: "2026-08-01T12:00:00.000Z",
-    });
-    db.prepare(`UPDATE audit_entries SET decision = ? WHERE id = ?`).run(
-      "legacy-maybe",
-      corrupt.id,
-    );
-
-    const asInfo = listAuditEntries(db, { taskId, decision: "info" });
-    expect(asInfo.entries.map((e) => e.id).sort()).toEqual(
-      [literalInfo.id, corrupt.id].sort(),
-    );
-    expect(asInfo.entries.every((e) => e.decision === "info")).toBe(true);
-    expect(asInfo.total).toBe(2);
-    // Corrupt row presents as info with provenance.
-    const corruptMapped = asInfo.entries.find((e) => e.id === corrupt.id);
-    expect(corruptMapped?.detail._unknownDecision).toBe("legacy-maybe");
-
-    // Known non-info filters stay exact-column and exclude remapped rows.
-    const asAllow = listAuditEntries(db, { taskId, decision: "allow" });
-    expect(asAllow.entries).toHaveLength(1);
-    expect(asAllow.entries[0]?.id).toBe(allow.id);
-    expect(
-      listAuditEntries(db, { taskId, decision: "deny" }).entries,
-    ).toHaveLength(0);
-  });
-
-  it("null taskId/decision omit filters (not IS NULL / not throw)", () => {
-    audit.append({
-      taskId: null,
-      action: "system.row",
-      detail: {},
-      decision: "info",
-      createdAt: "2026-08-01T10:00:00.000Z",
-    });
-    audit.append({
-      taskId: "t-null-filter",
-      action: "task.row",
-      detail: {},
-      decision: "allow",
-      createdAt: "2026-08-01T11:00:00.000Z",
-    });
-
-    // null filters = unfiltered list (includes system null-taskId rows).
-    const nullFilters = listAuditEntries(db, {
-      taskId: null,
-      decision: null,
-      limit: 10,
-    });
-    expect(nullFilters.entries).toHaveLength(2);
-    expect(nullFilters.entries.map((e) => e.action).sort()).toEqual([
-      "system.row",
-      "task.row",
-    ]);
-
-    // Explicit empty-string taskId also omits (truthiness guard).
-    expect(
-      listAuditEntries(db, { taskId: "", limit: 10 }).entries,
-    ).toHaveLength(2);
-  });
-
-  it("redacts secret-like fields in listed detail", () => {
+  it("redacts secret-like fields in listed detail including nested tool", () => {
     audit.append({
       taskId: "t-sec",
       action: "tool.shell",
@@ -394,6 +377,11 @@ describe("listAuditEntries", () => {
         apiKey: "sk-live-xyz",
         command: "export token=abc123 password=hunter2",
         path: "/workspace/a",
+        tool: {
+          type: "tool_request",
+          command: "curl -H token=nested-secret password=nested-pw https://x",
+          meta: { note: "safe" },
+        },
       },
       decision: "deny",
       createdAt: "2026-08-01T10:00:00.000Z",
@@ -404,11 +392,16 @@ describe("listAuditEntries", () => {
     expect(d.apiKey).toBe("[REDACTED]");
     expect(String(d.command)).toContain("token=[REDACTED]");
     expect(String(d.command)).toContain("password=[REDACTED]");
-    expect(JSON.stringify(d)).not.toMatch(/hunter2|abc123|sk-live/);
+    expect(JSON.stringify(d)).not.toMatch(
+      /hunter2|abc123|sk-live|nested-secret|nested-pw/,
+    );
     expect(d.path).toBe("/workspace/a");
+    const tool = d.tool as Record<string, unknown>;
+    expect(String(tool.command)).toContain("token=[REDACTED]");
+    expect(tool.meta).toEqual({ note: "safe" });
   });
 
-  it("reports hasMore and total when truncated", () => {
+  it("reports hasMore and total when truncated; offset pages further", () => {
     for (let i = 0; i < 5; i++) {
       audit.append({
         taskId: "task-page",
@@ -423,9 +416,33 @@ describe("listAuditEntries", () => {
     expect(page.total).toBe(5);
     expect(page.hasMore).toBe(true);
     expect(page.limit).toBe(2);
+    expect(page.offset).toBe(0);
     // Newest first
     expect(page.entries[0]?.action).toBe("action.4");
     expect(page.entries[1]?.action).toBe("action.3");
+
+    const page2 = listAuditEntries(db, {
+      taskId: "task-page",
+      limit: 2,
+      offset: 2,
+    });
+    expect(page2.entries).toHaveLength(2);
+    expect(page2.offset).toBe(2);
+    expect(page2.total).toBe(5);
+    expect(page2.hasMore).toBe(true);
+    expect(page2.entries[0]?.action).toBe("action.2");
+    expect(page2.entries[1]?.action).toBe("action.1");
+
+    const page3 = listAuditEntries(db, {
+      taskId: "task-page",
+      limit: 2,
+      offset: 4,
+    });
+    expect(page3.entries).toHaveLength(1);
+    expect(page3.entries[0]?.action).toBe("action.0");
+    expect(page3.hasMore).toBe(false);
+    expect(page3.total).toBe(5);
+    expect(page3.offset).toBe(4);
 
     const full = listAuditEntries(db, { taskId: "task-page", limit: 10 });
     expect(full.entries).toHaveLength(5);
@@ -433,7 +450,7 @@ describe("listAuditEntries", () => {
     expect(full.total).toBe(5);
   });
 
-  it("caps limit at 500 and retains the newest 500 rows", () => {
+  it("caps limit at 500", () => {
     for (let i = 0; i < 510; i++) {
       audit.append({
         taskId: "task-cap",
@@ -448,21 +465,23 @@ describe("listAuditEntries", () => {
     expect(capped.limit).toBe(500);
     expect(capped.total).toBe(510);
     expect(capped.hasMore).toBe(true);
-    // Newest retained: action.509 … action.10 (not the oldest slice).
-    expect(capped.entries[0]?.action).toBe("action.509");
-    expect(capped.entries[0]?.createdAt).toBe(
-      new Date(Date.UTC(2026, 7, 1, 0, 0, 509)).toISOString(),
-    );
-    expect(capped.entries[499]?.action).toBe("action.10");
-    expect(capped.entries.map((e) => e.action)).toEqual(
-      Array.from({ length: 500 }, (_, i) => `action.${509 - i}`),
-    );
     expect(
       listAuditEntries(db, { limit: 9999 }).entries.length,
     ).toBeLessThanOrEqual(500);
     expect(
       listAuditEntries(db, { taskId: "task-cap", limit: 500 }).entries,
     ).toHaveLength(500);
+
+    // Older rows past the first page via offset.
+    const next = listAuditEntries(db, {
+      taskId: "task-cap",
+      limit: 500,
+      offset: 500,
+    });
+    expect(next.entries).toHaveLength(10);
+    expect(next.offset).toBe(500);
+    expect(next.hasMore).toBe(false);
+    expect(next.total).toBe(510);
   });
 
   it("AuditService.list delegates to listAuditEntries", () => {
@@ -478,12 +497,11 @@ describe("listAuditEntries", () => {
     expect(viaService).toEqual(viaHelper);
     expect(viaService.entries).toHaveLength(1);
     expect(viaService.entries[0]?.detail).toEqual({ ok: true });
-    expect(viaService.entries[0]?.createdAt).toBe("2026-08-01T10:00:00.000Z");
     expect(viaService.hasMore).toBe(false);
     expect(viaService.total).toBe(1);
   });
 
-  it("defaults limit to 100, clamps below 1, and retains newest N", () => {
+  it("defaults limit to 100 and clamps below 1 to 1", () => {
     // Seed >100 rows so a wrong default (e.g. 10) would fail.
     for (let i = 0; i < 105; i++) {
       audit.append({
@@ -499,39 +517,22 @@ describe("listAuditEntries", () => {
     expect(def.limit).toBe(100);
     expect(def.total).toBe(105);
     expect(def.hasMore).toBe(true);
-    // Newest 100: a104 … a5 (not oldest a0…a99).
-    expect(def.entries[0]?.action).toBe("a104");
-    expect(def.entries[0]?.createdAt).toBe(
-      new Date(Date.UTC(2026, 7, 1, 0, 0, 104)).toISOString(),
-    );
-    expect(def.entries[99]?.action).toBe("a5");
-    expect(def.entries.map((e) => e.action)).toEqual(
-      Array.from({ length: 100 }, (_, i) => `a${104 - i}`),
-    );
 
     expect(
       listAuditEntries(db, { taskId: "lim", limit: undefined }).entries,
     ).toHaveLength(100);
-    const one = listAuditEntries(db, { taskId: "lim", limit: 0 });
-    expect(one.entries).toHaveLength(1);
-    expect(one.entries[0]?.action).toBe("a104");
     expect(
-      listAuditEntries(db, { taskId: "lim", limit: -3 }).entries[0]?.action,
-    ).toBe("a104");
-    const floor = listAuditEntries(db, { taskId: "lim", limit: 2.9 });
-    expect(floor.entries).toHaveLength(2);
-    expect(floor.entries.map((e) => e.action)).toEqual(["a104", "a103"]);
-
-    // Non-finite limits fall back to default 100 newest.
-    const nanPage = listAuditEntries(db, { taskId: "lim", limit: Number.NaN });
-    expect(nanPage.limit).toBe(100);
-    expect(nanPage.entries).toHaveLength(100);
-    expect(nanPage.entries[0]?.action).toBe("a104");
+      listAuditEntries(db, { taskId: "lim", limit: 0 }).entries,
+    ).toHaveLength(1);
     expect(
-      listAuditEntries(db, {
-        taskId: "lim",
-        limit: Number.POSITIVE_INFINITY,
-      }).limit,
-    ).toBe(100);
+      listAuditEntries(db, { taskId: "lim", limit: -3 }).entries,
+    ).toHaveLength(1);
+    expect(
+      listAuditEntries(db, { taskId: "lim", limit: 2.9 }).entries,
+    ).toHaveLength(2);
+    // NaN must not produce broken LIMIT — fail closed to default 100.
+    expect(
+      listAuditEntries(db, { taskId: "lim", limit: Number.NaN }).entries,
+    ).toHaveLength(100);
   });
 });

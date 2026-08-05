@@ -295,13 +295,14 @@ describe("ipc schemas", () => {
     const full = parseIpcRequest({
       id: "al2",
       method: "audit.list",
-      params: { taskId: "task-1", decision: "deny", limit: 50 },
+      params: { taskId: "task-1", decision: "deny", limit: 50, offset: 10 },
     });
     expect(full.method).toBe("audit.list");
     expect(full.params).toEqual({
       taskId: "task-1",
       decision: "deny",
       limit: 50,
+      offset: 10,
     });
 
     expect(() =>
@@ -337,6 +338,13 @@ describe("ipc schemas", () => {
         id: "al7",
         method: "audit.list",
         params: { taskId: "x".repeat(129) },
+      }),
+    ).toThrow();
+    expect(() =>
+      parseIpcRequest({
+        id: "al8",
+        method: "audit.list",
+        params: { offset: 1.5 },
       }),
     ).toThrow();
 

@@ -2,13 +2,16 @@
  * List/filter audit entries (trust Phase A — task workspace + Settings).
  *
  * Honesty:
- * - Returns { entries, hasMore, total, limit } so truncation is never silent.
+ * - Returns { entries, hasMore, total, limit, offset } so truncation is never silent.
+ * - Offset pagination lets consumers load older rows past the first page (limit max 500).
  * - Isolates corrupt detail_json per row (does not fail the whole list).
  * - Validates decision enum; unknown DB values become "info" + _unknownDecision.
- * - Redacts secret-like detail keys/values before IPC (mirrors operation-receipts).
+ * - decision:"info" filter includes remapped/unknown stored decisions (matches display).
+ * - Deep-redacts secret-like detail (keys, nested tool/command, shared secret patterns)
+ *   before IPC.
  */
 
-import type { AuditEntry } from "@grokdesk/shared";
+import { redactSecretString, type AuditEntry } from "@grokdesk/shared";
 import type { Db } from "../db.js";
 
 export const AUDIT_DECISIONS = [
@@ -21,10 +24,27 @@ export const AUDIT_DECISIONS = [
 
 const AUDIT_DECISION_SET = new Set<string>(AUDIT_DECISIONS);
 
+/** Known mediation outcomes stored as-is (not remapped to info). */
+const KNOWN_DECISION_SQL = "('allow','deny','approve','reject','info')";
+
+const SECRET_KEY_RE =
+  /secret|token|password|api[_-]?key|authorization|credential/i;
+
+const ASSIGNMENT_SECRET_RE =
+  /(password|token|api[_-]?key|secret|authorization)\s*[:=]\s*\S+/gi;
+
+/** Max depth when walking nested audit detail (tool_request trees, etc.). */
+const REDACT_MAX_DEPTH = 24;
+
+/** Max string length returned in listed detail (IPC size bound). */
+export const AUDIT_DETAIL_STRING_MAX = 2_000;
+
 export type AuditListParams = {
   taskId?: string | null;
   decision?: AuditEntry["decision"] | null;
   limit?: number;
+  /** Skip this many newest-first rows (default 0). */
+  offset?: number;
 };
 
 /** Honest list result — consumers must not treat a page as the full trail. */
@@ -36,61 +56,50 @@ export type AuditListResult = {
   total: number;
   /** Effective limit applied after clamp (default 100, max 500). */
   limit: number;
+  /** Effective offset applied after clamp (default 0). */
+  offset: number;
 };
 
 /**
  * Clamp list limit: default 100, min 1, max 500.
- * Non-finite values (NaN, ±Infinity) fall back to the default.
+ * Non-finite / non-number inputs fail closed to the default (not NaN LIMIT).
  */
 export function clampAuditListLimit(limit?: number): number {
-  const raw =
-    typeof limit === "number" && Number.isFinite(limit) ? limit : 100;
-  return Math.min(Math.max(1, Math.floor(raw)), 500);
+  if (typeof limit !== "number" || !Number.isFinite(limit)) {
+    return 100;
+  }
+  return Math.min(Math.max(1, Math.floor(limit)), 500);
 }
 
 /**
- * Build decision WHERE clause aligned with parseAuditDecision mapping.
- *
- * Stored corrupt/unknown decision strings are presented as "info" on read.
- * Filtering decision:"info" must therefore include those rows (not only the
- * literal column value "info"), or filter results disagree with AuditEntry.decision.
- * Known non-info decisions match the column exactly.
+ * Clamp list offset: default 0, min 0.
+ * Non-finite / non-number inputs fail closed to 0.
  */
-function pushDecisionFilter(
-  decision: AuditEntry["decision"],
-  clauses: string[],
-  binds: unknown[],
-): void {
-  if (decision === "info") {
-    // Present-as-info: literal "info" OR any value outside the known enum set.
-    const placeholders = AUDIT_DECISIONS.map(() => "?").join(", ");
-    clauses.push(
-      `(decision = ? OR decision NOT IN (${placeholders}) OR decision IS NULL OR decision = '')`,
-    );
-    binds.push("info", ...AUDIT_DECISIONS);
-    return;
+export function clampAuditListOffset(offset?: number): number {
+  if (typeof offset !== "number" || !Number.isFinite(offset)) {
+    return 0;
   }
-  clauses.push("decision = ?");
-  binds.push(decision);
+  return Math.max(0, Math.floor(offset));
 }
 
 /**
  * List audit entries newest-first, optionally filtered by taskId / decision.
+ * Use offset + limit to page beyond the first 500 rows.
  */
 export function listAuditEntries(
   db: Db,
   params: AuditListParams = {},
 ): AuditListResult {
   const limit = clampAuditListLimit(params.limit);
+  const offset = clampAuditListOffset(params.offset);
   const clauses: string[] = [];
   const binds: unknown[] = [];
-  // null / empty string / undefined all mean "omit filter" (not IS NULL).
   if (params.taskId) {
     clauses.push("task_id = ?");
     binds.push(params.taskId);
   }
   if (params.decision) {
-    pushDecisionFilter(params.decision, clauses, binds);
+    appendDecisionFilter(params.decision, clauses, binds);
   }
   const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
 
@@ -99,22 +108,43 @@ export function listAuditEntries(
     .get(...binds) as { c: number } | undefined;
   const total = Number(totalRow?.c ?? 0);
 
-  // Secondary id DESC matches tasks.list: same-ms ISO timestamps stay stable.
   const rows = db
     .prepare(
       `SELECT id, task_id, action, detail_json, decision, created_at
        FROM audit_entries ${where}
-       ORDER BY created_at DESC, id DESC LIMIT ?`,
+       ORDER BY created_at DESC LIMIT ? OFFSET ?`,
     )
-    .all(...binds, limit) as Record<string, unknown>[];
+    .all(...binds, limit, offset) as Record<string, unknown>[];
 
   const entries = rows.map((r) => mapAuditRow(r));
   return {
     entries,
-    hasMore: total > entries.length,
+    hasMore: total > offset + entries.length,
     total,
     limit,
+    offset,
   };
+}
+
+/**
+ * decision:"info" must include rows whose stored decision is unknown/corrupt
+ * (parseAuditDecision remaps those to "info" for display). Other filters use
+ * exact stored values.
+ */
+function appendDecisionFilter(
+  decision: AuditEntry["decision"],
+  clauses: string[],
+  binds: unknown[],
+): void {
+  if (decision === "info") {
+    // Stored "info" OR anything parseAuditDecision would remap to info.
+    clauses.push(
+      `(decision = 'info' OR decision IS NULL OR decision = '' OR decision NOT IN ${KNOWN_DECISION_SQL})`,
+    );
+    return;
+  }
+  clauses.push("decision = ?");
+  binds.push(decision);
 }
 
 function mapAuditRow(r: Record<string, unknown>): AuditEntry {
@@ -167,30 +197,45 @@ function parseAuditDetail(raw: unknown): Record<string, unknown> {
 }
 
 /**
- * Redact secret-like keys and inline password/token assignments for Settings /
- * task inspection surfaces. Mirrors operation-receipts.redactDetail policy.
+ * Deep-redact secret-like keys and values for Settings / task inspection.
+ * Walks nested objects/arrays (e.g. approval detail.tool.command/meta), applies
+ * shared secret-value patterns (sk-, Bearer, commerce/JWT canaries), assignment
+ * scrub, and string length truncation.
  */
 export function redactAuditDetail(
   detail: Record<string, unknown>,
 ): Record<string, unknown> {
+  return redactAuditValue(detail, 0) as Record<string, unknown>;
+}
+
+function redactAuditValue(value: unknown, depth: number): unknown {
+  if (value == null) return value;
+  if (depth > REDACT_MAX_DEPTH) return "[REDACTED]";
+  if (typeof value === "string") {
+    return redactAuditString(value);
+  }
+  if (typeof value !== "object") return value;
+  if (Array.isArray(value)) {
+    return value.map((v) => redactAuditValue(v, depth + 1));
+  }
   const out: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(detail)) {
-    if (/secret|token|password|api[_-]?key|authorization|credential/i.test(k)) {
+  for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+    if (SECRET_KEY_RE.test(k)) {
       out[k] = "[REDACTED]";
       continue;
     }
-    if (typeof v === "string") {
-      let s = v.replace(
-        /(password|token|api[_-]?key|secret|authorization)\s*[:=]\s*\S+/gi,
-        "$1=[REDACTED]",
-      );
-      if (s.length > 2_000) {
-        s = s.slice(0, 2_000) + "…[truncated]";
-      }
-      out[k] = s;
-      continue;
-    }
-    out[k] = v;
+    out[k] = redactAuditValue(v, depth + 1);
   }
   return out;
+}
+
+function redactAuditString(input: string): string {
+  // Assignment forms first so "token=abc" becomes "token=[REDACTED]" before
+  // pattern redaction, preserving key names for operators.
+  let s = input.replace(ASSIGNMENT_SECRET_RE, "$1=[REDACTED]");
+  s = redactSecretString(s);
+  if (s.length > AUDIT_DETAIL_STRING_MAX) {
+    s = s.slice(0, AUDIT_DETAIL_STRING_MAX) + "…[truncated]";
+  }
+  return s;
 }

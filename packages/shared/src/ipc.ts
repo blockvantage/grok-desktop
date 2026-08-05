@@ -493,6 +493,8 @@ export const IpcRequestSchema = z.discriminatedUnion("method", [
           .optional(),
         // Server clamps to [1, 500]; accept any finite int here.
         limit: z.number().int().optional(),
+        // Server clamps to ≥0; page past first limit with offset.
+        offset: z.number().int().optional(),
       })
       .default({}),
   }),

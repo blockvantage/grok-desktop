@@ -25,6 +25,7 @@ function baseDeps(
       hasMore: false,
       total: 0,
       limit: 100,
+      offset: 0,
     })),
     ...overrides,
   };
@@ -121,6 +122,7 @@ describe("dispatchSideDataMethod", () => {
       hasMore: false,
       total: 1,
       limit: 20,
+      offset: 0,
     };
     const auditList = vi.fn(() => page);
     const deps = baseDeps({ auditList });
@@ -135,6 +137,32 @@ describe("dispatchSideDataMethod", () => {
       taskId: "t1",
       decision: "deny",
       limit: 20,
+      offset: undefined,
+    });
+  });
+
+  it("dispatches audit.list with offset for multi-page trails", () => {
+    const page = {
+      entries: [{ id: "a2" }],
+      hasMore: true,
+      total: 40,
+      limit: 10,
+      offset: 10,
+    };
+    const auditList = vi.fn(() => page);
+    const deps = baseDeps({ auditList });
+    expect(
+      dispatchSideDataMethod(
+        "audit.list",
+        { taskId: "t1", limit: 10, offset: 10 },
+        deps,
+      ),
+    ).toEqual(page);
+    expect(auditList).toHaveBeenCalledWith({
+      taskId: "t1",
+      decision: undefined,
+      limit: 10,
+      offset: 10,
     });
   });
 
@@ -144,6 +172,7 @@ describe("dispatchSideDataMethod", () => {
       hasMore: false,
       total: 0,
       limit: 100,
+      offset: 0,
     }));
     const deps = baseDeps({ auditList });
 
@@ -152,17 +181,19 @@ describe("dispatchSideDataMethod", () => {
       taskId: undefined,
       decision: undefined,
       limit: undefined,
+      offset: undefined,
     });
 
     dispatchSideDataMethod(
       "audit.list",
-      { taskId: "", decision: "", limit: Number.NaN },
+      { taskId: "", decision: "", limit: Number.NaN, offset: Number.NaN },
       deps,
     );
     expect(auditList).toHaveBeenLastCalledWith({
       taskId: undefined,
       decision: undefined,
       limit: undefined,
+      offset: undefined,
     });
 
     dispatchSideDataMethod(
@@ -174,6 +205,31 @@ describe("dispatchSideDataMethod", () => {
       taskId: "t2",
       decision: "allow",
       limit: undefined,
+      offset: undefined,
     });
+  });
+
+  it("fails closed on invalid non-empty audit.list decision (no unfiltered trail)", () => {
+    const auditList = vi.fn(() => ({
+      entries: [],
+      hasMore: false,
+      total: 0,
+      limit: 100,
+      offset: 0,
+    }));
+    const deps = baseDeps({ auditList });
+    expect(() =>
+      dispatchSideDataMethod(
+        "audit.list",
+        { decision: "not-a-decision" },
+        deps,
+      ),
+    ).toThrow(/invalid audit decision filter/);
+    expect(auditList).not.toHaveBeenCalled();
+
+    expect(() =>
+      dispatchSideDataMethod("audit.list", { decision: "maybe" }, deps),
+    ).toThrow(/invalid audit decision filter/);
+    expect(auditList).not.toHaveBeenCalled();
   });
 });

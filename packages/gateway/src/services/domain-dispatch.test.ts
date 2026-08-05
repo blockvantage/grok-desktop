@@ -72,6 +72,7 @@ function emptyDeps() {
         hasMore: false,
         total: 0,
         limit: 100,
+        offset: 0,
       })),
     },
     eventsExport: {
@@ -110,6 +111,7 @@ describe("dispatchDomainMethod", () => {
       hasMore: true,
       total: 12,
       limit: 5,
+      offset: 0,
     };
     deps.sideData.auditList = vi.fn(() => page);
     const r = await dispatchDomainMethod(
@@ -122,6 +124,7 @@ describe("dispatchDomainMethod", () => {
       taskId: "task-1",
       decision: "deny",
       limit: 5,
+      offset: undefined,
     });
   });
 

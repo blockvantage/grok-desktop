@@ -196,19 +196,23 @@ export type ListAuditParams = {
   taskId?: string;
   decision?: AuditEntry["decision"];
   limit?: number;
+  /** Skip this many newest-first rows (default 0). */
+  offset?: number;
 };
 
-/** Honest audit list page — hasMore/total make truncation visible to Settings/task UI. */
+/** Honest audit list page — hasMore/total/offset make truncation and paging visible. */
 export type ListAuditResult = {
   entries: AuditEntry[];
   hasMore: boolean;
   total: number;
   limit: number;
+  offset: number;
 };
 
 /**
  * Newest-first audit page (optional taskId / decision filter; limit default 100, max 500).
- * Single client surface — use `audit.list` alias for namespace-style access.
+ * Use offset to load older rows past the first page. Single client surface —
+ * use `audit.list` alias for namespace-style access.
  */
 export async function listAudit(
   params: ListAuditParams = {},

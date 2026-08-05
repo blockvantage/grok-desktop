@@ -24,11 +24,13 @@ export type SideDataDeps = {
     taskId?: string | null;
     decision?: AuditEntry["decision"] | null;
     limit?: number;
+    offset?: number;
   }) => {
     entries: AuditEntry[];
     hasMore: boolean;
     total: number;
     limit: number;
+    offset: number;
   };
 };
 
@@ -104,17 +106,28 @@ export function dispatchSideDataMethod(
         typeof params.taskId === "string" && params.taskId
           ? params.taskId
           : undefined;
+      // Fail closed: empty/missing decision → no filter; unknown non-empty
+      // strings throw (do not silently return the full unfiltered trail).
       const decisionRaw =
         typeof params.decision === "string" ? params.decision : undefined;
-      const decision =
-        decisionRaw && AUDIT_DECISION_FILTER.has(decisionRaw)
-          ? (decisionRaw as AuditEntry["decision"])
-          : undefined;
+      let decision: AuditEntry["decision"] | undefined;
+      if (decisionRaw !== undefined && decisionRaw !== "") {
+        if (!AUDIT_DECISION_FILTER.has(decisionRaw)) {
+          throw new Error(`invalid audit decision filter: ${decisionRaw}`);
+        }
+        decision = decisionRaw as AuditEntry["decision"];
+      } else {
+        decision = undefined;
+      }
       const limit =
         typeof params.limit === "number" && Number.isFinite(params.limit)
           ? params.limit
           : undefined;
-      return deps.auditList({ taskId, decision, limit });
+      const offset =
+        typeof params.offset === "number" && Number.isFinite(params.offset)
+          ? params.offset
+          : undefined;
+      return deps.auditList({ taskId, decision, limit, offset });
     }
     default:
       throw new Error(`Unhandled side-data method: ${method}`);
