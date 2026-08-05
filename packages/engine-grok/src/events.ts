@@ -1,5 +1,8 @@
 import type { NormalizedEngineEvent } from "./types.js";
 
+const MAX_VISIBLE_TEXT_LENGTH = 96_000;
+const MAX_NESTED_ENVELOPE_DEPTH = 3;
+
 /**
  * Parse one line of Grok `--output-format streaming-json` (or plain text) into
  * normalized engine events. Tolerant of unknown shapes.
@@ -20,11 +23,15 @@ export function parseStreamingJsonLine(
     return normalizeJsonEvent(obj);
   } catch {
     // plain text line
+    if (!isSafeVisibleText(trimmed)) return [];
     return [{ type: "message", role: "assistant", text: trimmed, channel: "text" }];
   }
 }
 
-function normalizeJsonEvent(obj: Record<string, unknown>): NormalizedEngineEvent[] {
+function normalizeJsonEvent(
+  obj: Record<string, unknown>,
+  depth = 0,
+): NormalizedEngineEvent[] {
   const type = String(obj.type ?? obj.event ?? obj.kind ?? "").toLowerCase();
 
   const workerEvents = normalizeExplicitWorkerEvent(type, obj);
@@ -34,13 +41,13 @@ function normalizeJsonEvent(obj: Record<string, unknown>): NormalizedEngineEvent
   if (type === "thought") {
     const data = extractDataChunk(obj);
     if (!data) return [];
-    return [{ type: "message", role: "assistant", text: data, channel: "thought" }];
+    return normalizeVisibleText(data, "thought", "assistant", depth);
   }
 
   if (type === "text") {
     const data = extractDataChunk(obj);
     if (!data) return [];
-    return [{ type: "message", role: "assistant", text: data, channel: "text" }];
+    return normalizeVisibleText(data, "text", "assistant", depth);
   }
 
   // Terminal / session metadata. Never surface as user-visible messages.
@@ -98,21 +105,13 @@ function normalizeJsonEvent(obj: Record<string, unknown>): NormalizedEngineEvent
       obj.text ?? obj.content ?? obj.message ?? obj.delta ?? obj.data ?? "",
     );
     if (!text) return [];
-    // Never re-emit nested JSON dumps as user-visible prose
-    if (looksLikeStreamEnvelope(text)) {
-      try {
-        return normalizeJsonEvent(JSON.parse(text) as Record<string, unknown>);
-      } catch {
-        // fall through
-      }
-    }
     const role =
       obj.role === "user" || obj.role === "assistant"
         ? (obj.role as "user" | "assistant")
         : "assistant";
     const channel =
       type === "thought" || obj.channel === "thought" ? "thought" : "text";
-    return [{ type: "message", role, text, channel }];
+    return normalizeVisibleText(text, channel, role, depth);
   }
 
   if (
@@ -286,16 +285,44 @@ function extractDataChunk(obj: Record<string, unknown>): string {
   return "";
 }
 
-/** True when a string looks like a nested streaming-json envelope we stored by mistake. */
-function looksLikeStreamEnvelope(text: string): boolean {
-  const t = text.trim();
-  return (
-    (t.startsWith('{"type":"thought"') ||
-      t.startsWith('{"type":"text"') ||
-      t.startsWith('{"type": "thought"') ||
-      t.startsWith('{"type": "text"')) &&
-    t.includes("data")
-  );
+function normalizeVisibleText(
+  text: string,
+  channel: "text" | "thought",
+  role: "user" | "assistant",
+  depth: number,
+): NormalizedEngineEvent[] {
+  if (depth < MAX_NESTED_ENVELOPE_DEPTH) {
+    const nested = parseNestedProtocolEnvelope(text);
+    if (nested) return normalizeJsonEvent(nested, depth + 1);
+  }
+  if (!isSafeVisibleText(text)) return [];
+  return [{ type: "message", role, text, channel }];
+}
+
+function parseNestedProtocolEnvelope(
+  text: string,
+): Record<string, unknown> | null {
+  const value = text.trim();
+  if (!value.startsWith("{") || !value.endsWith("}")) return null;
+  try {
+    const parsed = JSON.parse(value) as Record<string, unknown>;
+    return parsed && typeof parsed === "object" && typeof parsed.type === "string"
+      ? parsed
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function isSafeVisibleText(text: string): boolean {
+  if (text.length > MAX_VISIBLE_TEXT_LENGTH) return false;
+  const value = text.trim();
+  if (/^data:[^;,]+;base64,/i.test(value)) return false;
+  // Provider image payloads sometimes arrive without a data-URL prefix.
+  if (value.length >= 4_096 && !/\s/.test(value) && /^[A-Za-z0-9+/]+=*$/.test(value)) {
+    return false;
+  }
+  return true;
 }
 
 type MappedTool =
@@ -342,10 +369,10 @@ function mapToolName(name: string): MappedTool {
   if (n.includes("read") || n.includes("view") || n.includes("cat")) {
     return "read_file";
   }
-  if (n.includes("delete") || n.includes("rm")) return "delete_file";
   if (n.includes("bash") || n.includes("shell") || n.includes("terminal")) {
     return "shell";
   }
+  if (/(^|_)(delete|remove|rm)(_|$)/.test(n)) return "delete_file";
   if (n.includes("web") || n.includes("search") || n.includes("fetch")) {
     return "network";
   }

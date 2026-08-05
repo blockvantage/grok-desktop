@@ -219,6 +219,35 @@ describe("parseStreamingJsonLine", () => {
     ]);
   });
 
+  it("does not render a nested tool_call_update image as assistant text", () => {
+    const nested = JSON.stringify({
+      type: "tool_call_update",
+      toolCallId: "image-1",
+      status: "completed",
+      content: [{ type: "image", data: "A".repeat(32_000) }],
+    });
+
+    expect(
+      parseStreamingJsonLine(JSON.stringify({ type: "text", data: nested })),
+    ).toEqual([]);
+  });
+
+  it("does not render oversized text or binary data URLs", () => {
+    expect(
+      parseStreamingJsonLine(
+        JSON.stringify({ type: "text", data: "x".repeat(96_001) }),
+      ),
+    ).toEqual([]);
+    expect(
+      parseStreamingJsonLine(
+        JSON.stringify({
+          type: "text",
+          data: `data:image/png;base64,${"A".repeat(4096)}`,
+        }),
+      ),
+    ).toEqual([]);
+  });
+
   it("ignores end / housekeeping events", () => {
     expect(
       parseStreamingJsonLine(
@@ -263,6 +292,17 @@ describe("parseStreamingJsonLine", () => {
       tool: "shell",
       command: "ls",
     });
+  });
+
+  it("maps run_terminal_command to shell", () => {
+    const [event] = parseStreamingJsonLine(
+      JSON.stringify({
+        type: "tool_call",
+        name: "run_terminal_command",
+        input: { command: "ls -la" },
+      }),
+    );
+    expect(event).toMatchObject({ type: "tool_request", tool: "shell" });
   });
 
   it("maps browser.open and browser_open to browser_open", () => {
