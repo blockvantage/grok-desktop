@@ -40,9 +40,38 @@ export type AuditListResult = {
 
 /**
  * Clamp list limit: default 100, min 1, max 500.
+ * Non-finite values (NaN, ±Infinity) fall back to the default.
  */
 export function clampAuditListLimit(limit?: number): number {
-  return Math.min(Math.max(1, Math.floor(limit ?? 100)), 500);
+  const raw =
+    typeof limit === "number" && Number.isFinite(limit) ? limit : 100;
+  return Math.min(Math.max(1, Math.floor(raw)), 500);
+}
+
+/**
+ * Build decision WHERE clause aligned with parseAuditDecision mapping.
+ *
+ * Stored corrupt/unknown decision strings are presented as "info" on read.
+ * Filtering decision:"info" must therefore include those rows (not only the
+ * literal column value "info"), or filter results disagree with AuditEntry.decision.
+ * Known non-info decisions match the column exactly.
+ */
+function pushDecisionFilter(
+  decision: AuditEntry["decision"],
+  clauses: string[],
+  binds: unknown[],
+): void {
+  if (decision === "info") {
+    // Present-as-info: literal "info" OR any value outside the known enum set.
+    const placeholders = AUDIT_DECISIONS.map(() => "?").join(", ");
+    clauses.push(
+      `(decision = ? OR decision NOT IN (${placeholders}) OR decision IS NULL OR decision = '')`,
+    );
+    binds.push("info", ...AUDIT_DECISIONS);
+    return;
+  }
+  clauses.push("decision = ?");
+  binds.push(decision);
 }
 
 /**
@@ -55,13 +84,13 @@ export function listAuditEntries(
   const limit = clampAuditListLimit(params.limit);
   const clauses: string[] = [];
   const binds: unknown[] = [];
+  // null / empty string / undefined all mean "omit filter" (not IS NULL).
   if (params.taskId) {
     clauses.push("task_id = ?");
     binds.push(params.taskId);
   }
   if (params.decision) {
-    clauses.push("decision = ?");
-    binds.push(params.decision);
+    pushDecisionFilter(params.decision, clauses, binds);
   }
   const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
 
@@ -70,11 +99,12 @@ export function listAuditEntries(
     .get(...binds) as { c: number } | undefined;
   const total = Number(totalRow?.c ?? 0);
 
+  // Secondary id DESC matches tasks.list: same-ms ISO timestamps stay stable.
   const rows = db
     .prepare(
       `SELECT id, task_id, action, detail_json, decision, created_at
        FROM audit_entries ${where}
-       ORDER BY created_at DESC LIMIT ?`,
+       ORDER BY created_at DESC, id DESC LIMIT ?`,
     )
     .all(...binds, limit) as Record<string, unknown>[];
 

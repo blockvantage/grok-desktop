@@ -339,6 +339,18 @@ describe("ipc schemas", () => {
         params: { taskId: "x".repeat(129) },
       }),
     ).toThrow();
+
+    // Contract: any finite int is accepted at parse; server clamps to [1, 500].
+    // Do not regress to .positive().max(500) here (events.page style).
+    for (const limit of [0, -1, 1, 500, 501, 9999]) {
+      const req = parseIpcRequest({
+        id: `al-lim-${limit}`,
+        method: "audit.list",
+        params: { limit },
+      });
+      expect(req.method).toBe("audit.list");
+      expect(req.params).toEqual({ limit });
+    }
   });
 
   it("parses workspace.prepareAsset", () => {
