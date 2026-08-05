@@ -26,6 +26,6 @@ export default defineConfig({
   retries: 0,
   reporter: [["list"]],
   use: {
-    trace: "off",
+    trace: "retain-on-failure",
   },
 });

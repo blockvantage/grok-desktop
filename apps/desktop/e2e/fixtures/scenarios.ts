@@ -15,7 +15,8 @@ export type ChatScenarioId =
   | "provider_failure_retry"
   | "missing_attachment"
   | "queue_capacity"
-  | "home_draft_restore";
+  | "home_draft_restore"
+  | "refined_chat_trace";
 
 export type ChatScenario = {
   id: ChatScenarioId;
@@ -82,7 +83,43 @@ export const CHAT_SCENARIOS: Record<ChatScenarioId, ChatScenario> = {
     id: "home_draft_restore",
     provider: { complete: true },
   },
+  refined_chat_trace: {
+    id: "refined_chat_trace",
+    provider: { complete: true },
+  },
 };
+
+/**
+ * Anonymized shape of a problematic production chat. The fixture intentionally
+ * combines provider envelopes, policy decisions, narration, a real answer,
+ * citations, and a Markdown link so the boundaries regress together.
+ */
+export const REFINED_CHAT_TRACE = {
+  nestedImageUpdate: JSON.stringify({
+    type: "text",
+    data: JSON.stringify({
+      type: "tool_call_update",
+      toolCallId: "image-call",
+      status: "completed",
+      content: [{ type: "image", data: "A".repeat(8_192) }],
+    }),
+  }),
+  safeInspection: JSON.stringify({
+    type: "tool_call",
+    id: "inspect-call",
+    name: "run_terminal_command",
+    input: { command: "git status --short" },
+  }),
+  destructiveCommand: "rm -rf ./generated-preview",
+  narration: "I’ll check the remaining files now.",
+  finalAnswer:
+    "The review is complete. Open the [security guide](https://www.electronjs.org/docs/latest/tutorial/security) for the source details.",
+  citation: {
+    url: "https://www.electronjs.org/docs/latest/tutorial/security",
+    title: "Electron security guide",
+    source: "web" as const,
+  },
+} as const;
 
 export function scenarioEnv(id: ChatScenarioId): Record<string, string> {
   return { ...(CHAT_SCENARIOS[id].env ?? {}) };
