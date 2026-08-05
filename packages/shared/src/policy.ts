@@ -1,4 +1,5 @@
 import { isPathInsideAnyRoot } from "./paths.js";
+import { classifyBalancedShellCommand } from "./safe-shell-command.js";
 import type { PolicySnapshot } from "./types.js";
 
 export type ToolName =
@@ -59,9 +60,24 @@ export function evaluateToolRequest(
     if (policy.approvalMode === "autopilot") {
       return { decision: "allow", reason: "Autopilot allows shell" };
     }
+    if (policy.approvalMode === "balanced" && req.command) {
+      const classification = classifyBalancedShellCommand(
+        req.command,
+        policy.workspaceRoots,
+      );
+      if (classification.safe) {
+        return {
+          decision: "allow",
+          reason:
+            classification.reason === "verification"
+              ? "Recognized project verification command"
+              : "Recognized read-only workspace command",
+        };
+      }
+    }
     return {
       decision: "needs_approval",
-      reason: "Shell requires approval in this mode",
+      reason: "Unclassified shell command requires approval",
     };
   }
 

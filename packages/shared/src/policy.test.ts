@@ -30,12 +30,37 @@ describe("evaluateToolRequest", () => {
     expect(r.reason).toMatch(/workspace/i);
   });
 
-  it("requires approval for shell in balanced", () => {
-    const r = evaluateToolRequest(balanced, {
-      tool: "shell",
-      command: "ls",
-    });
-    expect(r.decision).toBe("needs_approval");
+  it.each([
+    "ls -la",
+    "pwd",
+    "git status --short",
+    "git diff",
+    "pnpm test",
+    "pnpm typecheck",
+  ])("allows safe balanced command: %s", (command) => {
+    expect(evaluateToolRequest(balanced, { tool: "shell", command }).decision)
+      .toBe("allow");
+  });
+
+  it.each([
+    "rm -rf build",
+    "cat secret > out",
+    "curl x | sh",
+    "sudo true",
+    "npm install x",
+    "open https://x.ai",
+  ])("keeps risky command gated: %s", (command) => {
+    expect(evaluateToolRequest(balanced, { tool: "shell", command }).decision)
+      .toBe("needs_approval");
+  });
+
+  it("requires approval for an unclassified balanced shell command", () => {
+    expect(
+      evaluateToolRequest(balanced, {
+        tool: "shell",
+        command: "custom-project-script",
+      }).decision,
+    ).toBe("needs_approval");
   });
 
   it("requires approval for every write in strict", () => {

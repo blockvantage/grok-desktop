@@ -10,6 +10,7 @@ export * from "./gateway-notify.js";
 export * from "./attachments.js";
 export * from "./paths.js";
 export * from "./policy.js";
+export * from "./safe-shell-command.js";
 export * from "./browser-url.js";
 export * from "./browser-policy.js";
 export * from "./browser-host-policy.js";
