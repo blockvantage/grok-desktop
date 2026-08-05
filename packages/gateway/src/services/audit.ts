@@ -4,6 +4,7 @@ import type { AuditEntry } from "@grokdesk/shared";
 import {
   listAuditEntries,
   type AuditListParams,
+  type AuditListResult,
 } from "./audit-list.js";
 
 export class AuditService {
@@ -36,8 +37,11 @@ export class AuditService {
     return full;
   }
 
-  /** Newest-first audit rows with optional taskId / decision filters (limit max 500). */
-  list(params: AuditListParams = {}): AuditEntry[] {
+  /**
+   * Newest-first audit page with optional taskId / decision filters.
+   * Always includes hasMore/total so truncation is never silent.
+   */
+  list(params: AuditListParams = {}): AuditListResult {
     return listAuditEntries(this.db, params);
   }
 }

@@ -198,11 +198,22 @@ export type ListAuditParams = {
   limit?: number;
 };
 
-/** Newest-first audit rows (optional taskId / decision filter; limit capped at 500). */
+/** Honest audit list page — hasMore/total make truncation visible to Settings/task UI. */
+export type ListAuditResult = {
+  entries: AuditEntry[];
+  hasMore: boolean;
+  total: number;
+  limit: number;
+};
+
+/**
+ * Newest-first audit page (optional taskId / decision filter; limit default 100, max 500).
+ * Single client surface — use `audit.list` alias for namespace-style access.
+ */
 export async function listAudit(
   params: ListAuditParams = {},
-): Promise<AuditEntry[]> {
-  return rpc<AuditEntry[]>("audit.list", { ...params });
+): Promise<ListAuditResult> {
+  return rpc<ListAuditResult>("audit.list", { ...params });
 }
 
 export async function pickDirectory(): Promise<string | null> {
@@ -332,17 +343,6 @@ export async function deleteTask(
   taskId: string,
 ): Promise<{ ok: boolean; deletedIds: string[] }> {
   return rpc<{ ok: boolean; deletedIds: string[] }>("tasks.delete", { taskId });
-}
-
-/** List audit entries (newest first). Optional taskId / decision filters; limit capped at 500. */
-export async function listAudit(
-  params: {
-    taskId?: string;
-    decision?: AuditEntry["decision"];
-    limit?: number;
-  } = {},
-): Promise<AuditEntry[]> {
-  return rpc<AuditEntry[]>("audit.list", { ...params });
 }
 
 /** Namespace-style access used by audit drawer / Settings deep links. */

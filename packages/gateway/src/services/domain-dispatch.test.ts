@@ -67,7 +67,12 @@ function emptyDeps() {
       inboxList: vi.fn(() => []),
       inboxMarkRead: vi.fn(),
       inboxDismiss: vi.fn(),
-      auditList: vi.fn(() => []),
+      auditList: vi.fn(() => ({
+        entries: [],
+        hasMore: false,
+        total: 0,
+        limit: 100,
+      })),
     },
     eventsExport: {
       listEvents: vi.fn(() => []),
@@ -96,6 +101,28 @@ describe("dispatchDomainMethod", () => {
     const r = await dispatchDomainMethod("artifacts.list", {}, deps);
     expect(r.handled).toBe(true);
     expect(deps.artifactsList.list).toHaveBeenCalled();
+  });
+
+  it("handles audit.list via side-data with filters and honest page shape", async () => {
+    const deps = emptyDeps();
+    const page = {
+      entries: [{ id: "e1", decision: "deny" }],
+      hasMore: true,
+      total: 12,
+      limit: 5,
+    };
+    deps.sideData.auditList = vi.fn(() => page);
+    const r = await dispatchDomainMethod(
+      "audit.list",
+      { taskId: "task-1", decision: "deny", limit: 5 },
+      deps,
+    );
+    expect(r).toEqual({ handled: true, result: page });
+    expect(deps.sideData.auditList).toHaveBeenCalledWith({
+      taskId: "task-1",
+      decision: "deny",
+      limit: 5,
+    });
   });
 
   it("returns handled false for unknown", async () => {

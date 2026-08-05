@@ -4,7 +4,10 @@
  */
 
 import type { AuditEntry } from "@grokdesk/shared";
+import { AUDIT_DECISIONS } from "./audit-list.js";
 import { okResponse } from "./simple-ok.js";
+
+const AUDIT_DECISION_FILTER = new Set<string>(AUDIT_DECISIONS);
 
 export type SideDataDeps = {
   scheduleList: () => unknown;
@@ -21,7 +24,12 @@ export type SideDataDeps = {
     taskId?: string | null;
     decision?: AuditEntry["decision"] | null;
     limit?: number;
-  }) => unknown;
+  }) => {
+    entries: AuditEntry[];
+    hasMore: boolean;
+    total: number;
+    limit: number;
+  };
 };
 
 export const SIDE_DATA_METHODS = new Set([
@@ -96,9 +104,11 @@ export function dispatchSideDataMethod(
         typeof params.taskId === "string" && params.taskId
           ? params.taskId
           : undefined;
+      const decisionRaw =
+        typeof params.decision === "string" ? params.decision : undefined;
       const decision =
-        typeof params.decision === "string" && params.decision
-          ? (params.decision as AuditEntry["decision"])
+        decisionRaw && AUDIT_DECISION_FILTER.has(decisionRaw)
+          ? (decisionRaw as AuditEntry["decision"])
           : undefined;
       const limit =
         typeof params.limit === "number" && Number.isFinite(params.limit)

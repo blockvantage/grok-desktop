@@ -20,7 +20,12 @@ function baseDeps(
     inboxList: vi.fn(),
     inboxMarkRead: vi.fn(),
     inboxDismiss: vi.fn(),
-    auditList: vi.fn(() => []),
+    auditList: vi.fn(() => ({
+      entries: [],
+      hasMore: false,
+      total: 0,
+      limit: 100,
+    })),
     ...overrides,
   };
 }
@@ -111,7 +116,13 @@ describe("dispatchSideDataMethod", () => {
   });
 
   it("dispatches audit.list with filters", () => {
-    const auditList = vi.fn(() => [{ id: "a1" }]);
+    const page = {
+      entries: [{ id: "a1" }],
+      hasMore: false,
+      total: 1,
+      limit: 20,
+    };
+    const auditList = vi.fn(() => page);
     const deps = baseDeps({ auditList });
     expect(
       dispatchSideDataMethod(
@@ -119,11 +130,50 @@ describe("dispatchSideDataMethod", () => {
         { taskId: "t1", decision: "deny", limit: 20 },
         deps,
       ),
-    ).toEqual([{ id: "a1" }]);
+    ).toEqual(page);
     expect(auditList).toHaveBeenCalledWith({
       taskId: "t1",
       decision: "deny",
       limit: 20,
+    });
+  });
+
+  it("normalizes empty/missing audit.list params before deps.auditList", () => {
+    const auditList = vi.fn(() => ({
+      entries: [],
+      hasMore: false,
+      total: 0,
+      limit: 100,
+    }));
+    const deps = baseDeps({ auditList });
+
+    dispatchSideDataMethod("audit.list", {}, deps);
+    expect(auditList).toHaveBeenLastCalledWith({
+      taskId: undefined,
+      decision: undefined,
+      limit: undefined,
+    });
+
+    dispatchSideDataMethod(
+      "audit.list",
+      { taskId: "", decision: "", limit: Number.NaN },
+      deps,
+    );
+    expect(auditList).toHaveBeenLastCalledWith({
+      taskId: undefined,
+      decision: undefined,
+      limit: undefined,
+    });
+
+    dispatchSideDataMethod(
+      "audit.list",
+      { taskId: "t2", decision: "allow", limit: Number.POSITIVE_INFINITY },
+      deps,
+    );
+    expect(auditList).toHaveBeenLastCalledWith({
+      taskId: "t2",
+      decision: "allow",
+      limit: undefined,
     });
   });
 });

@@ -276,6 +276,71 @@ describe("ipc schemas", () => {
     ).toBe("remote.telepresence.listDisplays");
   });
 
+  it("parses audit.list with defaults and rejects invalid filters", () => {
+    const missingParams = parseIpcRequest({
+      id: "al0",
+      method: "audit.list",
+    });
+    expect(missingParams.method).toBe("audit.list");
+    expect(missingParams.params).toEqual({});
+
+    const emptyParams = parseIpcRequest({
+      id: "al1",
+      method: "audit.list",
+      params: {},
+    });
+    expect(emptyParams.method).toBe("audit.list");
+    expect(emptyParams.params).toEqual({});
+
+    const full = parseIpcRequest({
+      id: "al2",
+      method: "audit.list",
+      params: { taskId: "task-1", decision: "deny", limit: 50 },
+    });
+    expect(full.method).toBe("audit.list");
+    expect(full.params).toEqual({
+      taskId: "task-1",
+      decision: "deny",
+      limit: 50,
+    });
+
+    expect(() =>
+      parseIpcRequest({
+        id: "al3",
+        method: "audit.list",
+        params: { decision: "not-a-decision" },
+      }),
+    ).toThrow();
+    expect(() =>
+      parseIpcRequest({
+        id: "al4",
+        method: "audit.list",
+        params: { taskId: "" },
+      }),
+    ).toThrow();
+    expect(() =>
+      parseIpcRequest({
+        id: "al5",
+        method: "audit.list",
+        params: { limit: 1.5 },
+      }),
+    ).toThrow();
+    expect(() =>
+      parseIpcRequest({
+        id: "al6",
+        method: "audit.list",
+        params: { limit: "10" },
+      }),
+    ).toThrow();
+    expect(() =>
+      parseIpcRequest({
+        id: "al7",
+        method: "audit.list",
+        params: { taskId: "x".repeat(129) },
+      }),
+    ).toThrow();
+  });
+
   it("parses workspace.prepareAsset", () => {
     const req = parseIpcRequest({
       id: "10",
