@@ -108,7 +108,7 @@ class FakeAgentSession implements AgentSession {
     const signal = await sink({
       type: "message",
       role: "assistant",
-      text: `I’ll take on “${input.goal}”, turn it into a focused brief, and save it in your workspace for review.`,
+      text: `I’m drafting a focused brief for “${input.goal}”.`,
       channel: "text",
     });
     if (signal === "abort" || this.cancelled.has(key)) {
@@ -155,6 +155,24 @@ class FakeAgentSession implements AgentSession {
       title: "Launch brief",
       path: outputPath,
       kind: "report",
+    });
+    const sourceUrl =
+      "https://www.electronjs.org/docs/latest/tutorial/security";
+    await sink({
+      type: "citations",
+      items: [
+        {
+          url: sourceUrl,
+          title: "Electron security guide",
+          source: "web",
+        },
+      ],
+    });
+    await sink({
+      type: "message",
+      role: "assistant",
+      text: `Your launch brief is ready. Review the [Electron security guide](${sourceUrl}) for the linked source.`,
+      channel: "text",
     });
     await sink({
       type: "usage",

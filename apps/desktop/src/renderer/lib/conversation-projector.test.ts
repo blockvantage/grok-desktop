@@ -2,12 +2,19 @@ import type { Artifact, Task, TaskEvent } from "@grokdesk/shared";
 import { describe, expect, it } from "vitest";
 import type { DurableQueuedMessage } from "./message-queue-store";
 import {
+  isOperationalNarration,
   isProviderNoise,
   mergeRunState,
   mergeWorker,
   projectConversation,
   type ConversationProjectionInput,
 } from "./conversation-projector";
+
+it("treats drafting updates as live narration", () => {
+  expect(isOperationalNarration("I’m drafting a focused brief now.")).toBe(
+    true,
+  );
+});
 
 function task(
   id: string,
@@ -290,6 +297,34 @@ describe("projectConversation", () => {
     expect(snapshot.turns[0]?.liveSummary).toBe(
       "I’ll check the remaining files now.",
     );
+  });
+
+  it("keeps a substantive answer instead of replacing it with a terminal summary", () => {
+    const completed = task("answer-summary", "done", "2026-01-01T00:00:00.000Z");
+    const answer =
+      "Your launch brief is ready. Review the [linked source](https://example.com/source).";
+    const snapshot = projectConversation({
+      conversationId: completed.id,
+      title: null,
+      tasks: [completed],
+      eventsByTask: {
+        [completed.id]: [
+          event("answer", completed.id, 1, "message", {
+            role: "assistant",
+            channel: "text",
+            text: answer,
+          }),
+          event("summary", completed.id, 2, "message", {
+            role: "assistant",
+            channel: "text",
+            terminal: true,
+            text: "Launch brief ready — saved to your workspace.",
+          }),
+        ],
+      },
+    });
+
+    expect(snapshot.turns[0]?.answer?.text).toBe(answer);
   });
 
   it("quarantines stored protocol envelopes from the answer", () => {

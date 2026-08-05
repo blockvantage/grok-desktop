@@ -9,12 +9,13 @@ import { cn } from "@/lib/utils";
 export function PlanCard(props: {
   plan: TurnPlan;
   busy?: boolean;
+  onOpenUrl?: (url: string) => void;
   onApprove: () => void;
   onRequestChanges: () => void;
   onRunAnyway: () => void;
 }) {
   const t = useT();
-  const { plan, busy } = props;
+  const { plan, busy, onOpenUrl } = props;
   const approveRef = useRef<HTMLButtonElement>(null);
   const awaiting = plan.status === "awaiting_approval";
   const approved = plan.status === "approved";
@@ -70,7 +71,7 @@ export function PlanCard(props: {
         {statusLabel}
       </header>
       <div className="max-h-80 overflow-y-auto">
-        <Markdown className="max-w-none text-foreground">
+        <Markdown className="max-w-none text-foreground" onOpenUrl={onOpenUrl}>
           {plan.content}
         </Markdown>
       </div>
@@ -79,6 +80,7 @@ export function PlanCard(props: {
           className="mt-3 flex flex-wrap gap-2"
           role="group"
           aria-label={t("conversation.planApproveStart")}
+          data-approval-actions
         >
           <Button
             ref={approveRef}

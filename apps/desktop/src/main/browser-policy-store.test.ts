@@ -255,6 +255,30 @@ describe("BrowserPolicyStore", () => {
     }
   });
 
+  it("treats an explicit renderer click as strict-mode approval for a safe web link", async () => {
+    const store = new BrowserPolicyStore();
+    store.configure("t1", {
+      approvalMode: "strict",
+      workspaceRoots: [],
+      allowNetworkTools: true,
+      allowShell: false,
+    });
+    let approvalRequested = false;
+    store.setApprovalHandler(() => {
+      approvalRequested = true;
+    });
+
+    await expect(
+      store.authorize(
+        "t1",
+        "browser_open",
+        { url: "https://example.com/source" },
+        { source: "renderer_user" },
+      ),
+    ).resolves.toEqual({ ok: true });
+    expect(approvalRequested).toBe(false);
+  });
+
   it("requires strict-mode approval for an agent or harvest local HTML open", async () => {
     const root = mkdtempSync(path.join(tmpdir(), "grok-browser-agent-open-"));
     try {

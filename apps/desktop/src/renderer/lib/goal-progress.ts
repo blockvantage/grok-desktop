@@ -42,6 +42,8 @@ const STALE_STATUS = [
 export function projectGoalProgress(input: {
   events: readonly GoalEventLike[];
   taskGoal?: string | null;
+  /** Completed work uses the final answer and status badge, never live copy. */
+  terminal?: boolean;
   /** When true, show static task goal even without events (headless ok). */
   allowTaskGoalFallback?: boolean;
   /**
@@ -50,6 +52,7 @@ export function projectGoalProgress(input: {
    */
   softenSavedClaims?: boolean;
 }): GoalProgressView | null {
+  if (input.terminal) return null;
   let objective: string | null = null;
   let status: string | null = null;
   let sawLiveWork = false;

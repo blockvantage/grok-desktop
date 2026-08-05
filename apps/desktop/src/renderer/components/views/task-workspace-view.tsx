@@ -528,6 +528,7 @@ export function TaskWorkspaceView(props: {
           payload: e.payload,
         })),
         taskGoal: task.goal,
+        terminal: isTerminal,
         allowTaskGoalFallback: isLive || !isTerminal,
         // Terminal tasks: do not keep present-tense "Saved … under path" claims
         // when local assets may have been cleaned up.
@@ -1547,18 +1548,25 @@ export function TaskWorkspaceView(props: {
   }
 
   async function openUrlInAgentBrowser(url: string) {
+    // The user's click should respond immediately. Navigation can take time on
+    // a cold browser process or slow network, so reveal the pane first and let
+    // its own loading/error state tell the truth while the host request settles.
+    setBrowserUi((state) => reduceBrowserUi(state, { type: "user_open" }));
     try {
       const res = await rpc<{ ok?: boolean; output?: string }>(
         "browser.openUrl",
         { taskId: task.id, url },
       );
-      if (res?.ok) {
-        setBrowserUi((state) => reduceBrowserUi(state, { type: "user_open" }));
-        return;
-      }
+      if (res?.ok) return;
       toast({
         description: res?.output || t("workspace.openInBrowserFailed"),
         variant: "destructive",
+        action: {
+          label: t("turn.retry"),
+          onClick: () => {
+            void openUrlInAgentBrowser(url);
+          },
+        },
       });
     } catch (error) {
       toast({
@@ -1567,6 +1575,12 @@ export function TaskWorkspaceView(props: {
             ? error.message
             : t("workspace.openInBrowserFailed"),
         variant: "destructive",
+        action: {
+          label: t("turn.retry"),
+          onClick: () => {
+            void openUrlInAgentBrowser(url);
+          },
+        },
       });
     }
   }

@@ -40,6 +40,25 @@ describe("projectGoalProgress (C1)", () => {
     ).toBeNull();
   });
 
+  it("does not label a completed answer as work still in progress", () => {
+    expect(
+      projectGoalProgress({
+        terminal: true,
+        events: [
+          {
+            kind: "message",
+            payload: {
+              channel: "text",
+              terminal: true,
+              text: "Launch brief ready — saved to your workspace.",
+            },
+          },
+        ],
+        taskGoal: "Prepare a launch brief",
+      }),
+    ).toBeNull();
+  });
+
   it("drops sticky Session ready setup once real work text arrives", () => {
     const v = projectGoalProgress({
       events: [

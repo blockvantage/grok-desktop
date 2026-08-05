@@ -150,7 +150,7 @@ export function isProviderNoise(text: string): boolean {
 export function isOperationalNarration(text: string): boolean {
   const normalized = text.trim();
   if (!normalized || normalized.length > 280) return false;
-  return /^(?:let me\b|i(?:'|’)?ll\b|i will\b|i(?:'|’)?m (?:going to|checking|looking|opening|reading|researching|running|working)\b|i am (?:going to|checking|looking|opening|reading|researching|running|working)\b|(?:checking|looking|opening|reading|researching|running|working)\b)/i.test(
+  return /^(?:let me\b|i(?:'|’)?ll\b|i will\b|i(?:'|’)?m (?:going to|analyzing|checking|creating|drafting|editing|fixing|gathering|investigating|looking|opening|preparing|reading|researching|reviewing|running|updating|working)\b|i am (?:going to|analyzing|checking|creating|drafting|editing|fixing|gathering|investigating|looking|opening|preparing|reading|researching|reviewing|running|updating|working)\b|(?:analyzing|checking|creating|drafting|editing|fixing|gathering|investigating|looking|opening|preparing|reading|researching|reviewing|running|updating|working)\b)/i.test(
     normalized,
   );
 }
@@ -469,6 +469,7 @@ function projectTurn(
   ];
   const workers: Record<string, WorkerView> = {};
   let answer: AnswerView | null = null;
+  let terminalAnswer: AnswerView | null = null;
   let liveSummary: string | null = null;
   const pendingApprovals = new Map<string, ApprovalView>();
   let primaryError: ErrorView | null = null;
@@ -507,11 +508,14 @@ function projectTurn(
         !isProviderNoise(text) &&
         isSafeAssistantDisplayText(text)
       ) {
-        if (
-          event.payload.terminal !== true &&
-          isOperationalNarration(text)
-        ) {
+        if (event.payload.terminal !== true && isOperationalNarration(text)) {
           liveSummary = text;
+        } else if (event.payload.terminal === true) {
+          terminalAnswer = {
+            eventId: event.id,
+            text,
+            createdAt: event.createdAt,
+          };
         } else {
           answer = { eventId: event.id, text, createdAt: event.createdAt };
         }
@@ -678,7 +682,7 @@ function projectTurn(
       completedAt: task.completedAt,
     },
     workers: sortedWorkers,
-    answer,
+    answer: answer ?? terminalAnswer,
     liveSummary: TERMINAL_RUN_STATE_RANK[state] ? null : liveSummary,
     work: foldRecoveredWorkEntries(
       coalesceBrowserToolActivity(events)

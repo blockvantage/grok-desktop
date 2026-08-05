@@ -73,6 +73,11 @@ type RunIntent = {
 
 /** Keep capability instructions relevant so ordinary chat stays conversational. */
 function classifyRunIntent(goal: string): RunIntent {
+  const explanatoryQuestion =
+    /^\s*(?:how|why|what|when|where|who)\b/i.test(goal) ||
+    /^\s*(?:can|could|would)\s+you\s+(?:explain|describe|tell|walk\s+me\s+through|show\s+me\s+how)\b/i.test(
+      goal,
+    );
   const media =
     /\b(?:image|video|illustration|poster|logo|graphic|visual|photo|animation)\b/i.test(
       goal,
@@ -92,6 +97,7 @@ function classifyRunIntent(goal: string): RunIntent {
       goal,
     );
   const codeChange =
+    !explanatoryQuestion &&
     /\b(?:build|implement|refactor|fix|update)\b/i.test(goal);
   const artifactAction =
     /\b(?:create|write|edit|generate|design|make|produce|export|save)\b/i.test(

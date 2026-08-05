@@ -5,6 +5,7 @@ import { runProviderConformance } from "./conformance.js";
 import { ProviderRegistry } from "./registry.js";
 import { assertPolicyCompatible } from "./provider.js";
 import type { ProviderCapabilities, EffectivePolicy } from "./types.js";
+import type { RuntimeEvent } from "./events.js";
 
 describe("agent-runtime conformance (fake provider)", () => {
   it("fake provider passes the full conformance suite", async () => {
@@ -27,7 +28,7 @@ describe("agent-runtime conformance (fake provider)", () => {
         capabilities: [{ id: "shell", decision: "ask" }],
       },
     });
-    const events: Array<{ type: string; path?: string; meta?: Record<string, unknown> }> = [];
+    const events: RuntimeEvent[] = [];
     await session.runTurn({ goal: "Prepare the launch brief" }, async (event) => {
       events.push(event);
       return "continue";
@@ -39,6 +40,14 @@ describe("agent-runtime conformance (fake provider)", () => {
     });
     expect(events.find((event) => event.type === "artifact")).toMatchObject({
       path: path.join("/demo/workspace", "grokdesk-demo-report.md"),
+    });
+    expect(
+      events.slice().reverse().find((event) => event.type === "message"),
+    ).toMatchObject({
+      text: expect.stringContaining("[Electron security guide](https://"),
+    });
+    expect(events.find((event) => event.type === "citations")).toMatchObject({
+      items: [expect.objectContaining({ url: expect.stringMatching(/^https:\/\//) })],
     });
     expect(JSON.stringify(events)).not.toMatch(/fake (?:turn|done|wrote)/i);
   });

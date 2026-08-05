@@ -151,6 +151,8 @@ export function ConversationTurn({
   const showLiveWork =
     LIVE_STATES.has(turn.state) &&
     !(turn.state === "waiting_approval" && turn.approval);
+  const planOwnsApproval =
+    Boolean(turn.approval) && turn.plan?.status === "awaiting_approval";
   const foldedArtifacts = useMemo(
     () =>
       foldTurnArtifacts(
@@ -432,7 +434,7 @@ export function ConversationTurn({
         />
       ) : null}
 
-      {turn.approval ? (
+      {turn.approval && !planOwnsApproval ? (
         <div
           className={cn(
             "rounded-lg border px-3 py-2 text-sm transition-colors duration-200",
@@ -551,6 +553,7 @@ export function ConversationTurn({
         <PlanCard
           plan={turn.plan}
           busy={Boolean(approvalBusy)}
+          onOpenUrl={onOpenUrl}
           onApprove={() => {
             if (!approvalTarget || !onApprove) return;
             void runApprovalAction({

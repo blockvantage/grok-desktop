@@ -9,6 +9,8 @@ describe("isUsefulDoneSummary", () => {
     expect(isUsefulDoneSummary("Done.")).toBe(false);
     expect(isUsefulDoneSummary("EndTurn")).toBe(false);
     expect(isUsefulDoneSummary("Grok Build finished (code 0)")).toBe(false);
+    expect(isUsefulDoneSummary("ACP turn complete")).toBe(false);
+    expect(isUsefulDoneSummary("ACP turn complete (tool allowed)")).toBe(false);
   });
 
   it("accepts real summaries", () => {

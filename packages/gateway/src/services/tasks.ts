@@ -517,7 +517,7 @@ export class TaskService {
       const channel = String(payload.channel ?? "text");
       const role = String(payload.role ?? "assistant");
       const chunk = String(payload.text ?? "");
-      if (chunk) {
+      if (chunk && payload.terminal !== true) {
         const last = this.db
           .prepare(
             `SELECT id, seq, kind, payload_json, created_at FROM task_events
@@ -540,7 +540,11 @@ export class TaskService {
             >;
             const prevChannel = String(prev.channel ?? "text");
             const prevRole = String(prev.role ?? "assistant");
-            if (prevChannel === channel && prevRole === role) {
+            if (
+              prevChannel === channel &&
+              prevRole === role &&
+              prev.terminal !== true
+            ) {
               // Cap coalesced message body so a runaway stream cannot grow a
               // single SQLite payload without bound (still streamable via seq).
               const MAX_MSG = 500_000;

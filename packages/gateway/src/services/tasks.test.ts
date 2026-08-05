@@ -270,6 +270,33 @@ describe("TaskService", () => {
     expect(tasks.listEvents(t.id, 0)).toHaveLength(3);
   });
 
+  it("keeps a terminal summary separate from the preceding assistant answer", () => {
+    const root = path.join(dir, "ws");
+    fs.mkdirSync(root);
+    const t = tasks.create({ goal: "x", workspaceRoots: [root] });
+    tasks.appendEvent(t.id, "message", {
+      role: "assistant",
+      channel: "text",
+      text: "The complete linked answer.",
+    });
+    tasks.appendEvent(t.id, "message", {
+      role: "assistant",
+      channel: "text",
+      text: "Short completion summary.",
+      terminal: true,
+    });
+
+    const messages = tasks
+      .listEvents(t.id, 0)
+      .filter((entry) => entry.kind === "message");
+    expect(messages).toHaveLength(2);
+    expect(messages.map((entry) => entry.payload.text)).toEqual([
+      "The complete linked answer.",
+      "Short completion summary.",
+    ]);
+    expect(messages[1]?.payload.terminal).toBe(true);
+  });
+
   it("setStatus updates task and emits event", () => {
     const root = path.join(dir, "ws");
     fs.mkdirSync(root);

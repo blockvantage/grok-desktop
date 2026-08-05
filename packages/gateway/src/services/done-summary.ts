@@ -4,7 +4,7 @@
  */
 
 const LIFECYCLE_SUMMARY =
-  /^(Grok Build completed|Grok Build finished|Completed|EndTurn|Done\.?)$/i;
+  /^(Grok Build completed|Grok Build finished|Completed|EndTurn|Done\.?|ACP turn complete(?: \(tool allowed\))?)$/i;
 const LIFECYCLE_CODE = /^Grok Build finished \(code /i;
 
 /**

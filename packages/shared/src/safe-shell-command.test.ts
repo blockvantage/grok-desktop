@@ -30,6 +30,16 @@ describe("classifyBalancedShellCommand", () => {
     "git checkout main",
     "pnpm publish",
     "echo $HOME",
+    "pnpm --dir=/tmp/outside test",
+    "pnpm --dir /tmp/outside test",
+    "npm --prefix=/tmp/outside test",
+    "npm --prefix /tmp/outside test",
+    "yarn --cwd=/tmp/outside test",
+    "yarn --cwd /tmp/outside test",
+    "bun --cwd=/tmp/outside test",
+    "bun --cwd /tmp/outside test",
+    "pnpm -C=/tmp/outside test",
+    "pnpm -C /tmp/outside test",
   ])("keeps risky or unclassified work gated: %s", (command) => {
     expect(classifyBalancedShellCommand(command, roots).safe).toBe(false);
   });

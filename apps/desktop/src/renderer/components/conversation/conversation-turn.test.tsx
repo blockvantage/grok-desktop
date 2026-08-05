@@ -332,6 +332,35 @@ describe("ConversationTurn", () => {
     expect(html).not.toContain("data-reject-action");
   });
 
+  it("renders plan review as the single approval surface", () => {
+    const planTurn = turn("waiting_approval");
+    planTurn.approval = {
+      approvalId: "plan-approval",
+      eventId: "plan-approval-event",
+      summary: "Review the plan",
+      createdAt: "2026-07-15T12:00:05.000Z",
+      payload: { kind: "plan_review" },
+    };
+    planTurn.plan = {
+      content: "# Plan\n\nRead the [source](https://example.com/source).",
+      status: "awaiting_approval",
+    };
+
+    const html = renderToStaticMarkup(
+      <ConversationTurn
+        turn={planTurn}
+        onApprove={() => {}}
+        onReject={() => {}}
+        onOpenUrl={() => {}}
+      />,
+    );
+
+    expect(count(html, "data-approval-actions")).toBe(1);
+    expect(count(html, "data-approve-action")).toBe(1);
+    expect(html).toContain('data-plan-status="awaiting_approval"');
+    expect(html).not.toContain("Review the plan");
+  });
+
   it("keeps a failed turn recovery beside its preserved answer", () => {
     const failed = turn("failed");
     failed.answer = {

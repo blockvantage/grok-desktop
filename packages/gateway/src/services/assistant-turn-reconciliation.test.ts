@@ -64,6 +64,51 @@ describe("assistant turn reconciliation", () => {
     ).toBe("The page is ready.");
   });
 
+  it("keeps the real ACP answer instead of its terminal lifecycle marker", () => {
+    expect(
+      selectSafeAssistantFinal([
+        event(1, "message", {
+          role: "assistant",
+          channel: "text",
+          text: "The detailed review found two issues and both are fixed.",
+        }),
+        event(2, "message", {
+          role: "assistant",
+          channel: "text",
+          terminal: true,
+          text: "ACP turn complete",
+        }),
+      ]),
+    ).toBe("The detailed review found two issues and both are fixed.");
+  });
+
+  it("prefers a substantive streamed answer over a shorter terminal summary", () => {
+    const linkedAnswer =
+      "Your launch brief is ready. Review the [Electron security guide](https://www.electronjs.org/docs/latest/tutorial/security) for the linked source.";
+
+    expect(
+      selectSafeAssistantFinal([
+        event(1, "message", {
+          role: "assistant",
+          channel: "text",
+          text: "I’m drafting a focused brief now.",
+        }),
+        event(2, "tool_request", { id: "tool-1", tool: "write_file" }),
+        event(3, "message", {
+          role: "assistant",
+          channel: "text",
+          text: linkedAnswer,
+        }),
+        event(4, "message", {
+          role: "assistant",
+          channel: "text",
+          terminal: true,
+          text: "Launch brief ready — saved to your workspace.",
+        }),
+      ]),
+    ).toBe(linkedAnswer);
+  });
+
   it("appends a complete assistant turn with task metadata", () => {
     const appendTurn = vi.fn((input) => input);
     const result = reconcileAssistantTurn({

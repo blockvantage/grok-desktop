@@ -91,6 +91,25 @@ describe("buildRunPrompt intent-aware guidance", () => {
     expect(prompt).not.toContain("always write");
   });
 
+  it.each([
+    "How should I fix this?",
+    "Can you explain how React updates state?",
+    "What should I update in this configuration?",
+  ])("keeps explanatory code questions conversational: %s", (goal) => {
+    const prompt = buildPromptForTest({ ...baseTask, goal });
+
+    expect(prompt).not.toContain("Create the requested deliverables");
+  });
+
+  it("still recognizes an explicit code-change request", () => {
+    const prompt = buildPromptForTest({
+      ...baseTask,
+      goal: "Fix the broken state update in src/App.tsx",
+    });
+
+    expect(prompt).toContain("Create the requested deliverables");
+  });
+
   it("adds focused file and preview guidance for a website deliverable", () => {
     const prompt = buildPromptForTest({
       ...baseTask,

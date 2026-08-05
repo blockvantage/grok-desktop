@@ -46,8 +46,16 @@ export function classifyBalancedShellCommand(
     return unsafe("parent path traversal is not auto-approved");
   }
   for (const token of tokens) {
-    if (!isAbsolutePathToken(token)) continue;
-    if (workspaceRoots.length === 0 || !isPathInsideAnyRoot(token, [...workspaceRoots])) {
+    const optionValue = valueAfterEquals(token);
+    const pathCandidate = optionValue ?? token;
+    if (hasParentTraversal(pathCandidate)) {
+      return unsafe("parent path traversal is not auto-approved");
+    }
+    if (!isAbsolutePathToken(pathCandidate)) continue;
+    if (
+      workspaceRoots.length === 0 ||
+      !isPathInsideAnyRoot(pathCandidate, [...workspaceRoots])
+    ) {
       return unsafe("absolute path is outside the authorized workspace");
     }
   }
@@ -122,6 +130,11 @@ function isAbsolutePathToken(token: string): boolean {
   return token.startsWith("/") || /^[A-Za-z]:[\\/]/.test(token);
 }
 
+function valueAfterEquals(token: string): string | null {
+  const index = token.indexOf("=");
+  return index >= 0 ? token.slice(index + 1) : null;
+}
+
 function isSafeReadCommand(executable: string, args: string[]): boolean {
   if (executable === "rg" && args.some((arg) => arg === "--pre" || arg.startsWith("--pre="))) {
     return false;
@@ -152,10 +165,19 @@ function isSafeGitCommand(args: string[]): boolean {
 }
 
 function isSafePackageVerification(args: string[]): boolean {
+  if (
+    args.some((arg) =>
+      ["--cwd", "--dir", "--directory", "--prefix", "-C"].some(
+        (flag) => arg === flag || arg.startsWith(`${flag}=`),
+      ),
+    )
+  ) {
+    return false;
+  }
   let index = 0;
   while (index < args.length && args[index]?.startsWith("-")) {
     const flag = args[index]!;
-    if (["--filter", "--dir", "--prefix", "-C", "-F"].includes(flag)) index += 2;
+    if (["--filter", "-F"].includes(flag)) index += 2;
     else index += 1;
   }
   if (args[index] === "run") index += 1;

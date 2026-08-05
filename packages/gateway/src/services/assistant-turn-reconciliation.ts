@@ -1,7 +1,7 @@
 import type { TaskEvent } from "@grokdesk/shared";
 
 const MAX_ASSISTANT_TURN_LENGTH = 96_000;
-const NOISE_ONLY = /^(?:done|completed|complete|working|finished|ok|success)[.!\s]*$/i;
+const NOISE_ONLY = /^(?:(?:done|completed|complete|working|finished|ok|success)[.!\s]*|ACP turn complete(?: \(tool allowed\))?)$/i;
 
 type ReconciliationTask = {
   id: string;
@@ -60,7 +60,8 @@ export function selectSafeAssistantFinal(events: readonly TaskEvent[]): string |
   }
   flush();
 
-  return terminal.at(-1) ?? groups.at(-1) ?? null;
+  const substantive = groups.filter((text) => !isOperationalNarration(text));
+  return substantive.at(-1) ?? terminal.at(-1) ?? groups.at(-1) ?? null;
 }
 
 export function reconcileAssistantTurn<T>(input: {
@@ -109,4 +110,12 @@ function isSafeAssistantText(text: string): boolean {
     }
   }
   return true;
+}
+
+function isOperationalNarration(text: string): boolean {
+  const value = text.trim();
+  if (!value || value.length > 280) return false;
+  return /^(?:let me\b|i(?:'|’)?ll\b|i will\b|i(?:'|’)?m (?:going to|analyzing|checking|creating|drafting|editing|fixing|gathering|investigating|looking|opening|preparing|reading|researching|reviewing|running|updating|working)\b|i am (?:going to|analyzing|checking|creating|drafting|editing|fixing|gathering|investigating|looking|opening|preparing|reading|researching|reviewing|running|updating|working)\b|(?:analyzing|checking|creating|drafting|editing|fixing|gathering|investigating|looking|opening|preparing|reading|researching|reviewing|running|updating|working)\b)/i.test(
+    value,
+  );
 }

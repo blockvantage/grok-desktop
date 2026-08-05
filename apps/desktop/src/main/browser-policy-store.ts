@@ -7,7 +7,6 @@ import {
   decideBrowserHostTool,
   noteBrowserOpenAllowed,
   browserToolRequestFromArgs,
-  isLocalHtmlDeliverable,
   type BrowserHostTaskState,
   type BrowserAuthorizeResult,
   type PolicySnapshot,
@@ -30,7 +29,7 @@ type PendingApproval = {
 };
 
 export type BrowserAuthorizationContext = {
-  /** Only the gateway's explicit browser.openHtml renderer RPC may set this. */
+  /** Only an explicit link/file action from the trusted renderer may set this. */
   source: "renderer_user" | "agent";
 };
 
@@ -208,15 +207,14 @@ export class BrowserPolicyStore {
       return { ok: false, output: decision.reason };
     }
 
-    // The click itself is the user's strict-mode approval for this exact local
-    // file. Agent/MCP/harvest opens still use the normal approval surface.
+    // The click itself is the user's strict-mode approval for this exact safe
+    // link. Agent/MCP/harvest opens still use the normal approval surface.
     // This exception is evaluated only after the task's unchanged policy has
     // allowed browser capability, so it cannot elevate a no-network task.
     if (
       context.source === "renderer_user" &&
       req.tool === "browser_open" &&
-      req.url &&
-      isLocalHtmlDeliverable(req.url)
+      req.url
     ) {
       noteBrowserOpenAllowed(state, req.url);
       return { ok: true, canonicalUrl: canonical.canonicalUrl };
