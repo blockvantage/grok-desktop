@@ -474,19 +474,6 @@ export const IpcRequestSchema = z.discriminatedUnion("method", [
   }),
   z.object({
     id: z.string().min(1).max(128),
-    method: z.literal("audit.list"),
-    params: z
-      .object({
-        taskId: z.string().min(1).max(128).optional(),
-        decision: z
-          .enum(["allow", "deny", "approve", "reject", "info"])
-          .optional(),
-        limit: z.number().int().positive().max(500).optional(),
-      })
-      .default({}),
-  }),
-  z.object({
-    id: z.string().min(1).max(128),
     method: z.literal("inbox.markRead"),
     params: z.object({ id: z.string().min(1).max(128) }),
   }),
@@ -504,6 +491,7 @@ export const IpcRequestSchema = z.discriminatedUnion("method", [
         decision: z
           .enum(["allow", "deny", "approve", "reject", "info"])
           .optional(),
+        // Server clamps to [1, 500]; accept any finite int here.
         limit: z.number().int().optional(),
       })
       .default({}),
