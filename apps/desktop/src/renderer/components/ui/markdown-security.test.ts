@@ -13,6 +13,8 @@ describe("markdown security guards (source)", () => {
     expect(markdownSrc).toMatch(/sanitizeMarkdownHref/);
     expect(markdownSrc).toMatch(/p !== "http:" && p !== "https:"/);
     expect(markdownSrc).toMatch(/u\.username \|\| u\.password/);
+    expect(markdownSrc).toMatch(/onOpenUrl/);
+    expect(markdownSrc).toMatch(/event\.preventDefault\(\)/);
   });
 
   it("blocks remote http(s) images by default", () => {

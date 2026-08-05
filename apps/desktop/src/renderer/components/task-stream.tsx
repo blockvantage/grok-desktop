@@ -159,6 +159,8 @@ export const TaskStream = forwardRef<
     onOpenFile?: (path: string) => void;
     /** Focus the deliverables rail (digest "Open deliverables"). */
     onOpenDeliverables?: () => void;
+    /** Open assistant/citation links in the task-partitioned Desk browser. */
+    onOpenUrl?: (url: string) => void;
     /**
      * Run start ISO for PROG-1 elapsed. Prefer task.createdAt (attempt start is
      * not on the Task payload — see taskElapsedStartIso).
@@ -206,6 +208,7 @@ export const TaskStream = forwardRef<
     baseDir = null,
     onOpenFile,
     onOpenDeliverables,
+    onOpenUrl,
     elapsedStartIso = null,
     onAnswerQuestion,
     followUpBusy = false,
@@ -558,6 +561,7 @@ export const TaskStream = forwardRef<
                   turn={turn}
                   onOpenFile={onOpenFile}
                   onOpenDeliverables={onOpenDeliverables}
+                  onOpenUrl={onOpenUrl}
                   baseDir={baseDir}
                   onEdit={
                     onEditConversationTurn && turn.taskId === editableTaskId
@@ -622,6 +626,7 @@ export const TaskStream = forwardRef<
         baseDir={baseDir}
         onOpenFile={onOpenFile}
         onOpenDeliverables={onOpenDeliverables}
+        onOpenUrl={onOpenUrl}
         showWorking={showWorking}
         activity={activity}
         elapsedSeconds={elapsedSeconds}
@@ -673,6 +678,7 @@ const StreamItemList = forwardRef<
     baseDir: string | null;
     onOpenFile?: (path: string) => void;
     onOpenDeliverables?: () => void;
+    onOpenUrl?: (url: string) => void;
     showWorking: boolean;
     activity: Activity;
     elapsedSeconds: number;
@@ -689,6 +695,7 @@ const StreamItemList = forwardRef<
     baseDir,
     onOpenFile,
     onOpenDeliverables,
+    onOpenUrl,
     showWorking,
     activity,
     elapsedSeconds,
@@ -807,6 +814,7 @@ const StreamItemList = forwardRef<
           }
           baseDir={baseDir}
           onOpenFile={onOpenFile}
+          onOpenUrl={onOpenUrl}
           animate={shouldAnimate(it)}
         />
       );
@@ -1027,12 +1035,14 @@ function StreamTurn({
   streaming,
   baseDir,
   onOpenFile,
+  onOpenUrl,
   animate = false,
 }: {
   block: StreamBlock;
   streaming: boolean;
   baseDir: string | null;
   onOpenFile?: (path: string) => void;
+  onOpenUrl?: (url: string) => void;
   animate?: boolean;
 }) {
   const t = useT();
@@ -1054,7 +1064,7 @@ function StreamTurn({
               )}
             </div>
             <div className={cn(streaming && "stream-caret")}>
-              <Markdown baseDir={baseDir}>{block.text}</Markdown>
+              <Markdown baseDir={baseDir} onOpenUrl={onOpenUrl}>{block.text}</Markdown>
             </div>
           </div>
         </div>
@@ -1064,7 +1074,7 @@ function StreamTurn({
       return (
         <div className={cn(animate && "chat-msg-in", "flex justify-end gap-3")}>
           <div className="min-w-0 max-w-[70%] rounded-2xl rounded-br-md border border-primary/20 bg-primary/[0.12] px-3.5 py-2.5">
-            <Markdown className="text-base" baseDir={baseDir}>
+            <Markdown className="text-base" baseDir={baseDir} onOpenUrl={onOpenUrl}>
               {block.text}
             </Markdown>
           </div>
@@ -1089,7 +1099,7 @@ function StreamTurn({
             </CollapsibleTrigger>
             <CollapsibleContent>
               <div className="mt-1 border-l-2 border-white/[0.07] pl-3 text-sm leading-relaxed text-muted-foreground/90">
-                <Markdown baseDir={baseDir}>{block.text}</Markdown>
+                <Markdown baseDir={baseDir} onOpenUrl={onOpenUrl}>{block.text}</Markdown>
               </div>
             </CollapsibleContent>
           </Collapsible>

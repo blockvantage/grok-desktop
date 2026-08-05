@@ -46,10 +46,12 @@ export function Markdown({
   children,
   className,
   baseDir = null,
+  onOpenUrl,
 }: {
   children: string;
   className?: string;
   baseDir?: string | null;
+  onOpenUrl?: (url: string) => void;
 }) {
   return (
     <BaseDirContext.Provider value={baseDir}>
@@ -76,7 +78,17 @@ export function Markdown({
                 return <a href={safe}>{children}</a>;
               }
               return (
-                <a href={safe} target="_blank" rel="noreferrer noopener">
+                <a
+                  href={safe}
+                  {...(onOpenUrl
+                    ? {
+                        onClick: (event) => {
+                          event.preventDefault();
+                          onOpenUrl(safe);
+                        },
+                      }
+                    : { target: "_blank", rel: "noreferrer noopener" })}
+                >
                   {children}
                 </a>
               );

@@ -1425,6 +1425,34 @@ export class TaskRunner {
     );
   }
 
+  /** Open a safe web link in the browser partition owned by this chat. */
+  async openUrlInAgentBrowser(
+    taskId: string,
+    rawUrl: string,
+  ): Promise<{ ok: boolean; output: string }> {
+    const task = this.tasks.get(taskId);
+    if (!task) return { ok: false, output: "task not found" };
+    let url: URL;
+    try {
+      url = new URL(rawUrl);
+    } catch {
+      return { ok: false, output: "invalid URL" };
+    }
+    if (
+      (url.protocol !== "http:" && url.protocol !== "https:") ||
+      url.username ||
+      url.password
+    ) {
+      return { ok: false, output: "only credential-free HTTP(S) links are allowed" };
+    }
+    return this.openBrowserTarget(
+      this.tasks.threadRootId(taskId),
+      { url: url.toString() },
+      taskId,
+      "renderer_user",
+    );
+  }
+
   /**
    * Load a local HTML page into the desk agent browser and record tool events
    * so the UI auto-opens the globe pane only after a successful host receipt.
@@ -1435,6 +1463,20 @@ export class TaskRunner {
     eventTaskId: string,
     source: "renderer_user" | "agent",
   ): Promise<{ ok: boolean; output: string }> {
+    return this.openBrowserTarget(
+      browserSessionId,
+      { path: htmlPath, url: htmlPath },
+      eventTaskId,
+      source,
+    );
+  }
+
+  private async openBrowserTarget(
+    browserSessionId: string,
+    target: { path?: string; url: string },
+    eventTaskId: string,
+    source: "renderer_user" | "agent",
+  ): Promise<{ ok: boolean; output: string }> {
     const requestId = randomUUID();
     // Emit intent before host I/O so work detail remains truthful if exec
     // hangs or throws. The pane itself waits for host status or a success.
@@ -1442,7 +1484,7 @@ export class TaskRunner {
       this.tasks.appendEvent(eventTaskId, "tool_request", {
         id: requestId,
         tool: "browser_open",
-        meta: { path: htmlPath, url: htmlPath },
+        meta: target,
       });
     } catch {
       /* non-fatal */
@@ -1461,7 +1503,7 @@ export class TaskRunner {
       const result = await this.hostBridge.browserExec({
         taskId: browserSessionId,
         tool: "browser_open",
-        args: { path: htmlPath, url: htmlPath },
+        args: target,
         source,
       });
       this.tasks.appendEvent(eventTaskId, "tool_result", {

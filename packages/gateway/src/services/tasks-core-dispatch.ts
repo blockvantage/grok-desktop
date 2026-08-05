@@ -33,6 +33,8 @@ export type TasksCoreDeps = {
   openLocalHtml?: (
     params: Record<string, unknown>,
   ) => Promise<unknown> | unknown;
+  /** Open an HTTP(S) chat link in the task-partitioned Desk browser. */
+  openUrl?: (params: Record<string, unknown>) => Promise<unknown> | unknown;
   pauseAll: () => void;
   resumeAll: () => void;
   pumpQueue: () => void;
@@ -80,6 +82,7 @@ export const TASKS_CORE_METHODS = new Set([
   "browser.capability",
   "browser.allowExternal",
   "browser.openHtml",
+  "browser.openUrl",
   "tasks.pauseAll",
   "tasks.resumeAll",
   "task.interject",
@@ -180,6 +183,12 @@ export async function dispatchTasksCoreMethod(
         return { ok: false, output: "openLocalHtml not available" };
       }
       return deps.openLocalHtml(params);
+    }
+    case "browser.openUrl": {
+      if (!deps.openUrl) {
+        return { ok: false, output: "openUrl not available" };
+      }
+      return deps.openUrl(params);
     }
     case "tasks.pauseAll":
       deps.pauseAll();

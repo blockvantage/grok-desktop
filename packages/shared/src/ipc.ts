@@ -22,6 +22,24 @@ export const ClientMutationIdSchema = z
 /** Required stable mutation / outbox id (same value as clientMutationId). */
 export const RequiredClientMutationIdSchema = z.string().min(1).max(128);
 
+const CredentialFreeHttpUrlSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(8_192)
+  .refine((value) => {
+    try {
+      const url = new URL(value);
+      return (
+        (url.protocol === "http:" || url.protocol === "https:") &&
+        !url.username &&
+        !url.password
+      );
+    } catch {
+      return false;
+    }
+  }, "URL must be credential-free HTTP(S)");
+
 /** Gateway-owned follow-up outbox lifecycle. */
 export const OutboxStatusSchema = z.enum([
   "pending",
@@ -217,6 +235,16 @@ export const IpcRequestSchema = z.discriminatedUnion("method", [
       .object({
         taskId: z.string().min(1).max(128),
         path: z.string().min(1).max(4096),
+      })
+      .strict(),
+  }),
+  z.object({
+    id: z.string().min(1).max(128),
+    method: z.literal("browser.openUrl"),
+    params: z
+      .object({
+        taskId: z.string().min(1).max(128),
+        url: CredentialFreeHttpUrlSchema,
       })
       .strict(),
   }),

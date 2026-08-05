@@ -130,6 +130,36 @@ describe("dispatchTasksCoreMethod", () => {
     expect(isTasksCoreMethod("browser.openHtml")).toBe(true);
   });
 
+  it("browser.openUrl delegates to the task-partitioned agent browser", async () => {
+    const openUrl = vi.fn(async () => ({ ok: true, output: "opened" }));
+    const deps = {
+      list: vi.fn(),
+      get: vi.fn(),
+      cancel: vi.fn(),
+      setTitle: vi.fn(),
+      deleteChat: vi.fn(),
+      approve: vi.fn(),
+      registerBrowserHostApproval: vi.fn(),
+      openUrl,
+      pauseAll: vi.fn(),
+      resumeAll: vi.fn(),
+      pumpQueue: vi.fn(),
+    };
+
+    const result = await dispatchTasksCoreMethod(
+      "browser.openUrl",
+      { taskId: "task-1", url: "https://example.com/docs" },
+      deps,
+    );
+
+    expect(isTasksCoreMethod("browser.openUrl")).toBe(true);
+    expect(openUrl).toHaveBeenCalledWith({
+      taskId: "task-1",
+      url: "https://example.com/docs",
+    });
+    expect(result).toEqual({ ok: true, output: "opened" });
+  });
+
   it("browser.capability returns verified handshake from deps", async () => {
     const deps = {
       list: vi.fn(),

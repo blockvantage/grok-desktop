@@ -32,6 +32,18 @@ describe("CitationCards", () => {
     expect(html).not.toContain("data-citations-toggle");
   });
 
+  it("uses the in-app browser contract when a link handler is provided", () => {
+    const html = renderToStaticMarkup(
+      <CitationCards
+        items={[{ url: "https://example.com/source", title: "Source" }]}
+        onOpenUrl={() => {}}
+      />,
+    );
+    expect(html).toContain('href="https://example.com/source"');
+    expect(html).not.toContain('target="_blank"');
+    expect(html).not.toContain('rel="noreferrer noopener"');
+  });
+
   it("falls back to the hostname for blank titles and keeps raw invalid URLs", () => {
     const html = renderToStaticMarkup(
       <CitationCards

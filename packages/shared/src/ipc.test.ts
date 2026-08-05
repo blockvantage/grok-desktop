@@ -169,6 +169,15 @@ describe("ipc schemas", () => {
         path: "/workspace/index.html",
       });
     }
+    const openUrl = parseIpcRequest({
+      id: "browser-open-url",
+      method: "browser.openUrl",
+      params: { taskId: "task-1", url: "https://example.com/docs" },
+    });
+    expect(openUrl.method).toBe("browser.openUrl");
+    if (openUrl.method === "browser.openUrl") {
+      expect(openUrl.params.url).toBe("https://example.com/docs");
+    }
 
     expect(() =>
       parseIpcRequest({
@@ -202,6 +211,19 @@ describe("ipc schemas", () => {
         params: { taskId: "task-1" },
       }),
     ).toThrow();
+    for (const url of [
+      "javascript:alert(1)",
+      "file:///etc/passwd",
+      "https://user:secret@example.com/private",
+    ]) {
+      expect(() =>
+        parseIpcRequest({
+          id: "browser-open-url-unsafe",
+          method: "browser.openUrl",
+          params: { taskId: "task-1", url },
+        }),
+      ).toThrow();
+    }
   });
 
   it("allows create task with empty workspaceRoots (chat temp)", () => {

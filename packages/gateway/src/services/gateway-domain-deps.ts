@@ -65,6 +65,10 @@ export type GatewayDomainServiceBag = {
       taskId: string,
       htmlPath: string,
     ) => Promise<{ ok: boolean; output: string }>;
+    openUrlInAgentBrowser?: (
+      taskId: string,
+      url: string,
+    ) => Promise<{ ok: boolean; output: string }>;
     interject: (
       taskId: string,
       text: string,
@@ -232,6 +236,17 @@ export function buildDomainDispatchDeps(
           return { ok: false, output: "runner cannot open local HTML" };
         }
         return g.runner.openLocalHtml(taskId, htmlPath);
+      },
+      openUrl: async (p) => {
+        const taskId = String(p.taskId ?? "").trim();
+        const url = String(p.url ?? "").trim();
+        if (!taskId || !url) {
+          return { ok: false, output: "taskId and url required" };
+        }
+        if (!g.runner.openUrlInAgentBrowser) {
+          return { ok: false, output: "runner cannot open URL" };
+        }
+        return g.runner.openUrlInAgentBrowser(taskId, url);
       },
       pauseAll: () => g.tasks.pauseAll(),
       resumeAll: () => g.tasks.resumeAll(),

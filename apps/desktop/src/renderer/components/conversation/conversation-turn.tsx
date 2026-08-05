@@ -100,6 +100,7 @@ export function ConversationTurn({
   onRetryTurn,
   onOpenFile,
   onOpenDeliverables,
+  onOpenUrl,
   baseDir = null,
   workOpen,
   selectedWorkerId: controlledWorkerId,
@@ -123,6 +124,7 @@ export function ConversationTurn({
   onRetryTurn?: (turn: ConversationTurnView) => void | Promise<void>;
   onOpenFile?: (path: string) => void;
   onOpenDeliverables?: () => void;
+  onOpenUrl?: (url: string) => void;
   baseDir?: string | null;
   workOpen?: boolean;
   selectedWorkerId?: string | null;
@@ -588,7 +590,7 @@ export function ConversationTurn({
           {...(turn.answer ? { "data-assistant-answer": true } : {})}
         >
           {turn.answer ? (
-            <Markdown className="max-w-none text-foreground">
+            <Markdown className="max-w-none text-foreground" onOpenUrl={onOpenUrl}>
               {turn.answer.text}
             </Markdown>
           ) : null}
@@ -654,7 +656,7 @@ export function ConversationTurn({
             </div>
           ) : null}
           {turn.answer && turn.citations.length > 0 ? (
-            <CitationCards items={turn.citations} />
+            <CitationCards items={turn.citations} onOpenUrl={onOpenUrl} />
           ) : null}
         </div>
       ) : null}

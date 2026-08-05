@@ -1546,6 +1546,31 @@ export function TaskWorkspaceView(props: {
     }
   }
 
+  async function openUrlInAgentBrowser(url: string) {
+    try {
+      const res = await rpc<{ ok?: boolean; output?: string }>(
+        "browser.openUrl",
+        { taskId: task.id, url },
+      );
+      if (res?.ok) {
+        setBrowserUi((state) => reduceBrowserUi(state, { type: "user_open" }));
+        return;
+      }
+      toast({
+        description: res?.output || t("workspace.openInBrowserFailed"),
+        variant: "destructive",
+      });
+    } catch (error) {
+      toast({
+        description:
+          error instanceof Error
+            ? error.message
+            : t("workspace.openInBrowserFailed"),
+        variant: "destructive",
+      });
+    }
+  }
+
   async function openInFileManager(target: string) {
     const res = await revealPath(target);
     const intent = toastForRevealResult(res, t("toast.openInFinderFailed"));
@@ -1972,6 +1997,7 @@ export function TaskWorkspaceView(props: {
               baseDir={root ?? null}
               onOpenFile={openFile}
               onOpenDeliverables={() => setRailOpen(true)}
+              onOpenUrl={openUrlInAgentBrowser}
               elapsedStartIso={task.createdAt}
               followUpBusy={Boolean(props.followUpBusy)}
               onAnswerQuestion={

@@ -1061,6 +1061,48 @@ describe("TaskRunner", () => {
     expect(events.filter((event) => event.kind === "message")).toHaveLength(0);
   });
 
+  it("opens a chat link in the thread browser and rejects unsafe schemes", async () => {
+    const execCalls: Array<{
+      taskId: string;
+      args: Record<string, unknown>;
+      source?: string;
+    }> = [];
+    const host = mockHost([]);
+    runner = new TaskRunner(tasks, audit, new TestEngine(), {
+      hostBridge: {
+        ...host,
+        async browserExec(request) {
+          execCalls.push(request);
+          return { ok: true, output: "loaded" };
+        },
+      },
+    });
+    const workspace = path.join(dir, "ws-chat-link");
+    fs.mkdirSync(workspace);
+    const root = tasks.create({ goal: "Research", workspaceRoots: [workspace] });
+    const child = tasks.create({
+      goal: "Read source",
+      workspaceRoots: [workspace],
+      parentTaskId: root.id,
+    });
+
+    await expect(
+      runner.openUrlInAgentBrowser(child.id, "https://example.com/source"),
+    ).resolves.toMatchObject({ ok: true });
+    await expect(
+      runner.openUrlInAgentBrowser(child.id, "javascript:alert(1)"),
+    ).resolves.toMatchObject({ ok: false });
+
+    expect(execCalls).toEqual([
+      {
+        taskId: root.id,
+        tool: "browser_open",
+        args: { url: "https://example.com/source" },
+        source: "renderer_user",
+      },
+    ]);
+  });
+
   it("lets the host policy deny an outside path without recording browser success", async () => {
     const execCalls: Array<{ taskId: string; args: Record<string, unknown> }> = [];
     const host = mockHost([]);
