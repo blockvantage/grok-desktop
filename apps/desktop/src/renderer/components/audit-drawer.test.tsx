@@ -16,6 +16,7 @@ import {
   AuditDrawer,
   auditFilterKey,
   decisionBadgeVariant,
+  deriveAuditTaskIds,
   detailPreview,
   entryIntegrity,
   loadAuditListPages,
@@ -26,6 +27,7 @@ import {
   resolveAuditDrawerView,
   shouldApplyAuditResult,
   sortNewestFirst,
+  stripSpoofedProvenance,
 } from "./audit-drawer";
 
 // React 19 createRoot + act requires this flag in non-RTL environments.
@@ -121,6 +123,59 @@ vi.mock("@/components/ui/sheet", () => ({
 vi.mock("@/lib/format", () => ({
   relativeTime: () => "just now",
 }));
+
+// TaskOverflowMenu pulls desktop grant UI that needs ToastProvider; stub for
+// entry-point open→list runtime proof.
+vi.mock("@/components/desktop-task-toggle", () => ({
+  DesktopTaskMenuItems: () => null,
+}));
+
+// Always-open dropdown (no radix portal) so View audit is clickable in jsdom.
+vi.mock("@/components/ui/dropdown-menu", () => {
+  const passthrough = ({
+    children,
+    ...rest
+  }: {
+    children?: React.ReactNode;
+    [k: string]: unknown;
+  }) => createElement("div", rest, children);
+  const Item = ({
+    children,
+    onClick,
+    ...rest
+  }: {
+    children?: React.ReactNode;
+    onClick?: () => void;
+    [k: string]: unknown;
+  }) =>
+    createElement(
+      "button",
+      { type: "button", onClick, ...rest },
+      children,
+    );
+  return {
+    DropdownMenu: passthrough,
+    DropdownMenuTrigger: ({
+      children,
+    }: {
+      children?: React.ReactNode;
+      asChild?: boolean;
+    }) => createElement("div", { "data-testid": "overflow-trigger" }, children),
+    DropdownMenuContent: passthrough,
+    DropdownMenuItem: Item,
+    DropdownMenuLabel: passthrough,
+    DropdownMenuSeparator: () => createElement("hr"),
+    DropdownMenuGroup: passthrough,
+    DropdownMenuPortal: passthrough,
+    DropdownMenuSub: passthrough,
+    DropdownMenuSubContent: passthrough,
+    DropdownMenuSubTrigger: Item,
+    DropdownMenuRadioGroup: passthrough,
+    DropdownMenuCheckboxItem: Item,
+    DropdownMenuRadioItem: Item,
+    DropdownMenuShortcut: passthrough,
+  };
+});
 
 function entry(
   partial: Partial<AuditEntry> & Pick<AuditEntry, "id" | "action" | "decision">,
@@ -238,6 +293,77 @@ describe("AuditDrawer (controlled render)", () => {
     expect(html).toMatch(/Needs approval/i);
     expect(html).toMatch(/Plan ready for review/i);
     expect(html).toContain('data-testid="audit-needs-approval-note"');
+  });
+
+  it("suppresses mediation chrome when decision column is not info (fail-closed)", () => {
+    // Writer-controlled detail.decision must not invent parked-approval over allow.
+    const html = render({
+      open: true,
+      entries: [
+        entry({
+          id: "spoof-allow",
+          action: "tool.shell",
+          decision: "allow",
+          detail: {
+            tool: "shell",
+            decision: "needs_approval",
+            reason: "Plan ready for review",
+          },
+        }),
+      ],
+    });
+    expect(html).toContain('data-audit-decision="allow"');
+    expect(html).not.toContain('data-audit-mediation=');
+    expect(html).not.toContain('data-testid="audit-mediation-badge"');
+    expect(html).not.toContain('data-testid="audit-needs-approval-note"');
+    expect(html).not.toMatch(/Needs approval/i);
+    expect(html).not.toMatch(/Parked for your approval/i);
+    // Preview falls through to tool (not mediation-biased reason path)
+    expect(html).toMatch(/shell/);
+  });
+
+  it("suppresses _unknownDecision provenance when decision is not info", () => {
+    const html = render({
+      open: true,
+      entries: [
+        entry({
+          id: "spoof-deny",
+          action: "policy.note",
+          decision: "deny",
+          detail: {
+            _unknownDecision: "bogus-decision",
+            summary: "should not claim remapped",
+          },
+        }),
+      ],
+    });
+    expect(html).toContain('data-audit-decision="deny"');
+    expect(html).not.toContain('data-audit-unknown-decision=');
+    expect(html).not.toContain('data-testid="audit-unknown-decision"');
+    expect(html).not.toContain('data-testid="audit-unknown-decision-note"');
+    expect(html).not.toMatch(/shown as info/i);
+    expect(html).not.toMatch(/Unknown decision/i);
+  });
+
+  it("suppresses spoofed _corruptDetail object marker when decision is not info", () => {
+    // AuditRow re-normalizes controlled rows — spoofed object markers drop on allow.
+    const html = render({
+      open: true,
+      entries: [
+        entry({
+          id: "spoof-corrupt",
+          action: "tool.shell",
+          decision: "allow",
+          detail: { _corruptDetail: true, command: "ls" },
+        }),
+      ],
+    });
+    expect(html).toContain('data-audit-decision="allow"');
+    expect(html).toContain('data-audit-action="tool.shell"');
+    expect(html).not.toContain('data-audit-corrupt-detail=');
+    expect(html).not.toContain('data-testid="audit-corrupt-detail"');
+    expect(html).not.toContain('data-testid="audit-corrupt-detail-note"');
+    expect(html).toMatch(/ls/);
   });
 
   it("renders newest-first when multiple controlled entries are out of order", () => {
@@ -528,6 +654,60 @@ describe("AuditDrawer uncontrolled async fetch", () => {
     expect(container.innerHTML).toMatch(/no decisions yet/i);
   });
 
+  it("multi-task one-of-N failure shows audit-error UI (not empty success)", async () => {
+    listMock.mockImplementation(async (params: { taskId?: string }) => {
+      if (params.taskId === "bad") {
+        throw new Error("IPC fail for bad turn");
+      }
+      return {
+        entries: [
+          entry({
+            id: "ok1",
+            taskId: "good",
+            action: "tool.ok",
+            decision: "info",
+          }),
+        ],
+        total: 1,
+        hasMore: false,
+        limit: 100,
+        offset: 0,
+      };
+    });
+
+    mount({ open: true, taskIds: ["good", "bad"] });
+    await flushLoad();
+
+    expect(listMock).toHaveBeenCalled();
+    expect(container.innerHTML).toContain('data-testid="audit-error"');
+    expect(container.innerHTML).not.toContain('data-audit-empty="true"');
+    expect(container.innerHTML).not.toContain('data-audit-action="tool.ok"');
+  });
+
+  it("same taskIds membership in different array order does not re-fetch", async () => {
+    listMock.mockResolvedValue({
+      entries: [
+        entry({ id: "1", taskId: "a", action: "tool.a", decision: "allow" }),
+      ],
+      total: 1,
+      hasMore: false,
+      limit: 100,
+      offset: 0,
+    });
+
+    mount({ open: true, taskIds: ["b", "a"] });
+    await flushLoad();
+    const callsAfterFirst = listMock.mock.calls.length;
+    expect(callsAfterFirst).toBeGreaterThanOrEqual(2); // one page per task
+
+    // Parent thrash: same membership, fresh order — filterKey must not change.
+    mount({ open: true, taskIds: ["a", "b"] });
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(listMock.mock.calls.length).toBe(callsAfterFirst);
+  });
+
   it("surfaces malformed error UI (not empty success)", async () => {
     listMock.mockResolvedValueOnce({
       entries: null,
@@ -716,6 +896,208 @@ describe("AuditDrawer uncontrolled async fetch", () => {
     expect(container.innerHTML).toMatch(/2 response row\(s\) were invalid/i);
     expect(container.innerHTML).not.toContain('data-testid="audit-has-more"');
     expect(container.innerHTML).not.toMatch(/older entries not loaded/i);
+  });
+
+  it("settled hasMore:true paints truncated-trail honesty (audit-has-more)", async () => {
+    listMock.mockResolvedValueOnce({
+      entries: [
+        entry({
+          id: "1",
+          taskId: "t1",
+          action: "tool.shell",
+          decision: "approve",
+        }),
+      ],
+      total: 42,
+      hasMore: true,
+      limit: 100,
+      offset: 0,
+    });
+
+    mount({ open: true, taskId: "t1" });
+    await flushLoad();
+
+    expect(container.innerHTML).toContain('data-audit-action="tool.shell"');
+    expect(container.innerHTML).toContain('data-testid="audit-has-more"');
+    expect(container.innerHTML).toMatch(/Showing 1 of 42/i);
+    expect(container.innerHTML).toMatch(/older entries not loaded/i);
+    expect(container.innerHTML).not.toContain('data-audit-empty="true"');
+  });
+
+  it("settled total>page without hasMore flag still shows truncated trail", async () => {
+    // Server reports total beyond page length but forgets hasMore — fail-closed.
+    listMock.mockResolvedValueOnce({
+      entries: [
+        entry({
+          id: "1",
+          taskId: "t1",
+          action: "tool.read",
+          decision: "allow",
+        }),
+      ],
+      total: 10,
+      hasMore: false,
+      limit: 100,
+      offset: 0,
+    });
+
+    mount({ open: true, taskId: "t1" });
+    await flushLoad();
+
+    expect(container.innerHTML).toContain('data-testid="audit-has-more"');
+    expect(container.innerHTML).toMatch(/Showing 1 of 10/i);
+    expect(container.innerHTML).toMatch(/older entries not loaded/i);
+  });
+
+  it("filter identity change while open discards late A and settles B only", async () => {
+    let resolveA!: (v: unknown) => void;
+    listMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveA = resolve;
+        }),
+    );
+
+    mount({ open: true, taskId: "task-a" });
+    expect(container.innerHTML).toContain('data-testid="audit-loading"');
+    expect(listMock).toHaveBeenCalledWith({ taskId: "task-a", limit: 100 });
+
+    // Mid-flight: thread expands / switches to task B
+    listMock.mockResolvedValueOnce({
+      entries: [
+        entry({
+          id: "b1",
+          taskId: "task-b",
+          action: "tool.b",
+          decision: "deny",
+        }),
+      ],
+      total: 1,
+      hasMore: false,
+      limit: 100,
+      offset: 0,
+    });
+    mount({ open: true, taskId: "task-b" });
+    // Immediate filter swap → loading, not A's empty/rows
+    expect(container.innerHTML).toContain('data-testid="audit-loading"');
+    expect(container.innerHTML).not.toContain('data-audit-action="tool.a"');
+    expect(container.innerHTML).not.toContain('data-audit-empty="true"');
+
+    // Late A must not apply
+    await act(async () => {
+      resolveA({
+        entries: [
+          entry({
+            id: "a1",
+            taskId: "task-a",
+            action: "tool.a",
+            decision: "allow",
+          }),
+        ],
+        total: 1,
+        hasMore: false,
+        limit: 100,
+        offset: 0,
+      });
+      await Promise.resolve();
+    });
+    expect(container.innerHTML).not.toContain('data-audit-action="tool.a"');
+
+    await flushLoad();
+    expect(container.innerHTML).toContain('data-audit-action="tool.b"');
+    expect(container.innerHTML).toContain('data-audit-decision="deny"');
+    expect(container.innerHTML).not.toContain('data-audit-action="tool.a"');
+    expect(listMock).toHaveBeenCalledWith({ taskId: "task-b", limit: 100 });
+  });
+
+  it("refresh control re-fetches and updates rows", async () => {
+    listMock.mockResolvedValueOnce({
+      entries: [
+        entry({
+          id: "old",
+          taskId: "t1",
+          action: "tool.old",
+          decision: "allow",
+        }),
+      ],
+      total: 1,
+      hasMore: false,
+      limit: 100,
+      offset: 0,
+    });
+
+    mount({ open: true, taskId: "t1" });
+    await flushLoad();
+    expect(container.innerHTML).toContain('data-audit-action="tool.old"');
+    expect(listMock).toHaveBeenCalledTimes(1);
+
+    let resolveRefresh!: (v: unknown) => void;
+    listMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveRefresh = resolve;
+        }),
+    );
+
+    const refresh = container.querySelector(
+      '[data-testid="audit-refresh"]',
+    ) as HTMLButtonElement | null;
+    expect(refresh).toBeTruthy();
+    await act(async () => {
+      refresh!.click();
+    });
+    // In-flight refresh clears prior rows and shows loading (not stale old).
+    expect(container.innerHTML).toContain('data-testid="audit-loading"');
+    expect(container.innerHTML).not.toContain('data-audit-action="tool.old"');
+
+    await act(async () => {
+      resolveRefresh({
+        entries: [
+          entry({
+            id: "new",
+            taskId: "t1",
+            action: "tool.new",
+            decision: "approve",
+          }),
+        ],
+        total: 1,
+        hasMore: false,
+        limit: 100,
+        offset: 0,
+      });
+      await Promise.resolve();
+    });
+
+    expect(listMock).toHaveBeenCalledTimes(2);
+    expect(container.innerHTML).toContain('data-audit-action="tool.new"');
+    expect(container.innerHTML).not.toContain('data-audit-action="tool.old"');
+    expect(container.innerHTML).not.toContain('data-testid="audit-loading"');
+  });
+
+  it("refresh after error reloads successfully", async () => {
+    listMock.mockRejectedValueOnce(new Error("IPC down"));
+    mount({ open: true, taskId: "t1" });
+    await flushLoad();
+    expect(container.innerHTML).toContain('data-testid="audit-error"');
+
+    listMock.mockResolvedValueOnce({
+      entries: [
+        entry({ id: "ok", taskId: "t1", action: "tool.ok", decision: "allow" }),
+      ],
+      total: 1,
+      hasMore: false,
+      limit: 100,
+      offset: 0,
+    });
+    const refresh = container.querySelector(
+      '[data-testid="audit-refresh"]',
+    ) as HTMLButtonElement | null;
+    await act(async () => {
+      refresh!.click();
+    });
+    await flushLoad();
+    expect(container.innerHTML).toContain('data-audit-action="tool.ok"');
+    expect(container.innerHTML).not.toContain('data-testid="audit-error"');
   });
 });
 
@@ -969,29 +1351,69 @@ describe("pure helpers", () => {
     expect(preview!.endsWith("…")).toBe(true);
   });
 
-  it("detailPreview prefers reason for needs_approval mediation", () => {
+  it("detailPreview prefers reason for needs_approval mediation only with info column", () => {
+    expect(
+      detailPreview(
+        {
+          tool: "shell",
+          decision: "needs_approval",
+          reason: "Plan ready for review",
+        },
+        "info",
+      ),
+    ).toBe("Plan ready for review");
+    expect(
+      detailPreview(
+        {
+          tool: "shell",
+          decision: "needs_approval",
+        },
+        "info",
+      ),
+    ).toBe("needs_approval");
+    // Without info column: no mediation-biased preview
+    expect(
+      detailPreview(
+        {
+          tool: "shell",
+          decision: "needs_approval",
+          reason: "Plan ready for review",
+        },
+        "allow",
+      ),
+    ).toBe("shell");
     expect(
       detailPreview({
         tool: "shell",
         decision: "needs_approval",
         reason: "Plan ready for review",
       }),
-    ).toBe("Plan ready for review");
-    expect(
-      detailPreview({
-        tool: "shell",
-        decision: "needs_approval",
-      }),
-    ).toBe("needs_approval");
+    ).toBe("shell");
   });
 
-  it("policyMediationDecision reads needs_approval only", () => {
+  it("policyMediationDecision requires info column + needs_approval detail", () => {
+    expect(
+      policyMediationDecision({ decision: "needs_approval", tool: "x" }, "info"),
+    ).toBe("needs_approval");
+    // Fail-closed: non-info column never surfaces mediation
+    expect(
+      policyMediationDecision(
+        { decision: "needs_approval", tool: "x" },
+        "allow",
+      ),
+    ).toBeNull();
+    expect(
+      policyMediationDecision(
+        { decision: "needs_approval", tool: "x" },
+        "deny",
+      ),
+    ).toBeNull();
     expect(
       policyMediationDecision({ decision: "needs_approval", tool: "x" }),
-    ).toBe("needs_approval");
-    expect(policyMediationDecision({ decision: "allow" })).toBeNull();
-    expect(policyMediationDecision({})).toBeNull();
-    expect(policyMediationDecision(null)).toBeNull();
+    ).toBeNull();
+    expect(policyMediationDecision({ decision: "allow" }, "info")).toBeNull();
+    expect(policyMediationDecision({}, "info")).toBeNull();
+    expect(policyMediationDecision(null, "info")).toBeNull();
   });
 
   it("decisionBadgeVariant maps allow/approve/deny/reject/info", () => {
@@ -1002,16 +1424,40 @@ describe("pure helpers", () => {
     expect(decisionBadgeVariant("info")).toBe("outline");
   });
 
-  it("entryIntegrity reads provenance markers only", () => {
-    expect(entryIntegrity({ _unknownDecision: "bogus", foo: 1 })).toEqual({
-      unknownDecision: "bogus",
+  it("entryIntegrity requires info column for _unknownDecision; corrupt is orthogonal", () => {
+    expect(entryIntegrity({ _unknownDecision: "bogus", foo: 1 }, "info")).toEqual(
+      {
+        unknownDecision: "bogus",
+        corruptDetail: false,
+      },
+    );
+    // Fail-closed: spoofed unknown marker over allow/deny is ignored
+    expect(
+      entryIntegrity({ _unknownDecision: "bogus", foo: 1 }, "allow"),
+    ).toEqual({
+      unknownDecision: null,
       corruptDetail: false,
     });
-    expect(entryIntegrity({ _corruptDetail: true })).toEqual({
+    expect(
+      entryIntegrity({ _unknownDecision: "bogus" }, "deny"),
+    ).toEqual({
+      unknownDecision: null,
+      corruptDetail: false,
+    });
+    expect(entryIntegrity({ _unknownDecision: "bogus" })).toEqual({
+      unknownDecision: null,
+      corruptDetail: false,
+    });
+    expect(entryIntegrity({ _corruptDetail: true }, "info")).toEqual({
       unknownDecision: null,
       corruptDetail: true,
     });
-    expect(entryIntegrity({ _corruptDetail: "yes" })).toEqual({
+    // Structural corrupt still surfaces on non-info (detail integrity)
+    expect(entryIntegrity({ _corruptDetail: true }, "allow")).toEqual({
+      unknownDecision: null,
+      corruptDetail: true,
+    });
+    expect(entryIntegrity({ _corruptDetail: "yes" }, "info")).toEqual({
       unknownDecision: null,
       corruptDetail: false,
     });
@@ -1021,7 +1467,17 @@ describe("pure helpers", () => {
     });
   });
 
-  it("normalizeEntryDetail marks non-object detail as corrupt", () => {
+  it("stripSpoofedProvenance drops reserved keys", () => {
+    expect(
+      stripSpoofedProvenance({
+        command: "ls",
+        _unknownDecision: "x",
+        _corruptDetail: true,
+      }),
+    ).toEqual({ command: "ls" });
+  });
+
+  it("normalizeEntryDetail marks non-object detail as corrupt; strips spoof on non-info", () => {
     expect(normalizeEntryDetail(undefined)).toEqual({});
     expect(normalizeEntryDetail(null)).toEqual({});
     expect(normalizeEntryDetail({ command: "ls" })).toEqual({ command: "ls" });
@@ -1030,6 +1486,28 @@ describe("pure helpers", () => {
     });
     expect(normalizeEntryDetail(42)).toEqual({ _corruptDetail: true });
     expect(normalizeEntryDetail(["array"])).toEqual({ _corruptDetail: true });
+    // Re-attach provenance for info column
+    expect(
+      normalizeEntryDetail(
+        { command: "ls", _unknownDecision: "bogus", _corruptDetail: true },
+        "info",
+      ),
+    ).toEqual({
+      command: "ls",
+      _unknownDecision: "bogus",
+      _corruptDetail: true,
+    });
+    // Fail-closed: strip spoofed markers over allow (with other fields)
+    expect(
+      normalizeEntryDetail(
+        { command: "ls", _unknownDecision: "bogus", _corruptDetail: true },
+        "allow",
+      ),
+    ).toEqual({ command: "ls" });
+    // Structural-only bag stays idempotent on non-info (double-normalize safe)
+    expect(normalizeEntryDetail({ _corruptDetail: true }, "approve")).toEqual({
+      _corruptDetail: true,
+    });
   });
 
   it("normalizeAuditTaskIds prefers taskIds over taskId, dedupes, sorts", () => {
@@ -1136,6 +1614,80 @@ describe("parseAuditListPage (fail-closed)", () => {
     }
   });
 
+  it("hasMore is true when reportedTotal > rawCount even if hasMore flag is false", () => {
+    // Fail-closed truncation: do not trust only the server flag.
+    const page = parseAuditListPage({
+      entries: [
+        entry({ id: "ok", action: "tool.read", decision: "allow" }),
+      ],
+      total: 50,
+      hasMore: false,
+    });
+    expect(page.ok).toBe(true);
+    if (page.ok) {
+      expect(page.hasMore).toBe(true);
+      expect(page.total).toBe(50);
+      expect(page.entries).toHaveLength(1);
+      expect(page.droppedInvalid).toBe(0);
+    }
+  });
+
+  it("strips spoofed provenance on non-info decisions; re-attaches only for info", () => {
+    const spoofedAllow = parseAuditListPage({
+      entries: [
+        {
+          id: "a1",
+          taskId: "t1",
+          action: "tool.shell",
+          decision: "allow",
+          createdAt: "2026-08-04T12:00:00.000Z",
+          detail: {
+            command: "ls",
+            _unknownDecision: "spoofed",
+            _corruptDetail: true,
+          },
+        },
+      ],
+      total: 1,
+      hasMore: false,
+    });
+    expect(spoofedAllow.ok).toBe(true);
+    if (spoofedAllow.ok) {
+      expect(spoofedAllow.entries[0].detail).toEqual({ command: "ls" });
+      expect(
+        entryIntegrity(spoofedAllow.entries[0].detail, "allow").unknownDecision,
+      ).toBeNull();
+      expect(
+        entryIntegrity(spoofedAllow.entries[0].detail, "allow").corruptDetail,
+      ).toBe(false);
+    }
+
+    const infoOk = parseAuditListPage({
+      entries: [
+        {
+          id: "i1",
+          taskId: "t1",
+          action: "policy.note",
+          decision: "info",
+          createdAt: "2026-08-04T12:00:00.000Z",
+          detail: {
+            summary: "remapped",
+            _unknownDecision: "bogus-decision",
+          },
+        },
+      ],
+      total: 1,
+      hasMore: false,
+    });
+    expect(infoOk.ok).toBe(true);
+    if (infoOk.ok) {
+      expect(infoOk.entries[0].detail._unknownDecision).toBe("bogus-decision");
+      expect(
+        entryIntegrity(infoOk.entries[0].detail, "info").unknownDecision,
+      ).toBe("bogus-decision");
+    }
+  });
+
   it("all-invalid entries array is malformed — not empty success", () => {
     const page = parseAuditListPage({
       entries: [
@@ -1171,7 +1723,10 @@ describe("parseAuditListPage (fail-closed)", () => {
     expect(page.ok).toBe(true);
     if (page.ok) {
       expect(page.entries[0].detail).toEqual({ _corruptDetail: true });
-      expect(entryIntegrity(page.entries[0].detail).corruptDetail).toBe(true);
+      // Structural corruption is client-observed — surfaces for any decision.
+      expect(
+        entryIntegrity(page.entries[0].detail, "approve").corruptDetail,
+      ).toBe(true);
     }
   });
 
@@ -1187,6 +1742,89 @@ describe("parseAuditListPage (fail-closed)", () => {
       expect(page.hasMore).toBe(false);
       expect(page.droppedInvalid).toBe(0);
     }
+  });
+
+  it("missing or non-finite total falls back to rawCount (hasMore stays honest)", () => {
+    const missing = parseAuditListPage({
+      entries: [entry({ id: "1", action: "tool.a", decision: "allow" })],
+      hasMore: false,
+    });
+    expect(missing.ok).toBe(true);
+    if (missing.ok) {
+      expect(missing.total).toBe(1);
+      expect(missing.hasMore).toBe(false);
+      expect(missing.entries).toHaveLength(1);
+    }
+
+    const nanTotal = parseAuditListPage({
+      entries: [entry({ id: "1", action: "tool.a", decision: "allow" })],
+      total: Number.NaN,
+      hasMore: false,
+    });
+    expect(nanTotal.ok).toBe(true);
+    if (nanTotal.ok) {
+      expect(nanTotal.total).toBe(1);
+      expect(nanTotal.hasMore).toBe(false);
+    }
+
+    const infTotal = parseAuditListPage({
+      entries: [entry({ id: "1", action: "tool.a", decision: "allow" })],
+      total: Number.POSITIVE_INFINITY,
+      hasMore: false,
+    });
+    expect(infTotal.ok).toBe(true);
+    if (infTotal.ok) {
+      expect(infTotal.total).toBe(1);
+      expect(infTotal.hasMore).toBe(false);
+    }
+
+    // Explicit hasMore:true still wins for pagination honesty.
+    const flagged = parseAuditListPage({
+      entries: [entry({ id: "1", action: "tool.a", decision: "allow" })],
+      hasMore: true,
+    });
+    expect(flagged.ok).toBe(true);
+    if (flagged.ok) {
+      expect(flagged.hasMore).toBe(true);
+      expect(flagged.total).toBe(1);
+    }
+  });
+});
+
+describe("deriveAuditTaskIds (workspace → drawer scope)", () => {
+  it("returns sorted turn ids for a multi-turn thread", () => {
+    expect(
+      deriveAuditTaskIds(
+        [{ id: "turn-b" }, { id: "turn-a" }, { id: "turn-c" }],
+        "turn-c",
+      ),
+    ).toEqual(["turn-a", "turn-b", "turn-c"]);
+  });
+
+  it("is set-stable across order-only reshuffles", () => {
+    const a = deriveAuditTaskIds(
+      [{ id: "b" }, { id: "a" }],
+      "b",
+    );
+    const b = deriveAuditTaskIds(
+      [{ id: "a" }, { id: "b" }],
+      "a",
+    );
+    expect(a).toEqual(b);
+    expect(auditFilterKey(a)).toBe(auditFilterKey(b));
+  });
+
+  it("empty thread falls back to [currentTaskId] — never []/global", () => {
+    expect(deriveAuditTaskIds([], "current")).toEqual(["current"]);
+    expect(deriveAuditTaskIds(null, "current")).toEqual(["current"]);
+    expect(deriveAuditTaskIds(undefined, "current")).toEqual(["current"]);
+    expect(deriveAuditTaskIds([], "")).toEqual([AUDIT_INVALID_SCOPE_SENTINEL]);
+  });
+
+  it("never returns empty array that would open global list from task chrome", () => {
+    const ids = deriveAuditTaskIds([{ id: "t1" }], "t1");
+    expect(ids.length).toBeGreaterThan(0);
+    expect(ids).not.toEqual([]);
   });
 });
 
@@ -1540,12 +2178,11 @@ describe("audit drawer wiring (structural)", () => {
     expect(ws).toMatch(/onViewAudit=\{\(\) => setAuditOpen\(true\)\}/);
     expect(ws).toMatch(/task-overflow-view-audit|onViewAudit/);
     expect(ws).toMatch(/<AuditDrawer/);
-    // Thread-wide: stable useMemo'd auditTaskIds (not inline map every render)
+    // Thread-wide: stable useMemo'd auditTaskIds via deriveAuditTaskIds
     expect(ws).toMatch(/taskIds=\{auditTaskIds\}/);
     expect(ws).toMatch(/const auditTaskIds = useMemo/);
     expect(ws).toMatch(/threadTaskIdsKey/);
-    // Set-stable sort so order-only churn does not thrash filter identity
-    expect(ws).toMatch(/localeCompare/);
+    expect(ws).toMatch(/deriveAuditTaskIds/);
     expect(ws).not.toMatch(
       /<AuditDrawer[\s\S]*taskId=\{task\.id\}[\s\S]*\/>/,
     );
@@ -1602,5 +2239,241 @@ describe("audit drawer wiring (structural)", () => {
     expect(en.audit.malformed).toBeTruthy();
     expect(en.audit.unknownDecision).toBeTruthy();
     expect(en.audit.corruptDetail).toBeTruthy();
+  });
+});
+
+// ── runtime open → list proof (entry points, not source scans) ──────────────
+
+describe("audit drawer entry-point runtime open→list", () => {
+  let container: HTMLDivElement;
+  let root: Root;
+
+  beforeEach(() => {
+    listMock.mockReset();
+    container = document.createElement("div");
+    document.body.appendChild(container);
+    root = createRoot(container);
+  });
+
+  afterEach(() => {
+    act(() => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  async function flushLoad() {
+    await act(async () => {
+      const pending = listMock.mock.results
+        .map((r) => r.value)
+        .filter(
+          (v) =>
+            v != null && typeof (v as Promise<unknown>).then === "function",
+        ) as Promise<unknown>[];
+      await Promise.all(
+        pending.map((p) => p.then(() => undefined, () => undefined)),
+      );
+      await Promise.resolve();
+    });
+  }
+
+  it("overflow View audit opens thread drawer and lists each taskId", async () => {
+    const { useState } = await import("react");
+    const { TaskOverflowMenu } = await import("./chat-actions-menu");
+
+    listMock.mockImplementation(async (params: { taskId?: string }) => ({
+      entries: [
+        entry({
+          id: params.taskId === "turn-b" ? "b1" : "a1",
+          taskId: params.taskId ?? "x",
+          action: params.taskId === "turn-b" ? "tool.b" : "tool.a",
+          decision: "allow",
+        }),
+      ],
+      total: 1,
+      hasMore: false,
+      limit: 100,
+      offset: 0,
+    }));
+
+    function Harness() {
+      const [open, setOpen] = useState(false);
+      return createElement(
+        "div",
+        null,
+        createElement(TaskOverflowMenu, {
+          taskId: "turn-b",
+          onExport: () => undefined,
+          onViewAudit: () => setOpen(true),
+        }),
+        createElement(AuditDrawer, {
+          open,
+          onOpenChange: setOpen,
+          // Mirrors task-workspace thread-wide auditTaskIds
+          taskIds: ["turn-a", "turn-b"],
+          taskLabel: "Thread",
+        }),
+      );
+    }
+
+    act(() => {
+      root.render(createElement(Harness));
+    });
+    // Closed: no list yet
+    expect(listMock).not.toHaveBeenCalled();
+    expect(container.innerHTML).not.toContain('data-testid="audit-drawer"');
+
+    // Always-visible menu item (dropdown mock) with production test id
+    const item = container.querySelector(
+      '[data-testid="task-overflow-view-audit"]',
+    ) as HTMLElement | null;
+    expect(item).toBeTruthy();
+    await act(async () => {
+      item!.click();
+    });
+
+    expect(container.innerHTML).toContain('data-testid="audit-drawer"');
+    await flushLoad();
+    expect(listMock).toHaveBeenCalledWith({ taskId: "turn-a", limit: 100 });
+    expect(listMock).toHaveBeenCalledWith({ taskId: "turn-b", limit: 100 });
+    expect(container.innerHTML).toContain('data-audit-action="tool.a"');
+    expect(container.innerHTML).toContain('data-audit-action="tool.b"');
+  });
+
+  it("permissions Recent decisions opens global AuditDrawer (no taskId)", async () => {
+    // Real PermissionsTab + desktop API stubs (not a hand-rolled button/drawer).
+    listMock.mockResolvedValueOnce({
+      entries: [
+        entry({
+          id: "g1",
+          taskId: "anywhere",
+          action: "tool.global",
+          decision: "deny",
+        }),
+      ],
+      total: 1,
+      hasMore: false,
+      limit: 100,
+      offset: 0,
+    });
+
+    const getPermissions = vi.fn(async () => ({
+      permissions: {
+        accessibility: "granted",
+        screenRecording: "granted",
+      },
+      machine: {
+        enabled: false,
+        allowDeletes: false,
+      },
+    }));
+    const prev = (window as unknown as { grokdesk?: unknown }).grokdesk;
+    (window as unknown as { grokdesk: unknown }).grokdesk = {
+      desktop: {
+        getPermissions,
+        setMachineEnabled: vi.fn(),
+        openAccessibility: vi.fn(),
+        openScreenRecording: vi.fn(),
+      },
+    };
+
+    try {
+      const { PermissionsTab } = await import(
+        "./views/settings/permissions-tab"
+      );
+      act(() => {
+        root.render(createElement(PermissionsTab));
+      });
+      // Allow refresh effect to settle
+      await act(async () => {
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+
+      expect(listMock).not.toHaveBeenCalled();
+      const btn = container.querySelector(
+        '[data-testid="permissions-recent-decisions"]',
+      ) as HTMLButtonElement | null;
+      expect(btn).toBeTruthy();
+      await act(async () => {
+        btn!.click();
+      });
+      await flushLoad();
+
+      expect(listMock).toHaveBeenCalledTimes(1);
+      expect(listMock).toHaveBeenCalledWith({ limit: 100 });
+      expect(listMock.mock.calls[0][0]).not.toHaveProperty("taskId");
+      expect(container.innerHTML).toContain('data-audit-filter="global"');
+      expect(container.innerHTML).toContain('data-audit-action="tool.global"');
+      expect(container.innerHTML).toContain('data-audit-decision="deny"');
+    } finally {
+      if (prev === undefined) {
+        delete (window as unknown as { grokdesk?: unknown }).grokdesk;
+      } else {
+        (window as unknown as { grokdesk: unknown }).grokdesk = prev;
+      }
+    }
+  });
+
+  it("overflow View audit uses deriveAuditTaskIds-style thread scope (not single task)", async () => {
+    // Prove production derive helper + overflow menu + drawer together:
+    // multi-turn ids drive multi-task list (not only current turn).
+    const { useState } = await import("react");
+    const { TaskOverflowMenu } = await import("./chat-actions-menu");
+
+    listMock.mockImplementation(async (params: { taskId?: string }) => ({
+      entries: [
+        entry({
+          id: `${params.taskId}-1`,
+          taskId: params.taskId ?? "x",
+          action: `tool.${params.taskId}`,
+          decision: "allow",
+        }),
+      ],
+      total: 1,
+      hasMore: false,
+      limit: 100,
+      offset: 0,
+    }));
+
+    const thread = [{ id: "turn-z" }, { id: "turn-a" }];
+    const scoped = deriveAuditTaskIds(thread, "turn-z");
+    expect(scoped).toEqual(["turn-a", "turn-z"]);
+
+    function Harness() {
+      const [open, setOpen] = useState(false);
+      return createElement(
+        "div",
+        null,
+        createElement(TaskOverflowMenu, {
+          taskId: "turn-z",
+          onExport: () => undefined,
+          onViewAudit: () => setOpen(true),
+        }),
+        createElement(AuditDrawer, {
+          open,
+          onOpenChange: setOpen,
+          taskIds: scoped,
+          taskLabel: "Thread",
+        }),
+      );
+    }
+
+    act(() => {
+      root.render(createElement(Harness));
+    });
+    const item = container.querySelector(
+      '[data-testid="task-overflow-view-audit"]',
+    ) as HTMLElement;
+    await act(async () => {
+      item.click();
+    });
+    await flushLoad();
+    expect(listMock).toHaveBeenCalledWith({ taskId: "turn-a", limit: 100 });
+    expect(listMock).toHaveBeenCalledWith({ taskId: "turn-z", limit: 100 });
+    // Not scoped to current turn only
+    expect(listMock.mock.calls.some((c) => c[0]?.taskId === "turn-a")).toBe(
+      true,
+    );
   });
 });

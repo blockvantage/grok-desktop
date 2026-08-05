@@ -103,12 +103,38 @@ function truncatePreview(s: string): string {
 }
 
 /**
+ * Reserved provenance keys — gateway strips writer-controlled copies and only
+ * re-attaches after decision remapping. Client re-strips + re-validates so a
+ * spoofed IPC row cannot invent integrity chrome.
+ */
+export const AUDIT_PROVENANCE_KEYS = [
+  "_unknownDecision",
+  "_corruptDetail",
+] as const;
+
+/** Drop spoofable provenance keys from detail (writer or untrusted IPC). */
+export function stripSpoofedProvenance(
+  detail: Record<string, unknown>,
+): Record<string, unknown> {
+  const out: Record<string, unknown> = { ...detail };
+  for (const k of AUDIT_PROVENANCE_KEYS) {
+    delete out[k];
+  }
+  return out;
+}
+
+/**
  * Policy mediation state preserved in detail when the audit decision column is
- * remapped (needs_approval → info). Honest UI surfaces this separately.
+ * remapped (needs_approval → info). Honest UI surfaces this only when the
+ * authoritative column is `info` — detail.decision alone cannot invent a
+ * parked-approval story over allow/deny.
  */
 export function policyMediationDecision(
   detail: Record<string, unknown> | null | undefined,
+  columnDecision?: AuditEntry["decision"] | null,
 ): string | null {
+  // Fail-closed: mediation chrome requires remapped info column.
+  if (columnDecision !== "info") return null;
   if (!detail || typeof detail !== "object") return null;
   const d = detail.decision;
   if (typeof d !== "string" || !d.trim()) return null;
@@ -118,10 +144,13 @@ export function policyMediationDecision(
 }
 
 /** Compact, non-secret detail line for operators (API already redacts secrets). */
-export function detailPreview(detail: Record<string, unknown>): string | null {
+export function detailPreview(
+  detail: Record<string, unknown>,
+  columnDecision?: AuditEntry["decision"] | null,
+): string | null {
   // Parked-for-approval: prefer reason (and mediation decision) over tool name
-  // so rows do not look like generic info notes.
-  const mediation = policyMediationDecision(detail);
+  // so rows do not look like generic info notes. Requires info column.
+  const mediation = policyMediationDecision(detail, columnDecision);
   if (mediation) {
     if (typeof detail.reason === "string" && detail.reason.trim()) {
       return truncatePreview(detail.reason.trim());
@@ -144,6 +173,32 @@ export function detailPreview(detail: Record<string, unknown>): string | null {
     }
   }
   return null;
+}
+
+/**
+ * Derive AuditDrawer taskIds for a task workspace (thread-wide or current turn).
+ *
+ * - Non-empty threadTasks → sorted unique turn ids (set-stable for filterKey)
+ * - Empty / missing thread → [currentTaskId] only (never [] / global)
+ *
+ * Pure helper so workspace chrome cannot regress to always-[task.id] or
+ * accidental global scope without a failing unit test.
+ */
+export function deriveAuditTaskIds(
+  threadTasks: ReadonlyArray<{ id: string }> | null | undefined,
+  currentTaskId: string,
+): string[] {
+  if (threadTasks && threadTasks.length > 0) {
+    return normalizeAuditTaskIds(
+      threadTasks.map((t) => t.id),
+      currentTaskId,
+    );
+  }
+  if (typeof currentTaskId === "string" && currentTaskId) {
+    return [currentTaskId];
+  }
+  // Fail-closed: never widen to global from missing current id.
+  return [AUDIT_INVALID_SCOPE_SENTINEL];
 }
 
 /**
@@ -188,20 +243,33 @@ export function auditFilterKey(taskIds: string[]): string {
 }
 
 /**
- * Gateway provenance markers attached by listAuditEntries.
- * Writers cannot spoof these; only the list path re-attaches them.
+ * Gateway provenance markers attached by listAuditEntries after remapping.
+ *
+ * Fail-closed honesty:
+ * - `_unknownDecision` copy says “shown as info” — only surface when the
+ *   authoritative column is `info`. allow/deny + spoofed marker must not claim
+ *   the row was remapped.
+ * - `_corruptDetail` is detail-structure integrity (orthogonal to decision).
+ *   Still only present after strip/re-attach in normalizeEntryDetail.
  */
-export function entryIntegrity(detail: Record<string, unknown> | null | undefined): {
+export function entryIntegrity(
+  detail: Record<string, unknown> | null | undefined,
+  columnDecision?: AuditEntry["decision"] | null,
+): {
   unknownDecision: string | null;
   corruptDetail: boolean;
 } {
   if (!detail || typeof detail !== "object") {
     return { unknownDecision: null, corruptDetail: false };
   }
+  const corruptDetail = detail._corruptDetail === true;
+  // Unknown-decision note claims remapping → info; require that column.
+  if (columnDecision !== "info") {
+    return { unknownDecision: null, corruptDetail };
+  }
   const rawUnknown = detail._unknownDecision;
   const unknownDecision =
     typeof rawUnknown === "string" && rawUnknown.length > 0 ? rawUnknown : null;
-  const corruptDetail = detail._corruptDetail === true;
   return { unknownDecision, corruptDetail };
 }
 
@@ -209,12 +277,47 @@ export function entryIntegrity(detail: Record<string, unknown> | null | undefine
  * Normalize detail for a parsed row. Missing/null → clean empty object.
  * Non-object (string/number/array) → empty detail with integrity marker so we
  * never present integrity loss as a clean empty detail bag.
+ *
+ * Object detail: strip spoofable provenance keys, then re-attach:
+ * - `_unknownDecision` only when decision column is `info` (gateway remap;
+ *   never over allow/deny — that would contradict the primary badge).
+ * - `_corruptDetail` when claimed and either column is `info`, or the object is
+ *   structural-only `{_corruptDetail:true}` (idempotent double-normalize after
+ *   a non-object parse). Spoofed corrupt + other fields on allow/deny is dropped.
  */
-export function normalizeEntryDetail(detail: unknown): Record<string, unknown> {
+export function normalizeEntryDetail(
+  detail: unknown,
+  columnDecision?: AuditEntry["decision"] | null,
+): Record<string, unknown> {
   if (detail === undefined || detail === null) return {};
   if (typeof detail === "object" && !Array.isArray(detail)) {
-    return detail as Record<string, unknown>;
+    const raw = detail as Record<string, unknown>;
+    const claimedUnknown =
+      typeof raw._unknownDecision === "string" && raw._unknownDecision.length > 0
+        ? raw._unknownDecision
+        : null;
+    const claimedCorrupt = raw._corruptDetail === true;
+    // Structural-only bag from a prior non-object normalize (or gateway parse).
+    const structuralCorruptOnly =
+      claimedCorrupt &&
+      Object.keys(raw).every(
+        (k) => k === "_corruptDetail" || k === "_unknownDecision",
+      ) &&
+      !claimedUnknown;
+    const out = stripSpoofedProvenance(raw);
+    // Fail-closed: unknown-decision marker only with remapped info column.
+    if (columnDecision === "info" && claimedUnknown) {
+      out._unknownDecision = claimedUnknown;
+    }
+    if (
+      claimedCorrupt &&
+      (columnDecision === "info" || structuralCorruptOnly)
+    ) {
+      out._corruptDetail = true;
+    }
+    return out;
   }
+  // Client-observed structural corruption (not a writer key spoof).
   return { _corruptDetail: true };
 }
 
@@ -260,7 +363,8 @@ export function parseAuditListPage(page: unknown): ParsedAuditListPage {
       id: e.id,
       taskId: typeof e.taskId === "string" ? e.taskId : null,
       action: e.action,
-      detail: normalizeEntryDetail(e.detail),
+      // Pass decision so spoofed provenance is stripped unless column is info.
+      detail: normalizeEntryDetail(e.detail, decision),
       decision,
       createdAt: e.createdAt,
     });
@@ -740,9 +844,13 @@ export function AuditDrawer(props: AuditDrawerProps) {
 function AuditRow(props: { entry: AuditEntry; showTask: boolean }) {
   const t = useT();
   const { entry, showTask } = props;
-  const preview = detailPreview(entry.detail);
-  const integrity = entryIntegrity(entry.detail);
-  const mediation = policyMediationDecision(entry.detail);
+  // Re-normalize even for controlled/preloaded rows so spoofed provenance keys
+  // cannot invent integrity chrome without an info decision column.
+  const detail = normalizeEntryDetail(entry.detail, entry.decision);
+  // Fail-closed: mediation + unknown-decision chrome require decision === "info".
+  const preview = detailPreview(detail, entry.decision);
+  const integrity = entryIntegrity(detail, entry.decision);
+  const mediation = policyMediationDecision(detail, entry.decision);
   return (
     <article
       className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3.5 py-3"
@@ -777,8 +885,8 @@ function AuditRow(props: { entry: AuditEntry; showTask: boolean }) {
             className="shrink-0 text-2xs capitalize"
             data-testid="audit-mediation-badge"
             title={
-              typeof entry.detail?.reason === "string"
-                ? entry.detail.reason
+              typeof detail.reason === "string"
+                ? detail.reason
                 : t("audit.needsApproval")
             }
           >

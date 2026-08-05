@@ -182,7 +182,7 @@ import {
   type BrowserStatusDto,
 } from "@/lib/api";
 import { TaskOverflowMenu } from "@/components/chat-actions-menu";
-import { AuditDrawer } from "@/components/audit-drawer";
+import { AuditDrawer, deriveAuditTaskIds } from "@/components/audit-drawer";
 import { DictationButton } from "@/components/dictation-button";
 import { useDictation } from "@/hooks/use-dictation";
 import { getActiveLocale } from "@/i18n/active";
@@ -974,22 +974,17 @@ export function TaskWorkspaceView(props: {
   /**
    * Stable thread task ids for AuditDrawer. Content-keyed (set-stable sort) so
    * parent re-renders / order-only thread list churn do not thrash filter identity.
+   * Derivation lives in deriveAuditTaskIds (unit-tested) — never []/global.
    */
   const threadTaskIdsKey = props.threadTasks?.length
-    ? [...props.threadTasks.map((threadTask) => threadTask.id)]
-        .sort((a, b) => a.localeCompare(b))
-        .join("\0")
+    ? deriveAuditTaskIds(props.threadTasks, task.id).join("\0")
     : "";
-  const auditTaskIds = useMemo(() => {
-    if (props.threadTasks?.length) {
-      return [...props.threadTasks.map((threadTask) => threadTask.id)].sort(
-        (a, b) => a.localeCompare(b),
-      );
-    }
-    return [task.id];
+  const auditTaskIds = useMemo(
+    () => deriveAuditTaskIds(props.threadTasks, task.id),
     // threadTaskIdsKey captures set membership; task.id covers empty-thread fallback.
     // eslint-disable-next-line react-hooks/exhaustive-deps -- content-stable key
-  }, [threadTaskIdsKey, task.id]);
+    [threadTaskIdsKey, task.id],
+  );
   const [preview, setPreview] = useState<TextPreview | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
