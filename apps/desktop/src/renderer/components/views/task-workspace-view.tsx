@@ -972,17 +972,22 @@ export function TaskWorkspaceView(props: {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [auditOpen, setAuditOpen] = useState(false);
   /**
-   * Stable thread task ids for AuditDrawer. Content-keyed so parent re-renders
-   * (events/status) do not pass a fresh array identity every frame.
+   * Stable thread task ids for AuditDrawer. Content-keyed (set-stable sort) so
+   * parent re-renders / order-only thread list churn do not thrash filter identity.
    */
-  const threadTaskIdsKey =
-    props.threadTasks?.map((threadTask) => threadTask.id).join("\0") ?? "";
+  const threadTaskIdsKey = props.threadTasks?.length
+    ? [...props.threadTasks.map((threadTask) => threadTask.id)]
+        .sort((a, b) => a.localeCompare(b))
+        .join("\0")
+    : "";
   const auditTaskIds = useMemo(() => {
     if (props.threadTasks?.length) {
-      return props.threadTasks.map((threadTask) => threadTask.id);
+      return [...props.threadTasks.map((threadTask) => threadTask.id)].sort(
+        (a, b) => a.localeCompare(b),
+      );
     }
     return [task.id];
-    // threadTaskIdsKey captures id content; task.id covers empty-thread fallback.
+    // threadTaskIdsKey captures set membership; task.id covers empty-thread fallback.
     // eslint-disable-next-line react-hooks/exhaustive-deps -- content-stable key
   }, [threadTaskIdsKey, task.id]);
   const [preview, setPreview] = useState<TextPreview | null>(null);

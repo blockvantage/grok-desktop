@@ -5,13 +5,19 @@
  *
  * Honesty:
  * - Clears rows on every fetch start / filter change (no cross-task flash).
+ * - On close: bump generation + clear settled result so reopen never paints stale/empty
+ *   as current before the open-triggered refetch settles.
  * - In-flight responses are sequenced; only the latest generation may apply.
- * - Load effect keys on stable filterKey string (not taskIds array identity).
+ * - Load effect keys on set-stable filterKey string (sorted ids; not array identity).
  * - Until a fetch for the open filter settles, show loading — never “no decisions yet”.
  * - Malformed / all-invalid list payloads surface as error, not empty success.
+ * - Soft-skipped invalid rows are reported separately from pagination hasMore
+ *   (never “older entries not loaded” for discarded untrustworthy rows).
  * - Surfaces gateway provenance markers _unknownDecision / _corruptDetail.
+ * - Surfaces detail.decision/reason for needs_approval policy mediation (mapped to info).
  * - hasMore / truncated trail is always visible when the page is incomplete.
  * - Empty and hasMore never render together.
+ * - Non-empty taskIds that filter to blanks never widen to the global list.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ScrollText } from "lucide-react";
@@ -36,17 +42,25 @@ import {
 /** Default page size — matches gateway list default; not the full trail. */
 export const AUDIT_DRAWER_PAGE_LIMIT = 100;
 
+/**
+ * Sentinel task id used when taskIds was non-empty but every id was blank/invalid
+ * and no fallback taskId exists. Queries this id (empty result) instead of the
+ * unfiltered global list — fail-closed scope honesty.
+ */
+export const AUDIT_INVALID_SCOPE_SENTINEL = "__audit_invalid_task_filter__";
+
 export type AuditDrawerProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /**
    * Single-task filter. Prefer `taskIds` for chat threads with follow-ups.
-   * When both are set, `taskIds` wins.
+   * When both are set, `taskIds` wins (if it yields any valid id).
    */
   taskId?: string | null;
   /**
    * Thread-wide filter: all turn task ids in the open chat.
    * Empty / omitted with no taskId → global list (Settings).
+   * Non-empty with all blanks never widens to global (see normalizeAuditTaskIds).
    */
   taskIds?: string[] | null;
   /** Optional label shown in the title (task summary / chat title). */
@@ -60,6 +74,8 @@ export type AuditDrawerProps = {
   hasMore?: boolean;
   /** Controlled total (tests / preloaded). Ignored when auto-fetching. */
   total?: number;
+  /** Controlled soft-dropped invalid row count (tests). Ignored when auto-fetching. */
+  droppedInvalid?: number;
 };
 
 // ── pure helpers (exported for unit tests) ──────────────────────────────────
@@ -82,27 +98,69 @@ export function decisionBadgeVariant(
   return "outline";
 }
 
+function truncatePreview(s: string): string {
+  return s.length > 120 ? `${s.slice(0, 117)}…` : s;
+}
+
+/**
+ * Policy mediation state preserved in detail when the audit decision column is
+ * remapped (needs_approval → info). Honest UI surfaces this separately.
+ */
+export function policyMediationDecision(
+  detail: Record<string, unknown> | null | undefined,
+): string | null {
+  if (!detail || typeof detail !== "object") return null;
+  const d = detail.decision;
+  if (typeof d !== "string" || !d.trim()) return null;
+  // Known mediation states written by the runner / browser host.
+  if (d === "needs_approval") return d;
+  return null;
+}
+
 /** Compact, non-secret detail line for operators (API already redacts secrets). */
 export function detailPreview(detail: Record<string, unknown>): string | null {
-  const prefer = ["command", "tool", "path", "summary", "reason", "message"] as const;
+  // Parked-for-approval: prefer reason (and mediation decision) over tool name
+  // so rows do not look like generic info notes.
+  const mediation = policyMediationDecision(detail);
+  if (mediation) {
+    if (typeof detail.reason === "string" && detail.reason.trim()) {
+      return truncatePreview(detail.reason.trim());
+    }
+    return truncatePreview(mediation);
+  }
+  const prefer = [
+    "command",
+    "tool",
+    "path",
+    "summary",
+    "reason",
+    "message",
+    "decision",
+  ] as const;
   for (const key of prefer) {
     const v = detail[key];
     if (typeof v === "string" && v.trim()) {
-      const s = v.trim();
-      return s.length > 120 ? `${s.slice(0, 117)}…` : s;
+      return truncatePreview(v.trim());
     }
   }
   return null;
 }
 
 /**
- * Normalize filter ids: taskIds wins; then single taskId; empty = global.
- * Dedupes and drops blanks so follow-up threads stay stable under re-render.
+ * Normalize filter ids: taskIds wins when it yields valid ids; then single taskId;
+ * empty = global. Dedupes, drops blanks, returns set-stable sorted order.
+ *
+ * Fail-closed: a non-empty taskIds array that filters to nothing never returns
+ * global []. Falls through to taskId when present; otherwise uses a sentinel
+ * scope id so the drawer does not silently load machine-wide decisions.
  */
 export function normalizeAuditTaskIds(
   taskIds?: string[] | null,
   taskId?: string | null,
 ): string[] {
+  const sortIds = (ids: string[]) =>
+    [...ids].sort((a, b) => a.localeCompare(b));
+
   if (Array.isArray(taskIds) && taskIds.length > 0) {
     const seen = new Set<string>();
     const out: string[] = [];
@@ -112,15 +170,21 @@ export function normalizeAuditTaskIds(
       seen.add(id);
       out.push(id);
     }
-    return out;
+    if (out.length > 0) return sortIds(out);
+    // All blank/invalid — do not widen to global; try taskId fallback next.
   }
   if (typeof taskId === "string" && taskId) return [taskId];
+  // Explicit non-empty taskIds that yielded nothing and no taskId → sentinel.
+  if (Array.isArray(taskIds) && taskIds.length > 0) {
+    return [AUDIT_INVALID_SCOPE_SENTINEL];
+  }
   return [];
 }
 
-/** Stable key for filter identity (generation invalidation). */
+/** Set-stable key for filter identity (order-independent membership). */
 export function auditFilterKey(taskIds: string[]): string {
-  return taskIds.length === 0 ? "" : taskIds.join("\0");
+  if (taskIds.length === 0) return "";
+  return [...taskIds].sort((a, b) => a.localeCompare(b)).join("\0");
 }
 
 /**
@@ -155,14 +219,23 @@ export function normalizeEntryDetail(detail: unknown): Record<string, unknown> {
 }
 
 export type ParsedAuditListPage =
-  | { ok: true; entries: AuditEntry[]; total: number; hasMore: boolean }
+  | {
+      ok: true;
+      entries: AuditEntry[];
+      total: number;
+      /** Pagination incompleteness only (not soft-dropped invalid rows). */
+      hasMore: boolean;
+      /** Rows discarded client-side for invalid shape/decision (not older pages). */
+      droppedInvalid: number;
+    }
   | { ok: false; reason: "malformed" };
 
 /**
  * Fail-closed page parse:
  * - non-array entries → malformed (error), never empty-success
  * - non-empty payload where every row fails validation → malformed (not empty trail)
- * - soft-skips individual invalid rows when some remain valid; hasMore reflects drops
+ * - soft-skips individual invalid rows when some remain valid; droppedInvalid
+ *   counts those skips (hasMore is NOT set for drops alone)
  * - non-object detail → {_corruptDetail: true}, not a silent {}
  */
 export function parseAuditListPage(page: unknown): ParsedAuditListPage {
@@ -198,12 +271,14 @@ export function parseAuditListPage(page: unknown): ParsedAuditListPage {
   }
   const reportedTotal =
     typeof p.total === "number" && Number.isFinite(p.total) ? p.total : rawCount;
-  const dropped = rawCount - entries.length;
-  // Honesty: dropped rows / total > shown mean the trail is incomplete.
-  const hasMore =
-    Boolean(p.hasMore) || dropped > 0 || reportedTotal > entries.length;
-  const total = Math.max(reportedTotal, entries.length + dropped);
-  return { ok: true, entries, total, hasMore };
+  const droppedInvalid = rawCount - entries.length;
+  // Pagination incompleteness only — soft-skips are reported via droppedInvalid.
+  // Server may set hasMore, or total may exceed the raw page length.
+  const hasMore = Boolean(p.hasMore) || reportedTotal > rawCount;
+  // Total: server total when present; do not invent pages from client drops.
+  // Still reflect that dropped rows existed in this page (shown < total honesty).
+  const total = Math.max(reportedTotal, entries.length + droppedInvalid);
+  return { ok: true, entries, total, hasMore, droppedInvalid };
 }
 
 function isAuditDecision(d: string): d is AuditEntry["decision"] {
@@ -217,7 +292,13 @@ function isAuditDecision(d: string): d is AuditEntry["decision"] {
 }
 
 export type LoadAuditListResult =
-  | { ok: true; entries: AuditEntry[]; total: number; hasMore: boolean }
+  | {
+      ok: true;
+      entries: AuditEntry[];
+      total: number;
+      hasMore: boolean;
+      droppedInvalid: number;
+    }
   | { ok: false; reason: "malformed" | "error"; error?: unknown };
 
 export type AuditListFn = (params: ListAuditParams) => Promise<ListAuditResult>;
@@ -270,11 +351,16 @@ export async function loadAuditListPages(
     const merged = sortNewestFirst([...byId.values()]);
     const total = okPages.reduce((sum, p) => sum + p.total, 0);
     const anyHasMore = okPages.some((p) => p.hasMore);
+    const droppedInvalid = okPages.reduce(
+      (sum, p) => sum + p.droppedInvalid,
+      0,
+    );
     const capped = merged.slice(0, limit);
-    // Honest truncation: more in memory, more beyond any page, or total > shown.
-    const hasMore =
-      anyHasMore || merged.length > limit || total > capped.length;
-    return { ok: true, entries: capped, total, hasMore };
+    // Pagination / client-cap only. Do NOT treat soft-dropped invalids as
+    // “older entries not loaded” (that would lie about incompleteness reason).
+    // Page-level hasMore already covers reportedTotal > raw page length.
+    const hasMore = anyHasMore || merged.length > limit;
+    return { ok: true, entries: capped, total, hasMore, droppedInvalid };
   } catch (error) {
     return { ok: false, reason: "error", error };
   }
@@ -291,8 +377,9 @@ export function shouldApplyAuditResult(
 /**
  * Pure view-phase resolver (fail-closed honesty).
  * - Pending open/filter with no settled result → loading (not empty).
- * - Empty only when settled success with 0 rows and no truncation signal.
+ * - Empty only when settled success with 0 rows and no truncation / drop signal.
  * - hasMore never coexists with empty.
+ * - Soft-dropped rows surface as showDropped (not pagination copy).
  */
 export function resolveAuditDrawerView(state: {
   controlled: boolean;
@@ -305,13 +392,17 @@ export function resolveAuditDrawerView(state: {
   rowCount: number;
   hasMore: boolean;
   total: number;
+  droppedInvalid?: number;
 }): {
   showLoading: boolean;
   showError: boolean;
   showEmpty: boolean;
   showRows: boolean;
   showHasMore: boolean;
+  showDropped: boolean;
 } {
+  const dropped = Math.max(0, state.droppedInvalid ?? 0);
+
   if (!state.open) {
     return {
       showLoading: false,
@@ -319,21 +410,27 @@ export function resolveAuditDrawerView(state: {
       showEmpty: false,
       showRows: false,
       showHasMore: false,
+      showDropped: false,
     };
   }
 
   if (state.controlled) {
-    const showEmpty = state.rowCount === 0 && !state.hasMore && state.total <= 0;
-    const showHasMore = state.hasMore && state.rowCount > 0;
-    // Controlled 0 rows + hasMore/total: honesty banner only (not “no decisions”).
     const truncatedEmpty =
       state.rowCount === 0 && (state.hasMore || state.total > 0);
+    const showEmpty =
+      state.rowCount === 0 &&
+      !state.hasMore &&
+      state.total <= 0 &&
+      dropped === 0;
+    const showHasMore =
+      (state.hasMore && state.rowCount > 0) || truncatedEmpty;
     return {
       showLoading: false,
       showError: false,
       showEmpty,
       showRows: state.rowCount > 0,
-      showHasMore: showHasMore || truncatedEmpty,
+      showHasMore,
+      showDropped: dropped > 0 && state.rowCount > 0,
     };
   }
 
@@ -346,6 +443,7 @@ export function resolveAuditDrawerView(state: {
       showEmpty: false,
       showRows: false,
       showHasMore: false,
+      showDropped: false,
     };
   }
 
@@ -356,6 +454,7 @@ export function resolveAuditDrawerView(state: {
       showEmpty: false,
       showRows: false,
       showHasMore: false,
+      showDropped: false,
     };
   }
 
@@ -368,6 +467,7 @@ export function resolveAuditDrawerView(state: {
         showEmpty: false,
         showRows: false,
         showHasMore: true,
+        showDropped: false,
       };
     }
     return {
@@ -376,6 +476,7 @@ export function resolveAuditDrawerView(state: {
       showEmpty: true,
       showRows: false,
       showHasMore: false,
+      showDropped: false,
     };
   }
 
@@ -385,6 +486,7 @@ export function resolveAuditDrawerView(state: {
     showEmpty: false,
     showRows: true,
     showHasMore: state.hasMore,
+    showDropped: dropped > 0,
   };
 }
 
@@ -392,10 +494,16 @@ export function resolveAuditDrawerView(state: {
 
 export function AuditDrawer(props: AuditDrawerProps) {
   const t = useT();
+  // Keep load() identity stable: useT() can return a new function each render
+  // outside I18nProvider (tests / edge). An unstable `t` in load deps would
+  // re-fire the open effect forever (setState → re-render → new t → new load).
+  const tRef = useRef(t);
+  tRef.current = t;
   const controlled = props.entries !== undefined;
   const [loaded, setLoaded] = useState<AuditEntry[]>([]);
   const [total, setTotal] = useState(0);
   const [hasMore, setHasMore] = useState(false);
+  const [droppedInvalid, setDroppedInvalid] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   /** filterKey for which loaded/error state is authoritative (null = never settled). */
@@ -404,7 +512,7 @@ export function AuditDrawer(props: AuditDrawerProps) {
 
   // Recompute every render from props content — do NOT memo on props.taskIds
   // array identity (parents often pass a fresh map() array). filterKey string
-  // equality is what drives effects.
+  // equality is what drives effects. normalize sorts → set-stable membership.
   const filterIds = normalizeAuditTaskIds(props.taskIds, props.taskId);
   const filterKey = auditFilterKey(filterIds);
   const filterIdsRef = useRef(filterIds);
@@ -414,13 +522,22 @@ export function AuditDrawer(props: AuditDrawerProps) {
     setLoaded([]);
     setTotal(0);
     setHasMore(false);
+    setDroppedInvalid(0);
   }, []);
+
+  const clearSettled = useCallback(() => {
+    clearRows();
+    setError(null);
+    setResultFilterKey(null);
+    setLoading(false);
+  }, [clearRows]);
 
   const load = useCallback(async () => {
     if (controlled) return;
     const gen = ++loadGen.current;
     const ids = filterIdsRef.current;
     const keyForRequest = auditFilterKey(ids);
+    const translate = tRef.current;
     // Fail-closed honesty: never keep another filter's rows while refetching.
     clearRows();
     setLoading(true);
@@ -436,9 +553,9 @@ export function AuditDrawer(props: AuditDrawerProps) {
       if (!result.ok) {
         clearRows();
         if (result.reason === "malformed") {
-          setError(t("audit.malformed"));
+          setError(translate("audit.malformed"));
         } else {
-          setError(humanizeError(result.error, t));
+          setError(humanizeError(result.error, translate));
         }
         setResultFilterKey(keyForRequest);
         return;
@@ -446,26 +563,32 @@ export function AuditDrawer(props: AuditDrawerProps) {
       setLoaded(result.entries);
       setTotal(result.total);
       setHasMore(result.hasMore);
+      setDroppedInvalid(result.droppedInvalid);
       setError(null);
       setResultFilterKey(keyForRequest);
     } catch (e) {
       if (!shouldApplyAuditResult(gen, loadGen.current)) return;
       clearRows();
-      setError(humanizeError(e, t));
+      setError(humanizeError(e, translate));
       setResultFilterKey(keyForRequest);
     } finally {
       if (shouldApplyAuditResult(gen, loadGen.current)) {
         setLoading(false);
       }
     }
-  }, [controlled, clearRows, t]);
+  }, [controlled, clearRows]);
 
-  // Reload when opened or when the task filter *content* changes.
-  // Depends on filterKey (stable string) + load (stable: no filterIds identity).
+  // Open → load. Close → bump gen + clear settled so reopen never paints stale
+  // empty/rows for one frame before effect refetch (loading-until-settle contract).
   useEffect(() => {
-    if (!props.open || controlled) return;
+    if (!props.open) {
+      loadGen.current += 1;
+      clearSettled();
+      return;
+    }
+    if (controlled) return;
     void load();
-  }, [props.open, controlled, filterKey, load]);
+  }, [props.open, controlled, filterKey, load, clearSettled]);
 
   // On unmount, invalidate pending applies.
   useEffect(() => {
@@ -485,6 +608,9 @@ export function AuditDrawer(props: AuditDrawerProps) {
       ? props.total
       : rows.length
     : total;
+  const displayDropped = controlled
+    ? Math.max(0, props.droppedInvalid ?? 0)
+    : droppedInvalid;
 
   const view = resolveAuditDrawerView({
     controlled,
@@ -496,6 +622,7 @@ export function AuditDrawer(props: AuditDrawerProps) {
     rowCount: rows.length,
     hasMore: displayHasMore,
     total: displayTotal,
+    droppedInvalid: displayDropped,
   });
 
   const title = props.taskLabel
@@ -509,6 +636,7 @@ export function AuditDrawer(props: AuditDrawerProps) {
         : t("audit.subtitle");
 
   // Multi-task or global: show task id on each row for attribution.
+  // Sentinel-only scope is treated as single-task (no global attribution).
   const showTask = filterIds.length !== 1;
 
   return (
@@ -593,6 +721,15 @@ export function AuditDrawer(props: AuditDrawerProps) {
                 })}
               </p>
             ) : null}
+
+            {view.showDropped ? (
+              <p
+                className="px-2 py-2 text-2xs text-muted-foreground"
+                data-testid="audit-dropped-invalid"
+              >
+                {t("audit.droppedInvalid", { count: displayDropped })}
+              </p>
+            ) : null}
           </div>
         </ScrollArea>
       </SheetContent>
@@ -605,6 +742,7 @@ function AuditRow(props: { entry: AuditEntry; showTask: boolean }) {
   const { entry, showTask } = props;
   const preview = detailPreview(entry.detail);
   const integrity = entryIntegrity(entry.detail);
+  const mediation = policyMediationDecision(entry.detail);
   return (
     <article
       className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3.5 py-3"
@@ -612,6 +750,7 @@ function AuditRow(props: { entry: AuditEntry; showTask: boolean }) {
       data-audit-id={entry.id}
       data-audit-action={entry.action}
       data-audit-decision={entry.decision}
+      data-audit-mediation={mediation ?? undefined}
       data-audit-task={entry.taskId ?? undefined}
       data-audit-unknown-decision={
         integrity.unknownDecision ? integrity.unknownDecision : undefined
@@ -632,6 +771,22 @@ function AuditRow(props: { entry: AuditEntry; showTask: boolean }) {
         >
           {entry.decision}
         </Badge>
+        {mediation ? (
+          <Badge
+            variant="secondary"
+            className="shrink-0 text-2xs capitalize"
+            data-testid="audit-mediation-badge"
+            title={
+              typeof entry.detail?.reason === "string"
+                ? entry.detail.reason
+                : t("audit.needsApproval")
+            }
+          >
+            {mediation === "needs_approval"
+              ? t("audit.needsApprovalShort")
+              : mediation}
+          </Badge>
+        ) : null}
         {integrity.unknownDecision ? (
           <Badge
             variant="secondary"
@@ -658,6 +813,14 @@ function AuditRow(props: { entry: AuditEntry; showTask: boolean }) {
       {preview ? (
         <p className="mt-1 truncate text-2xs text-muted-foreground" title={preview}>
           {preview}
+        </p>
+      ) : null}
+      {mediation === "needs_approval" ? (
+        <p
+          className="mt-1 text-2xs text-muted-foreground"
+          data-testid="audit-needs-approval-note"
+        >
+          {t("audit.needsApproval")}
         </p>
       ) : null}
       {integrity.unknownDecision ? (

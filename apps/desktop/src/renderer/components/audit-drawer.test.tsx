@@ -1,13 +1,18 @@
 /**
  * Audit drawer (trust Phase A2): empty + row render, pure helpers, load honesty,
  * view-phase resolver, task/global filter params, integrity markers, truncated-trail
- * signal, wiring. Fail-closed: never invent empty success from malformed rows.
+ * signal, soft-drop vs pagination, reopen honesty, async fetch wiring.
+ * Fail-closed: never invent empty success from malformed rows.
  */
+// @vitest-environment jsdom
 import { createElement } from "react";
+import { createRoot, type Root } from "react-dom/client";
+import { act } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AuditEntry } from "@grokdesk/shared";
 import {
+  AUDIT_INVALID_SCOPE_SENTINEL,
   AuditDrawer,
   auditFilterKey,
   decisionBadgeVariant,
@@ -17,36 +22,50 @@ import {
   normalizeAuditTaskIds,
   normalizeEntryDetail,
   parseAuditListPage,
+  policyMediationDecision,
   resolveAuditDrawerView,
   shouldApplyAuditResult,
   sortNewestFirst,
 } from "./audit-drawer";
 
-vi.mock("@/i18n", () => ({
-  useT: () => (key: string, vars?: Record<string, string | number>) => {
-    const map: Record<string, string> = {
-      "audit.title": "Audit decisions",
-      "audit.titleTask": "Audit · {label}",
-      "audit.subtitle": "Permission and tool decisions for this task.",
-      "audit.subtitleThread":
-        "Permission and tool decisions for this conversation (all turns).",
-      "audit.subtitleGlobal": "Recent permission and tool decisions.",
-      "audit.emptyTitle": "No decisions yet",
-      "audit.emptyDesc":
-        "When Grok asks for approval or tools run under policy, decisions show up here.",
-      "audit.loading": "Loading audit…",
-      "audit.loadFailed": "Could not load audit trail",
-      "audit.malformed": "Audit response was invalid — trail not shown.",
-      "audit.hasMore": "Showing {shown} of {total} — older entries not loaded",
-      "audit.refresh": "Refresh",
-      "audit.globalLabel": "All tasks",
-      "audit.unknownDecision":
-        "Stored decision was unknown ({value}); shown as info.",
-      "audit.unknownDecisionShort": "Unknown decision",
-      "audit.corruptDetail":
-        "Detail JSON was corrupt and could not be parsed.",
-      "audit.corruptDetailShort": "Corrupt detail",
-    };
+// React 19 createRoot + act requires this flag in non-RTL environments.
+(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT =
+  true;
+
+/** Hoisted so vi.mock factory can reference the spy before const init. */
+const { listMock, translate } = vi.hoisted(() => {
+  const map: Record<string, string> = {
+    "audit.title": "Audit decisions",
+    "audit.titleTask": "Audit · {label}",
+    "audit.subtitle": "Permission and tool decisions for this task.",
+    "audit.subtitleThread":
+      "Permission and tool decisions for this conversation (all turns).",
+    "audit.subtitleGlobal": "Recent permission and tool decisions.",
+    "audit.emptyTitle": "No decisions yet",
+    "audit.emptyDesc":
+      "When Grok asks for approval or tools run under policy, decisions show up here.",
+    "audit.loading": "Loading audit…",
+    "audit.loadFailed": "Could not load audit trail",
+    "audit.malformed": "Audit response was invalid — trail not shown.",
+    "audit.hasMore": "Showing {shown} of {total} — older entries not loaded",
+    "audit.droppedInvalid":
+      "{count} response row(s) were invalid and discarded (not older pages).",
+    "audit.needsApproval":
+      "Parked for your approval (policy needs_approval).",
+    "audit.needsApprovalShort": "Needs approval",
+    "audit.refresh": "Refresh",
+    "audit.globalLabel": "All tasks",
+    "audit.unknownDecision":
+      "Stored decision was unknown ({value}); shown as info.",
+    "audit.unknownDecisionShort": "Unknown decision",
+    "audit.corruptDetail":
+      "Detail JSON was corrupt and could not be parsed.",
+    "audit.corruptDetailShort": "Corrupt detail",
+  };
+  const translate = (
+    key: string,
+    vars?: Record<string, string | number>,
+  ): string => {
     let text = map[key] ?? key;
     if (vars) {
       for (const [k, v] of Object.entries(vars)) {
@@ -54,7 +73,24 @@ vi.mock("@/i18n", () => ({
       }
     }
     return text;
+  };
+  return { listMock: vi.fn(), translate };
+});
+
+vi.mock("@/lib/api", () => ({
+  audit: {
+    list: (...args: unknown[]) => listMock(...args),
   },
+}));
+
+vi.mock("@/i18n", () => ({
+  // Stable translate identity — mirrors production I18nProvider memoization.
+  useT: () => translate,
+}));
+
+vi.mock("@/lib/errors", () => ({
+  humanizeError: (e: unknown) =>
+    e instanceof Error ? e.message : "Could not load audit trail",
 }));
 
 vi.mock("@/components/ui/sheet", () => ({
@@ -127,6 +163,8 @@ function renderUncontrolled(
   );
 }
 
+// ── controlled static markup ────────────────────────────────────────────────
+
 describe("AuditDrawer (controlled render)", () => {
   it("shows empty copy when no entries", () => {
     const html = render({
@@ -161,6 +199,45 @@ describe("AuditDrawer (controlled render)", () => {
     expect(html).toContain('data-audit-decision="approve"');
     expect(html).not.toContain('data-audit-empty="true"');
     expect(html).toMatch(/ls/);
+  });
+
+  it("renders deny/reject/allow badges for multi-decision rows", () => {
+    const html = render({
+      open: true,
+      entries: [
+        entry({ id: "d1", action: "tool.write", decision: "deny" }),
+        entry({ id: "r1", action: "tool.exec", decision: "reject" }),
+        entry({ id: "a1", action: "tool.read", decision: "allow" }),
+      ],
+    });
+    expect(html).toContain('data-audit-decision="deny"');
+    expect(html).toContain('data-audit-decision="reject"');
+    expect(html).toContain('data-audit-decision="allow"');
+    expect(html.match(/data-testid="audit-entry"/g)?.length).toBe(3);
+  });
+
+  it("surfaces needs_approval mediation from detail (not plain info-only)", () => {
+    const html = render({
+      open: true,
+      entries: [
+        entry({
+          id: "p1",
+          action: "policy_check",
+          decision: "info",
+          detail: {
+            tool: "shell",
+            decision: "needs_approval",
+            reason: "Plan ready for review",
+          },
+        }),
+      ],
+    });
+    expect(html).toContain('data-audit-decision="info"');
+    expect(html).toContain('data-audit-mediation="needs_approval"');
+    expect(html).toContain('data-testid="audit-mediation-badge"');
+    expect(html).toMatch(/Needs approval/i);
+    expect(html).toMatch(/Plan ready for review/i);
+    expect(html).toContain('data-testid="audit-needs-approval-note"');
   });
 
   it("renders newest-first when multiple controlled entries are out of order", () => {
@@ -205,6 +282,22 @@ describe("AuditDrawer (controlled render)", () => {
     expect(html).toContain('data-testid="audit-has-more"');
     expect(html).toMatch(/Showing 1 of 42/i);
     expect(html).toMatch(/older entries not loaded/i);
+  });
+
+  it("surfaces soft-dropped invalid rows separately from pagination hasMore", () => {
+    const html = render({
+      open: true,
+      entries: [
+        entry({ id: "1", action: "tool.shell", decision: "approve" }),
+      ],
+      hasMore: false,
+      total: 3,
+      droppedInvalid: 2,
+    });
+    expect(html).toContain('data-testid="audit-dropped-invalid"');
+    expect(html).toMatch(/2 response row\(s\) were invalid/i);
+    expect(html).not.toContain('data-testid="audit-has-more"');
+    expect(html).not.toMatch(/older entries not loaded/i);
   });
 
   it("never shows empty + hasMore together (0 rows + truncation)", () => {
@@ -335,6 +428,299 @@ describe("AuditDrawer uncontrolled first paint (pre-effect honesty)", () => {
   });
 });
 
+// ── async uncontrolled (mocked audit.list) ──────────────────────────────────
+
+describe("AuditDrawer uncontrolled async fetch", () => {
+  let container: HTMLDivElement;
+  let root: Root;
+
+  beforeEach(() => {
+    listMock.mockReset();
+    container = document.createElement("div");
+    document.body.appendChild(container);
+    root = createRoot(container);
+  });
+
+  afterEach(() => {
+    act(() => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  function mount(
+    props: Partial<React.ComponentProps<typeof AuditDrawer>> & {
+      open: boolean;
+    },
+  ) {
+    act(() => {
+      root.render(
+        createElement(AuditDrawer, {
+          onOpenChange: vi.fn(),
+          ...props,
+        }),
+      );
+    });
+  }
+
+  /** Flush load() promise chain through React act (swallows list rejections). */
+  async function flushLoad() {
+    await act(async () => {
+      const pending = listMock.mock.results
+        .map((r) => r.value)
+        .filter(
+          (v) =>
+            v != null && typeof (v as Promise<unknown>).then === "function",
+        ) as Promise<unknown>[];
+      await Promise.all(
+        pending.map((p) => p.then(() => undefined, () => undefined)),
+      );
+      await Promise.resolve();
+    });
+  }
+
+  it("loads via audit.list with taskId and shows settled rows", async () => {
+    listMock.mockResolvedValueOnce({
+      entries: [
+        entry({
+          id: "1",
+          taskId: "task-a",
+          action: "tool.shell",
+          decision: "approve",
+          detail: { command: "ls" },
+        }),
+      ],
+      total: 1,
+      hasMore: false,
+      limit: 100,
+      offset: 0,
+    });
+
+    mount({ open: true, taskId: "task-a" });
+    expect(container.innerHTML).toContain('data-testid="audit-loading"');
+
+    await flushLoad();
+
+    expect(listMock).toHaveBeenCalledWith({
+      taskId: "task-a",
+      limit: 100,
+    });
+    expect(container.innerHTML).toContain('data-audit-action="tool.shell"');
+    expect(container.innerHTML).toContain('data-audit-decision="approve"');
+    expect(container.innerHTML).not.toContain('data-testid="audit-loading"');
+  });
+
+  it("loads global list with no taskId (Settings)", async () => {
+    listMock.mockResolvedValueOnce({
+      entries: [],
+      total: 0,
+      hasMore: false,
+      limit: 100,
+      offset: 0,
+    });
+
+    mount({ open: true });
+    await flushLoad();
+
+    expect(listMock).toHaveBeenCalledWith({ limit: 100 });
+    expect(listMock.mock.calls[0][0]).not.toHaveProperty("taskId");
+    expect(container.innerHTML).toContain('data-audit-empty="true"');
+    expect(container.innerHTML).toMatch(/no decisions yet/i);
+  });
+
+  it("surfaces malformed error UI (not empty success)", async () => {
+    listMock.mockResolvedValueOnce({
+      entries: null,
+      total: 0,
+      hasMore: false,
+      limit: 100,
+      offset: 0,
+    });
+
+    mount({ open: true, taskId: "t1" });
+    await flushLoad();
+
+    expect(container.innerHTML).toContain('data-testid="audit-error"');
+    expect(container.innerHTML).toMatch(/invalid/i);
+    expect(container.innerHTML).not.toContain('data-audit-empty="true"');
+    expect(container.innerHTML).not.toMatch(/no decisions yet/i);
+  });
+
+  it("surfaces thrown list errors in audit-error", async () => {
+    listMock.mockRejectedValueOnce(new Error("IPC down"));
+
+    mount({ open: true });
+    await flushLoad();
+
+    expect(container.innerHTML).toContain('data-testid="audit-error"');
+    expect(container.innerHTML).toMatch(/IPC down/);
+    expect(container.innerHTML).not.toContain('data-audit-empty="true"');
+  });
+
+  it("reopen with same filter shows loading — not cached empty/stale", async () => {
+    listMock.mockResolvedValueOnce({
+      entries: [],
+      total: 0,
+      hasMore: false,
+      limit: 100,
+      offset: 0,
+    });
+
+    mount({ open: true, taskId: "t1" });
+    await flushLoad();
+    expect(container.innerHTML).toContain('data-audit-empty="true"');
+
+    // Close clears settled result
+    mount({ open: false, taskId: "t1" });
+    expect(container.innerHTML).toBe("");
+
+    // New rows written while closed
+    listMock.mockResolvedValueOnce({
+      entries: [
+        entry({
+          id: "new-1",
+          taskId: "t1",
+          action: "tool.shell",
+          decision: "approve",
+        }),
+      ],
+      total: 1,
+      hasMore: false,
+      limit: 100,
+      offset: 0,
+    });
+
+    mount({ open: true, taskId: "t1" });
+    // Immediate reopen paint must be loading, never cached empty
+    expect(container.innerHTML).toContain('data-testid="audit-loading"');
+    expect(container.innerHTML).not.toContain('data-audit-empty="true"');
+    expect(container.innerHTML).not.toMatch(/no decisions yet/i);
+
+    await flushLoad();
+    expect(container.innerHTML).toContain('data-audit-action="tool.shell"');
+    expect(listMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("close while loading discards in-flight result (no late apply)", async () => {
+    let resolveList!: (v: unknown) => void;
+    listMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveList = resolve;
+        }),
+    );
+
+    mount({ open: true, taskId: "t1" });
+    expect(container.innerHTML).toContain('data-testid="audit-loading"');
+
+    mount({ open: false, taskId: "t1" });
+    expect(container.innerHTML).toBe("");
+
+    await act(async () => {
+      resolveList({
+        entries: [
+          entry({ id: "late", action: "tool.shell", decision: "approve" }),
+        ],
+        total: 1,
+        hasMore: false,
+        limit: 100,
+        offset: 0,
+      });
+      await Promise.resolve();
+    });
+
+    // Still closed — late result must not paint
+    expect(container.innerHTML).toBe("");
+
+    // Reopen starts a fresh load
+    listMock.mockResolvedValueOnce({
+      entries: [],
+      total: 0,
+      hasMore: false,
+      limit: 100,
+      offset: 0,
+    });
+    mount({ open: true, taskId: "t1" });
+    expect(container.innerHTML).toContain('data-testid="audit-loading"');
+    expect(container.innerHTML).not.toContain('data-audit-action="tool.shell"');
+
+    await flushLoad();
+    expect(container.innerHTML).toContain('data-audit-empty="true"');
+  });
+
+  it("thread taskIds loads each id and merges rows", async () => {
+    listMock.mockImplementation(async (params: { taskId?: string }) => {
+      if (params.taskId === "a") {
+        return {
+          entries: [
+            entry({
+              id: "a1",
+              taskId: "a",
+              action: "tool.a",
+              decision: "allow",
+              createdAt: "2026-08-04T10:00:00.000Z",
+            }),
+          ],
+          total: 1,
+          hasMore: false,
+          limit: 100,
+          offset: 0,
+        };
+      }
+      return {
+        entries: [
+          entry({
+            id: "b1",
+            taskId: "b",
+            action: "tool.b",
+            decision: "deny",
+            createdAt: "2026-08-04T12:00:00.000Z",
+          }),
+        ],
+        total: 1,
+        hasMore: false,
+        limit: 100,
+        offset: 0,
+      };
+    });
+
+    mount({ open: true, taskIds: ["b", "a"] });
+    await flushLoad();
+
+    expect(listMock).toHaveBeenCalledTimes(2);
+    expect(container.innerHTML).toContain('data-audit-action="tool.b"');
+    expect(container.innerHTML).toContain('data-audit-action="tool.a"');
+    // newest first
+    const html = container.innerHTML;
+    expect(html.indexOf("tool.b")).toBeLessThan(html.indexOf("tool.a"));
+  });
+
+  it("soft-skip partial page shows dropped copy without pagination lie", async () => {
+    listMock.mockResolvedValueOnce({
+      entries: [
+        { garbage: true },
+        entry({ id: "ok", action: "tool.read", decision: "allow" }),
+        { id: "bad", action: "x", decision: "not-a-decision", createdAt: "t" },
+      ],
+      total: 3,
+      hasMore: false,
+      limit: 100,
+      offset: 0,
+    });
+
+    mount({ open: true, taskId: "t1" });
+    await flushLoad();
+
+    expect(container.innerHTML).toContain('data-audit-action="tool.read"');
+    expect(container.innerHTML).toContain('data-testid="audit-dropped-invalid"');
+    expect(container.innerHTML).toMatch(/2 response row\(s\) were invalid/i);
+    expect(container.innerHTML).not.toContain('data-testid="audit-has-more"');
+    expect(container.innerHTML).not.toMatch(/older entries not loaded/i);
+  });
+});
+
+// ── resolveAuditDrawerView ──────────────────────────────────────────────────
+
 describe("resolveAuditDrawerView (fail-closed phases)", () => {
   it("pending open/filter → loading, never empty", () => {
     const v = resolveAuditDrawerView({
@@ -450,7 +836,101 @@ describe("resolveAuditDrawerView (fail-closed phases)", () => {
     expect(v.showHasMore).toBe(true);
     expect(v.showEmpty).toBe(false);
   });
+
+  it("soft-dropped rows show showDropped without forcing showHasMore", () => {
+    const v = resolveAuditDrawerView({
+      controlled: false,
+      open: true,
+      loading: false,
+      resultFilterKey: "t",
+      filterKey: "t",
+      error: null,
+      rowCount: 8,
+      hasMore: false,
+      total: 10,
+      droppedInvalid: 2,
+    });
+    expect(v.showRows).toBe(true);
+    expect(v.showDropped).toBe(true);
+    expect(v.showHasMore).toBe(false);
+  });
+
+  it("open:false → zero UI flags", () => {
+    const v = resolveAuditDrawerView({
+      controlled: false,
+      open: false,
+      loading: false,
+      resultFilterKey: "t",
+      filterKey: "t",
+      error: null,
+      rowCount: 3,
+      hasMore: true,
+      total: 10,
+      droppedInvalid: 1,
+    });
+    expect(v).toEqual({
+      showLoading: false,
+      showError: false,
+      showEmpty: false,
+      showRows: false,
+      showHasMore: false,
+      showDropped: false,
+    });
+  });
+
+  it("controlled truncated-empty shows hasMore not empty", () => {
+    const v = resolveAuditDrawerView({
+      controlled: true,
+      open: true,
+      loading: false,
+      resultFilterKey: null,
+      filterKey: "",
+      error: null,
+      rowCount: 0,
+      hasMore: true,
+      total: 5,
+    });
+    expect(v.showEmpty).toBe(false);
+    expect(v.showHasMore).toBe(true);
+    expect(v.showLoading).toBe(false);
+  });
+
+  it("controlled empty success shows empty", () => {
+    const v = resolveAuditDrawerView({
+      controlled: true,
+      open: true,
+      loading: false,
+      resultFilterKey: null,
+      filterKey: "",
+      error: null,
+      rowCount: 0,
+      hasMore: false,
+      total: 0,
+    });
+    expect(v.showEmpty).toBe(true);
+    expect(v.showHasMore).toBe(false);
+  });
+
+  it("controlled rows + droppedInvalid shows showDropped", () => {
+    const v = resolveAuditDrawerView({
+      controlled: true,
+      open: true,
+      loading: false,
+      resultFilterKey: null,
+      filterKey: "",
+      error: null,
+      rowCount: 2,
+      hasMore: false,
+      total: 4,
+      droppedInvalid: 2,
+    });
+    expect(v.showRows).toBe(true);
+    expect(v.showDropped).toBe(true);
+    expect(v.showHasMore).toBe(false);
+  });
 });
+
+// ── pure helpers ────────────────────────────────────────────────────────────
 
 describe("pure helpers", () => {
   it("sortNewestFirst ties break by id DESC", () => {
@@ -487,6 +967,31 @@ describe("pure helpers", () => {
     expect(preview).not.toBeNull();
     expect(preview!.length).toBeLessThanOrEqual(120);
     expect(preview!.endsWith("…")).toBe(true);
+  });
+
+  it("detailPreview prefers reason for needs_approval mediation", () => {
+    expect(
+      detailPreview({
+        tool: "shell",
+        decision: "needs_approval",
+        reason: "Plan ready for review",
+      }),
+    ).toBe("Plan ready for review");
+    expect(
+      detailPreview({
+        tool: "shell",
+        decision: "needs_approval",
+      }),
+    ).toBe("needs_approval");
+  });
+
+  it("policyMediationDecision reads needs_approval only", () => {
+    expect(
+      policyMediationDecision({ decision: "needs_approval", tool: "x" }),
+    ).toBe("needs_approval");
+    expect(policyMediationDecision({ decision: "allow" })).toBeNull();
+    expect(policyMediationDecision({})).toBeNull();
+    expect(policyMediationDecision(null)).toBeNull();
   });
 
   it("decisionBadgeVariant maps allow/approve/deny/reject/info", () => {
@@ -527,22 +1032,36 @@ describe("pure helpers", () => {
     expect(normalizeEntryDetail(["array"])).toEqual({ _corruptDetail: true });
   });
 
-  it("normalizeAuditTaskIds prefers taskIds over taskId and dedupes", () => {
+  it("normalizeAuditTaskIds prefers taskIds over taskId, dedupes, sorts", () => {
     expect(normalizeAuditTaskIds(["t2", "t1", "t2", ""], "ignored")).toEqual([
-      "t2",
       "t1",
+      "t2",
     ]);
     expect(normalizeAuditTaskIds(null, "solo")).toEqual(["solo"]);
     expect(normalizeAuditTaskIds([], null)).toEqual([]);
     expect(normalizeAuditTaskIds(undefined, undefined)).toEqual([]);
   });
 
-  it("auditFilterKey is empty for global and stable for ids across array identity", () => {
+  it("normalizeAuditTaskIds: all-blank taskIds falls through to taskId (not global)", () => {
+    expect(normalizeAuditTaskIds(["", ""], "real-task")).toEqual(["real-task"]);
+    // No fallback taskId → sentinel scope, never []
+    expect(normalizeAuditTaskIds(["", ""], null)).toEqual([
+      AUDIT_INVALID_SCOPE_SENTINEL,
+    ]);
+    expect(normalizeAuditTaskIds(["", ""], undefined)).toEqual([
+      AUDIT_INVALID_SCOPE_SENTINEL,
+    ]);
+    expect(normalizeAuditTaskIds(["", ""], "")).toEqual([
+      AUDIT_INVALID_SCOPE_SENTINEL,
+    ]);
+  });
+
+  it("auditFilterKey is empty for global and set-stable across order", () => {
     expect(auditFilterKey([])).toBe("");
     expect(auditFilterKey(["a", "b"])).toBe("a\0b");
-    // Same content, new array → same key (effect must not re-fire)
+    expect(auditFilterKey(["b", "a"])).toBe(auditFilterKey(["a", "b"]));
     expect(auditFilterKey(["a", "b"])).toBe(auditFilterKey(["a", "b"]));
-    expect(auditFilterKey(normalizeAuditTaskIds(["t1", "t2"]))).toBe(
+    expect(auditFilterKey(normalizeAuditTaskIds(["t2", "t1"]))).toBe(
       auditFilterKey(normalizeAuditTaskIds(["t1", "t2"])),
     );
   });
@@ -569,6 +1088,7 @@ describe("parseAuditListPage (fail-closed)", () => {
       expect(page.entries).toHaveLength(1);
       expect(page.total).toBe(1);
       expect(page.hasMore).toBe(false);
+      expect(page.droppedInvalid).toBe(0);
     }
   });
 
@@ -580,22 +1100,39 @@ describe("parseAuditListPage (fail-closed)", () => {
     expect(parseAuditListPage("nope").ok).toBe(false);
   });
 
-  it("skips invalid rows but keeps valid ones and marks incomplete trail", () => {
+  it("skips invalid rows, tracks droppedInvalid, does NOT force hasMore", () => {
     const page = parseAuditListPage({
       entries: [
         { garbage: true },
         entry({ id: "ok", action: "tool.read", decision: "allow" }),
         { id: "bad", action: "x", decision: "not-a-decision", createdAt: "t" },
       ],
-      total: 9,
+      total: 3,
       hasMore: false,
     });
     expect(page.ok).toBe(true);
     if (page.ok) {
       expect(page.entries.map((e) => e.id)).toEqual(["ok"]);
-      // Drops + total > shown → hasMore honesty even if server flag was false
+      // Soft-skips are not pagination
+      expect(page.hasMore).toBe(false);
+      expect(page.droppedInvalid).toBe(2);
+      expect(page.total).toBe(3);
+    }
+  });
+
+  it("pagination hasMore remains true when server flags it (with drops)", () => {
+    const page = parseAuditListPage({
+      entries: [
+        { garbage: true },
+        entry({ id: "ok", action: "tool.read", decision: "allow" }),
+      ],
+      total: 20,
+      hasMore: true,
+    });
+    expect(page.ok).toBe(true);
+    if (page.ok) {
       expect(page.hasMore).toBe(true);
-      expect(page.total).toBe(9);
+      expect(page.droppedInvalid).toBe(1);
     }
   });
 
@@ -648,6 +1185,7 @@ describe("parseAuditListPage (fail-closed)", () => {
     if (page.ok) {
       expect(page.entries).toEqual([]);
       expect(page.hasMore).toBe(false);
+      expect(page.droppedInvalid).toBe(0);
     }
   });
 });
@@ -722,10 +1260,70 @@ describe("loadAuditListPages (production list path)", () => {
         "old-approve",
       ]);
       expect(result.total).toBe(2);
+      expect(result.droppedInvalid).toBe(0);
     }
     expect(listFn).toHaveBeenCalledTimes(2);
-    expect(listFn).toHaveBeenCalledWith({ taskId: "old-turn", limit: 100 });
+    // Order of calls follows sorted normalize output
     expect(listFn).toHaveBeenCalledWith({ taskId: "new-turn", limit: 100 });
+    expect(listFn).toHaveBeenCalledWith({ taskId: "old-turn", limit: 100 });
+  });
+
+  it("multi-task all-empty merge is empty success", async () => {
+    const listFn = vi.fn(async () => ({
+      entries: [],
+      total: 0,
+      hasMore: false,
+      limit: 100,
+      offset: 0,
+    }));
+    const result = await loadAuditListPages(listFn, {
+      taskIds: ["a", "b"],
+      limit: 100,
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.entries).toEqual([]);
+      expect(result.hasMore).toBe(false);
+      expect(result.droppedInvalid).toBe(0);
+    }
+    expect(listFn).toHaveBeenCalledTimes(2);
+  });
+
+  it("multi-task partial soft-skip accumulates droppedInvalid without false hasMore", async () => {
+    const listFn = vi.fn(async (params: { taskId?: string }) => {
+      if (params.taskId === "a") {
+        return {
+          entries: [
+            { garbage: true } as unknown as AuditEntry,
+            entry({ id: "a1", taskId: "a", action: "x", decision: "info" }),
+          ],
+          total: 2,
+          hasMore: false,
+          limit: 100,
+          offset: 0,
+        };
+      }
+      return {
+        entries: [
+          entry({ id: "b1", taskId: "b", action: "y", decision: "deny" }),
+        ],
+        total: 1,
+        hasMore: false,
+        limit: 100,
+        offset: 0,
+      };
+    });
+    const result = await loadAuditListPages(listFn, {
+      taskIds: ["a", "b"],
+      limit: 100,
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.entries).toHaveLength(2);
+      expect(result.droppedInvalid).toBe(1);
+      // No page was truncated by pagination
+      expect(result.hasMore).toBe(false);
+    }
   });
 
   it("fail-closes on thrown list errors (no empty-success)", async () => {
@@ -890,10 +1488,47 @@ describe("loadAuditListPages (production list path)", () => {
       expect(result.reason).toBe("malformed");
     }
   });
+
+  it("all-blank taskIds with taskId fallback scopes to taskId", async () => {
+    const listFn = vi.fn(async (params: Record<string, unknown>) => ({
+      entries: [],
+      total: 0,
+      hasMore: false,
+      limit: 100,
+      offset: 0,
+      ...params,
+    }));
+    await loadAuditListPages(listFn, {
+      taskIds: ["", ""],
+      taskId: "fallback",
+      limit: 10,
+    });
+    expect(listFn).toHaveBeenCalledWith({ taskId: "fallback", limit: 10 });
+    expect(listFn.mock.calls[0][0]).not.toEqual({ limit: 10 });
+  });
+
+  it("all-blank taskIds without taskId uses sentinel (never global)", async () => {
+    const listFn = vi.fn(async (params: Record<string, unknown>) => ({
+      entries: [],
+      total: 0,
+      hasMore: false,
+      limit: 100,
+      offset: 0,
+      ...params,
+    }));
+    await loadAuditListPages(listFn, {
+      taskIds: ["", ""],
+      limit: 10,
+    });
+    expect(listFn).toHaveBeenCalledWith({
+      taskId: AUDIT_INVALID_SCOPE_SENTINEL,
+      limit: 10,
+    });
+  });
 });
 
 describe("audit drawer wiring (structural)", () => {
-  it("task workspace wires overflow View audit with stable thread taskIds", async () => {
+  it("task workspace wires overflow View audit with stable sorted thread taskIds", async () => {
     const fs = await import("node:fs");
     const path = await import("node:path");
     const { fileURLToPath } = await import("node:url");
@@ -909,6 +1544,8 @@ describe("audit drawer wiring (structural)", () => {
     expect(ws).toMatch(/taskIds=\{auditTaskIds\}/);
     expect(ws).toMatch(/const auditTaskIds = useMemo/);
     expect(ws).toMatch(/threadTaskIdsKey/);
+    // Set-stable sort so order-only churn does not thrash filter identity
+    expect(ws).toMatch(/localeCompare/);
     expect(ws).not.toMatch(
       /<AuditDrawer[\s\S]*taskId=\{task\.id\}[\s\S]*\/>/,
     );
@@ -960,6 +1597,8 @@ describe("audit drawer wiring (structural)", () => {
     );
     expect(en.settings.permissions.recentDecisionsHint).toMatch(/first page/i);
     expect(en.audit.hasMore).toMatch(/older entries not loaded/i);
+    expect(en.audit.droppedInvalid).toMatch(/invalid/i);
+    expect(en.audit.needsApproval).toMatch(/approval/i);
     expect(en.audit.malformed).toBeTruthy();
     expect(en.audit.unknownDecision).toBeTruthy();
     expect(en.audit.corruptDetail).toBeTruthy();
