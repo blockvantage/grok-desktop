@@ -18,6 +18,8 @@ The result is slow first feedback, weak continuation context, repetitive progres
 5. Present one stable live state, one stable approval interaction, and one durable final response per turn.
 6. Ensure the in-app browser remains available when ACP falls back to the headless engine.
 7. Make ordinary questions feel conversational rather than forcing every response into a deliverable report.
+8. Make loading, streaming, message arrival, and state transitions feel smooth and spatially stable.
+9. Open safe web links and citations inside Desk's in-app browser by default.
 
 ## Non-goals
 
@@ -123,6 +125,35 @@ The canonical conversation remains the primary surface.
 - Show citations adjacent to researched claims and artifacts as filename-first attachments; hide raw absolute paths until requested.
 - Keep raw events, tool names, and payload detail in the existing optional work/audit surfaces.
 
+#### Message and loading motion
+
+Loading uses spatial continuity instead of generic indefinite animation:
+
+- Initial conversation hydration renders a transcript-shaped skeleton that matches the final chat column width and message geometry.
+- A new user message settles into place immediately after durable acceptance; the live assistant state appears in the reserved response slot without shifting the transcript.
+- Streaming text updates the same response block and caret. Existing paragraphs do not replay entrance animation on every token or event.
+- Progress labels crossfade in place only when their semantic activity changes; elapsed-time ticks do not trigger visible remounts.
+- Approval, recovery, completion, citations, and artifacts morph or reveal within the reserved turn region rather than inserting competing cards above and below it.
+- Completion removes indeterminate motion before revealing the final response, preventing a spinner and finished answer from appearing simultaneously.
+- Animation uses transform and opacity only, with short 140–220 ms durations and the existing premium easing. No shimmer, pulse, bounce, glow, or attention animation runs indefinitely in the main transcript.
+- `prefers-reduced-motion` receives immediate state changes with the same spatial reservation and hierarchy.
+
+The opening boot screen may keep determinate progress only when it is tied to real boot stages. Conversation hydration and model execution use honest state labels rather than percentage bars that imply unavailable precision.
+
+#### Link and citation routing
+
+HTTP and HTTPS links rendered in assistant Markdown, citation cards, and artifact summaries open in the Desk browser pane by default.
+
+- Add a structured `browser.openUrl` gateway operation parallel to `browser.openHtml`.
+- Validate the scheme, reject embedded credentials, and route through the existing browser host policy and task partition.
+- Clicking a link opens or reveals the right-side browser pane while preserving the conversation and scroll position.
+- Repeated clicks in the same conversation reuse the existing browser session.
+- The link shows a small domain cue and accessible “Open in Desk browser” label; citation cards use the same handler.
+- A context-menu or explicit secondary action may open the system browser. Ordinary primary clicks never call `window.open` or create an external browser tab.
+- Fragment-only links remain local to the rendered response. Unsupported schemes render as inert text.
+- Local workspace links resolve through the existing asset/file-preview boundary and never become `file://` navigation.
+- Browser-open failure leaves the chat in place and shows one concise inline/toast recovery message with a retry action.
+
 ### 7. Conversational response policy
 
 The fallback prompt becomes intent-aware:
@@ -170,6 +201,10 @@ Test-first regressions will cover:
 11. Approval status transitions do not replay entrance animation or remount duplicate controls.
 12. Research without citation events cannot present unsupported source cards.
 13. An in-app open request takes the deterministic host path when a safe local HTML target is available.
+14. Assistant Markdown links and citation cards call the structured in-app `browser.openUrl` path and never default to `window.open`.
+15. Streaming updates preserve one message DOM identity and do not replay entrance motion per token.
+16. Loading-to-live-to-final transitions reserve space and never show simultaneous indeterminate and completed states.
+17. Motion-reduced rendering remains complete and usable without animation.
 
 The final verification gate includes focused unit tests, desktop renderer tests, gateway tests, typecheck, full workspace tests, build, and the existing chat E2E/visual QA suites.
 
@@ -184,3 +219,5 @@ The final verification gate includes focused unit tests, desktop renderer tests,
 - A turn presents one live state and one final assistant response without content flashing.
 - In-app browser capability remains available through provider fallback.
 - Research answers expose usable citations for time-sensitive claims.
+- Safe web links and citations open in the task-partitioned Desk browser while the conversation remains visible.
+- Loading and streaming preserve layout, avoid repeated pulses/shimmers, and transition smoothly into the final response.
