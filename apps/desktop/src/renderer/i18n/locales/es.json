@@ -678,7 +678,7 @@
       "auditSection": "Historial de decisiones",
       "recentDecisions": "Decisiones recientes",
       "recentDecisionsDesc": "Consulta las decisiones de permisos y herramientas registradas en este equipo.",
-      "recentDecisionsHint": "Abre el historial de auditoría completo (todas las tareas)."
+      "recentDecisionsHint": "Abre decisiones de auditoría recientes de todas las tareas (primera página; las más antiguas pueden no cargarse)."
     },
     "languageTitle": "Idioma",
     "languageDescription": "Elige el idioma de la interfaz de Grok Desk. Se aplica de inmediato.",
@@ -1709,13 +1709,19 @@
     "title": "Decisiones de auditoría",
     "titleTask": "Auditoría · {label}",
     "subtitle": "Decisiones de permisos y herramientas de esta tarea. Solo filas registradas reales.",
+    "subtitleThread": "Decisiones de permisos y herramientas de esta conversación (todos los turnos). Solo filas registradas reales.",
     "subtitleGlobal": "Decisiones recientes de permisos y herramientas. Solo filas registradas reales.",
     "emptyTitle": "Aún no hay decisiones",
     "emptyDesc": "Cuando Grok pida aprobación o las herramientas se ejecuten bajo política, las decisiones aparecerán aquí.",
     "loading": "Cargando auditoría…",
     "loadFailed": "No se pudo cargar el historial de auditoría",
+    "malformed": "La respuesta de auditoría no es válida — historial no mostrado.",
     "hasMore": "Mostrando {shown} de {total} — entradas antiguas no cargadas",
     "refresh": "Actualizar",
-    "globalLabel": "Todas las tareas"
+    "globalLabel": "Todas las tareas",
+    "unknownDecision": "La decisión almacenada era desconocida ({value}); se muestra como info.",
+    "unknownDecisionShort": "Decisión desconocida",
+    "corruptDetail": "El JSON de detalle estaba corrupto y no se pudo analizar.",
+    "corruptDetailShort": "Detalle corrupto"
   }
 }

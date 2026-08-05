@@ -678,7 +678,7 @@
       "auditSection": "Entscheidungs-Verlauf",
       "recentDecisions": "Aktuelle Entscheidungen",
       "recentDecisionsDesc": "Berechtigungs- und Tool-Entscheidungen auf diesem Gerät durchsuchen.",
-      "recentDecisionsHint": "Öffnet den vollständigen Audit-Verlauf (alle Aufgaben)."
+      "recentDecisionsHint": "Öffnet aktuelle Audit-Entscheidungen über alle Aufgaben (erste Seite; ältere Einträge ggf. unvollständig)."
     },
     "languageTitle": "Sprache",
     "languageDescription": "Sprache der Grok Desk-Oberfläche. Wirkt sofort.",
@@ -1709,13 +1709,19 @@
     "title": "Audit-Entscheidungen",
     "titleTask": "Audit · {label}",
     "subtitle": "Berechtigungs- und Tool-Entscheidungen für diese Aufgabe. Nur echte protokollierte Einträge.",
+    "subtitleThread": "Berechtigungs- und Tool-Entscheidungen für dieses Gespräch (alle Turns). Nur echte protokollierte Einträge.",
     "subtitleGlobal": "Aktuelle Berechtigungs- und Tool-Entscheidungen. Nur echte protokollierte Einträge.",
     "emptyTitle": "Noch keine Entscheidungen",
     "emptyDesc": "Wenn Grok um Freigabe bittet oder Tools unter Richtlinie laufen, erscheinen Entscheidungen hier.",
     "loading": "Audit wird geladen…",
     "loadFailed": "Audit-Verlauf konnte nicht geladen werden",
+    "malformed": "Audit-Antwort war ungültig — Verlauf nicht angezeigt.",
     "hasMore": "{shown} von {total} angezeigt — ältere Einträge nicht geladen",
     "refresh": "Aktualisieren",
-    "globalLabel": "Alle Aufgaben"
+    "globalLabel": "Alle Aufgaben",
+    "unknownDecision": "Gespeicherte Entscheidung war unbekannt ({value}); als info angezeigt.",
+    "unknownDecisionShort": "Unbekannte Entscheidung",
+    "corruptDetail": "Detail-JSON war beschädigt und konnte nicht gelesen werden.",
+    "corruptDetailShort": "Beschädigtes Detail"
   }
 }

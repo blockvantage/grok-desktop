@@ -3294,10 +3294,19 @@ export function TaskWorkspaceView(props: {
         </Suspense>
       ) : null}
 
+      {/*
+        Thread-wide audit: every turn has its own taskId; filtering only the
+        latest would hide prior approvals after a quiet follow-up (fail-closed
+        false-negative). Pass all open-chat task ids.
+      */}
       <AuditDrawer
         open={auditOpen}
         onOpenChange={setAuditOpen}
-        taskId={task.id}
+        taskIds={
+          props.threadTasks?.length
+            ? props.threadTasks.map((threadTask) => threadTask.id)
+            : [task.id]
+        }
         taskLabel={props.chatTitle || task.goal}
       />
     </div>

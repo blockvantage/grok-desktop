@@ -534,14 +534,20 @@
     "title": "Audit decisions",
     "titleTask": "Audit · {label}",
     "subtitle": "Permission and tool decisions recorded for this task. Only real logged rows appear here.",
+    "subtitleThread": "Permission and tool decisions for this conversation (all turns). Only real logged rows appear here.",
     "subtitleGlobal": "Recent permission and tool decisions across tasks. Only real logged rows appear here.",
     "emptyTitle": "No decisions yet",
     "emptyDesc": "When Grok asks for approval or tools run under policy, decisions show up here.",
     "loading": "Loading audit…",
     "loadFailed": "Could not load audit trail",
+    "malformed": "Audit response was invalid — trail not shown.",
     "hasMore": "Showing {shown} of {total} — older entries not loaded",
     "refresh": "Refresh",
-    "globalLabel": "All tasks"
+    "globalLabel": "All tasks",
+    "unknownDecision": "Stored decision was unknown ({value}); shown as info.",
+    "unknownDecisionShort": "Unknown decision",
+    "corruptDetail": "Detail JSON was corrupt and could not be parsed.",
+    "corruptDetailShort": "Corrupt detail"
   },
   "conversation": {
     "viewWork": "View work",
@@ -711,7 +717,7 @@
       "auditSection": "Decision history",
       "recentDecisions": "Recent decisions",
       "recentDecisionsDesc": "Browse permission and tool decisions recorded on this machine.",
-      "recentDecisionsHint": "Opens the full audit trail (all tasks)."
+      "recentDecisionsHint": "Opens recent audit decisions across all tasks (first page; older rows may not all load)."
     },
     "languageTitle": "Language",
     "languageDescription": "Choose the language for the Grok Desk interface. Takes effect immediately.",

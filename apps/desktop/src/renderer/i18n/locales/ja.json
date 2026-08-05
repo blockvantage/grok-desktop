@@ -678,7 +678,7 @@
       "auditSection": "決定履歴",
       "recentDecisions": "最近の決定",
       "recentDecisionsDesc": "このマシンに記録された権限・ツールの決定を確認します。",
-      "recentDecisionsHint": "全タスクの監査トレイルを開きます。"
+      "recentDecisionsHint": "全タスクの最近の監査決定を開きます（最初のページ。古い行はすべて読み込まれない場合があります）。"
     },
     "languageTitle": "言語",
     "languageDescription": "Grok Desk の表示言語を選びます。すぐに反映されます。",
@@ -1709,13 +1709,19 @@
     "title": "監査の決定",
     "titleTask": "監査 · {label}",
     "subtitle": "このタスクの権限・ツール決定。記録された実データのみ表示します。",
+    "subtitleThread": "この会話の全ターンの権限・ツール決定。記録された実データのみ表示します。",
     "subtitleGlobal": "最近の権限・ツール決定。記録された実データのみ表示します。",
     "emptyTitle": "まだ決定がありません",
     "emptyDesc": "Grok が承認を求めたり、ポリシー下でツールが実行されると、ここに決定が表示されます。",
     "loading": "監査を読み込み中…",
     "loadFailed": "監査履歴を読み込めませんでした",
+    "malformed": "監査レスポンスが無効です — 履歴を表示しません。",
     "hasMore": "{total} 件中 {shown} 件を表示 — 古いエントリは未読込",
     "refresh": "更新",
-    "globalLabel": "すべてのタスク"
+    "globalLabel": "すべてのタスク",
+    "unknownDecision": "保存された決定は不明（{value}）でした。info として表示。",
+    "unknownDecisionShort": "不明な決定",
+    "corruptDetail": "詳細 JSON が破損しており解析できませんでした。",
+    "corruptDetailShort": "破損した詳細"
   }
 }
