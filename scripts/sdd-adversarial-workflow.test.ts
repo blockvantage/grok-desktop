@@ -82,4 +82,42 @@ describe("sdd-adversarial-implement workflow (shipped Rhai)", () => {
     expect(src).toMatch(/max_components/);
     expect(src).toMatch(/write_scratch_file\s*\(\s*"sdd-adversarial-report\.md"/);
   });
+
+  it("uses per-component fix budget and never mutates args_max_fix_rounds after parse", () => {
+    const src = loadWorkflow();
+    expect(src).toMatch(/let args_max_fix_rounds\s*=/);
+    expect(src).toMatch(/let comp_fix_budget\s*=\s*args_max_fix_rounds/);
+    // Resume extends local budget only
+    expect(src).toMatch(/comp_fix_budget\s*=\s*fix_round\s*\+\s*1/);
+    // Must not reassign the immutable args budget after initialization block
+    const afterParse = src.slice(src.indexOf("let hard_rules"));
+    expect(afterParse).not.toMatch(/args_max_fix_rounds\s*=\s*args_max_fix_rounds\s*\+/);
+    expect(afterParse).not.toMatch(/args_max_fix_rounds\s*=\s*fix_round/);
+    expect(afterParse).not.toMatch(/max_fix_rounds\s*=\s*max_fix_rounds\s*\+/);
+  });
+
+  it("records components_blocked only on terminal abandon, exclusive of components_done", () => {
+    const src = loadWorkflow();
+    // Terminal abandon path
+    expect(src).toMatch(/terminal_block\s*=\s*true/);
+    expect(src).toMatch(/resume_grants\s*>=\s*max_resume_grants_per_component/);
+    expect(src).toMatch(/reason:\s*"adversarial_gate_open_after_fixes"/);
+    // When terminal, skip done
+    expect(src).toMatch(/if terminal_block \{[\s\S]*?continue;/);
+    // Exclusive outcome comment / control
+    expect(src).toMatch(/Exclusive outcome:\s*either DONE or BLOCKED/);
+    // Push blocked for adversarial must sit inside terminal grant-exhausted branch,
+    // not before await_user resume path.
+    const advExhaust = src.slice(
+      src.indexOf("if fix_round >= comp_fix_budget"),
+    );
+    const awaitIdx = advExhaust.indexOf('await_user(');
+    const blockedPushIdx = advExhaust.indexOf(
+      'reason: "adversarial_gate_open_after_fixes"',
+    );
+    expect(blockedPushIdx).toBeGreaterThan(-1);
+    expect(awaitIdx).toBeGreaterThan(-1);
+    // Terminal blocked push is in the resume_grants exhausted branch (before else await_user)
+    expect(blockedPushIdx).toBeLessThan(awaitIdx);
+  });
 });

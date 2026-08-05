@@ -120,13 +120,18 @@ if args != () && args.max_components != () {
 if max_components < 0 { max_components = 0; }
 if max_components > 40 { max_components = 40; }
 
-let max_fix_rounds = 2;
+// Immutable for the run — never mutate after parse. Each component copies this
+// into a local fix budget so resume extensions cannot leak across components.
+let args_max_fix_rounds = 2;
 if args != () && args.max_fix_rounds != () {
-    if type_of(args.max_fix_rounds) == "i64" { max_fix_rounds = args.max_fix_rounds; }
-    if type_of(args.max_fix_rounds) == "f64" { max_fix_rounds = args.max_fix_rounds; }
+    if type_of(args.max_fix_rounds) == "i64" { args_max_fix_rounds = args.max_fix_rounds; }
+    if type_of(args.max_fix_rounds) == "f64" { args_max_fix_rounds = args.max_fix_rounds; }
 }
-if max_fix_rounds < 0 { max_fix_rounds = 0; }
-if max_fix_rounds > 5 { max_fix_rounds = 5; }
+if args_max_fix_rounds < 0 { args_max_fix_rounds = 0; }
+if args_max_fix_rounds > 5 { args_max_fix_rounds = 5; }
+// Cap how many times a single component may await_user+extend after exhausting
+// its local budget (does not change args_max_fix_rounds for other components).
+let max_resume_grants_per_component = 3;
 
 let component_filter = "";
 if args != () && args.component != () && type_of(args.component) == "string" {
@@ -360,11 +365,16 @@ for comp in components {
     phase("Adversarial");
     let gate_open = true;
     let fix_round = 0;
+    // Per-component copy of args budget — resume may extend this only, never args_max_fix_rounds.
+    let comp_fix_budget = args_max_fix_rounds;
+    let resume_grants = 0;
+    let terminal_block = false;
     let last_findings_json = "[]";
     let last_gate_summary = "";
 
     while gate_open {
-        log("Adversarial review for " + comp_id + " (fix_round=" + fix_round.to_string() + ")");
+        log("Adversarial review for " + comp_id + " (fix_round=" + fix_round.to_string()
+            + " budget=" + comp_fix_budget.to_string() + ")");
 
         let impl_summary = "";
         if impl != () && impl.success && impl.output.summary != () {
@@ -481,78 +491,104 @@ for comp in components {
             }
             log("Adversarial gate OPEN for " + comp_id + ": " + last_gate_summary);
 
-            if fix_round >= max_fix_rounds {
-                // Exhausted fix budget — do not advance
-                components_blocked.push(#{
-                    id: comp_id,
-                    title: comp_title,
-                    reason: "adversarial_gate_open_after_fixes",
-                    findings: confirmed,
-                });
-                report_lines.push("- BLOCKED " + comp_id + " after adversarial: " + last_gate_summary);
-                await_user(
-                    "verification",
-                    "Adversarial gate still open for " + comp_id + " after " + max_fix_rounds.to_string()
-                        + " fix rounds. Findings: " + last_findings_json
-                        + ". Resume to continue fixing, or raise args.max_fix_rounds.",
-                );
-                // Post-resume: one more fix+review attempt
-                fix_round = 0;
-                max_fix_rounds = max_fix_rounds + 1;
-                if max_fix_rounds > 6 { max_fix_rounds = 6; }
-            }
-
-            // ---- Fix ----
-            phase("Fix");
-            fix_round += 1;
-            let fix_prompt = "";
-            fix_prompt += "You are the FIX agent after adversarial review failed.\n";
-            fix_prompt += "MONOREPO ROOT: " + root + "\n";
-            fix_prompt += hard_rules;
-            fix_prompt += "COMPONENT: " + comp_id + " — " + comp_title + "\n";
-            fix_prompt += "SPEC:\n" + json_encode(comp_body) + "\n";
-            fix_prompt += "CONFIRMED ADVERSARIAL FINDINGS (fix all with evidence):\n";
-            fix_prompt += last_findings_json + "\n";
-            fix_prompt += "Gate summary: " + last_gate_summary + "\n";
-            fix_prompt += "Fix round " + fix_round.to_string() + ".\n";
-            fix_prompt += "Read the cited files, implement fixes, add/adjust tests, re-run targeted tests.\n";
-            fix_prompt += "Return done, summary, changed_files[], addressed[] (issue strings fixed), notes.\n";
-
-            let fixr = agent(fix_prompt, #{
-                label: "fix:" + comp_id + ":" + fix_round.to_string(),
-                capability_mode: "all",
-                output_schema: fix_schema,
-            });
-
-            if fixr == () || !fixr.success {
-                await_user("verification", "Fix agent failed for " + comp_id + " round " + fix_round.to_string() + ". Resume to retry.");
-                // loop will re-run adversarial; still fail-closed if no fix
-            } else {
-                // Merge changed files into impl summary context for next review
-                if fixr.output.changed_files != () {
-                    let merged = [];
-                    if impl != () && impl.success && impl.output.changed_files != () {
-                        for x in impl.output.changed_files { merged.push(x); }
-                    }
-                    for x in fixr.output.changed_files { merged.push(x); }
-                    // Update impl.output for next adversarial prompt (re-bind summary)
-                    impl = #{
-                        success: true,
-                        output: #{
-                            done: true,
-                            summary: fixr.output.summary,
-                            changed_files: merged,
-                            tests_run: [],
-                            notes: "post-fix",
-                        },
-                    };
+            if fix_round >= comp_fix_budget {
+                // Local budget exhausted. Do NOT push components_blocked yet —
+                // only terminal abandon (no more resume grants) may record blocked,
+                // so a later gate pass cannot double-count Done+Blocked.
+                if resume_grants >= max_resume_grants_per_component {
+                    components_blocked.push(#{
+                        id: comp_id,
+                        title: comp_title,
+                        reason: "adversarial_gate_open_after_fixes",
+                        findings: confirmed,
+                    });
+                    report_lines.push("- BLOCKED " + comp_id + " after adversarial: " + last_gate_summary);
+                    terminal_block = true;
+                    gate_open = false;
+                    log("Terminal block for " + comp_id + " (resume grants exhausted)");
+                } else {
+                    await_user(
+                        "verification",
+                        "Adversarial gate still open for " + comp_id + " after "
+                            + fix_round.to_string()
+                            + " fix rounds (local budget "
+                            + comp_fix_budget.to_string()
+                            + ", args.max_fix_rounds="
+                            + args_max_fix_rounds.to_string()
+                            + "). Findings: " + last_findings_json
+                            + ". Resume for one more local fix attempt on this component only.",
+                    );
+                    // Extend THIS component only; args_max_fix_rounds stays immutable.
+                    resume_grants += 1;
+                    comp_fix_budget = fix_round + 1;
+                    log("Resume grant " + resume_grants.to_string()
+                        + " for " + comp_id + "; local budget now " + comp_fix_budget.to_string());
                 }
             }
-            // while continues → re-adversarial
+
+            if terminal_block {
+                // Exit while without running another fix; skip done push below.
+            } else {
+                // ---- Fix ----
+                phase("Fix");
+                fix_round += 1;
+                let fix_prompt = "";
+                fix_prompt += "You are the FIX agent after adversarial review failed.\n";
+                fix_prompt += "MONOREPO ROOT: " + root + "\n";
+                fix_prompt += hard_rules;
+                fix_prompt += "COMPONENT: " + comp_id + " — " + comp_title + "\n";
+                fix_prompt += "SPEC:\n" + json_encode(comp_body) + "\n";
+                fix_prompt += "CONFIRMED ADVERSARIAL FINDINGS (fix all with evidence):\n";
+                fix_prompt += last_findings_json + "\n";
+                fix_prompt += "Gate summary: " + last_gate_summary + "\n";
+                fix_prompt += "Fix round " + fix_round.to_string() + " of local budget "
+                    + comp_fix_budget.to_string() + " (args.max_fix_rounds="
+                    + args_max_fix_rounds.to_string() + " immutable).\n";
+                fix_prompt += "Read the cited files, implement fixes, add/adjust tests, re-run targeted tests.\n";
+                fix_prompt += "Return done, summary, changed_files[], addressed[] (issue strings fixed), notes.\n";
+
+                let fixr = agent(fix_prompt, #{
+                    label: "fix:" + comp_id + ":" + fix_round.to_string(),
+                    capability_mode: "all",
+                    output_schema: fix_schema,
+                });
+
+                if fixr == () || !fixr.success {
+                    await_user("verification", "Fix agent failed for " + comp_id + " round " + fix_round.to_string() + ". Resume to retry.");
+                    // loop will re-run adversarial; still fail-closed if no fix
+                } else {
+                    // Merge changed files into impl summary context for next review
+                    if fixr.output.changed_files != () {
+                        let merged = [];
+                        if impl != () && impl.success && impl.output.changed_files != () {
+                            for x in impl.output.changed_files { merged.push(x); }
+                        }
+                        for x in fixr.output.changed_files { merged.push(x); }
+                        // Update impl.output for next adversarial prompt (re-bind summary)
+                        impl = #{
+                            success: true,
+                            output: #{
+                                done: true,
+                                summary: fixr.output.summary,
+                                changed_files: merged,
+                                tests_run: [],
+                                notes: "post-fix",
+                            },
+                        };
+                    }
+                }
+            }
+            // while continues → re-adversarial (unless terminal_block closed the gate)
         }
     }
 
-    // Gate passed
+    // Exclusive outcome: either DONE or BLOCKED for this id — never both.
+    if terminal_block {
+        log("Component terminal-blocked (not done): " + comp_id);
+        continue;
+    }
+
+    // Gate passed (and not terminal-blocked)
     components_done.push(#{
         id: comp_id,
         title: comp_title,
@@ -584,7 +620,8 @@ md += "## Run context\n\n";
 md += "- root: `" + root + "`\n";
 md += "- plan_path: `" + plan_path + "`\n";
 md += "- max_components: " + max_components.to_string() + "\n";
-md += "- max_fix_rounds: " + max_fix_rounds.to_string() + "\n\n";
+md += "- args.max_fix_rounds (immutable): " + args_max_fix_rounds.to_string() + "\n";
+md += "- resume grants cap per component: " + max_resume_grants_per_component.to_string() + "\n\n";
 md += "## Components done\n\n";
 if components_done.len() == 0 {
     md += "(none)\n\n";
@@ -612,7 +649,8 @@ md += "- Implementer uses capability_mode `all` (write + execute tests).\n";
 md += "- Adversarial reviewers are `read-only` and must set `inspected=true` after reading code.\n";
 md += "- Advancement requires all dimensions approved, full parallel panel usable, and zero evidence-backed findings.\n";
 md += "- Missing/failed reviewer or `approved!=true` keeps the gate open (fail-closed).\n";
-md += "- Fix loop runs until gate passes or max_fix_rounds + user resume.\n";
+md += "- Fix loop uses per-component local budget (copy of args.max_fix_rounds); resume extends local budget only.\n";
+md += "- components_blocked is terminal-only; a later gate pass never double-counts Done+Blocked for the same id.\n";
 
 let report_path = write_scratch_file("sdd-adversarial-report.md", md);
 log("Wrote report " + report_path);
