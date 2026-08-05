@@ -59,6 +59,38 @@ describe("TaskRunner", () => {
     expect(fs.existsSync(path.join(ws, "grokdesk-output.md"))).toBe(true);
   });
 
+  it("does not host-execute a self-owned tool after the global engine is hot-swapped", async () => {
+    const ws = path.join(dir, "ws-run-engine-ownership");
+    fs.mkdirSync(ws);
+    const output = path.join(ws, "provider-owned.txt");
+    const selfOwnedEngine: EngineAdapter = {
+      executesOwnTools: true,
+      async cancel() {},
+      async run(options) {
+        runner.setEngine(new TestEngine());
+        await options.onEvent({
+          type: "tool_request",
+          id: "provider-write",
+          tool: "write_file",
+          path: output,
+          meta: { content: "must not be written by the host" },
+        });
+        await options.onEvent({ type: "done", summary: "provider finished" });
+      },
+    };
+    runner = new TaskRunner(tasks, audit, selfOwnedEngine);
+    const task = tasks.create({
+      goal: "Keep tool ownership stable",
+      workspaceRoots: [ws],
+      approvalMode: "autopilot",
+    });
+
+    await runner.start(task.id);
+
+    expect(fs.existsSync(output)).toBe(false);
+    expect(tasks.get(task.id)?.status).toBe("done");
+  });
+
   it("reconciles the assistant turn before publishing done status", async () => {
     const calls: Array<{ taskId: string; status: string | undefined }> = [];
     runner = new TaskRunner(tasks, audit, new TestEngine(), {

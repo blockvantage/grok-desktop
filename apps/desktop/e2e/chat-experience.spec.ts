@@ -280,6 +280,7 @@ test.describe("refined chat production trace", () => {
         model: "fake-fast",
         effort: "normal",
         approvalMode: "strict",
+        allowNetworkTools: true,
         clientMutationId: "refined-chat-real-app",
         locale: "en",
       });
@@ -322,6 +323,31 @@ test.describe("refined chat production trace", () => {
       await expect(page.locator("[data-browser-pane]")).toBeVisible({
         timeout: 30_000,
       });
+      const expectedUrl =
+        "https://www.electronjs.org/docs/latest/tutorial/security";
+      await expect(page.locator("[data-browser-pane]")).toHaveAttribute(
+        "data-browser-url",
+        expectedUrl,
+        { timeout: 30_000 },
+      );
+      await expect
+        .poll(
+          async () => {
+            const events = await rpc<TaskEvent[]>(page, "events.list", {
+              taskId: created.id,
+              afterSeq: 0,
+            });
+            return events.some(
+              (event) =>
+                event.kind === "tool_result" &&
+                event.payload.tool === "browser_open" &&
+                event.payload.ok === true &&
+                event.payload.browserProvider === "desk-browser",
+            );
+          },
+          { timeout: 30_000, intervals: [100, 250, 500] },
+        )
+        .toBe(true);
     } finally {
       await closeElectron(app);
       fs.rmSync(profile, { recursive: true, force: true });

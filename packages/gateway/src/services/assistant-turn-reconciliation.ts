@@ -17,17 +17,34 @@ type AssistantTurnInput = {
   contextStrategy: "transcript_fallback";
   modelId: string;
   providerId: string;
+  createdAt: string;
+  replaceExisting: true;
+};
+
+type AssistantFinal = {
+  content: string;
+  createdAt: string;
 };
 
 export function selectSafeAssistantFinal(events: readonly TaskEvent[]): string | null {
-  const groups: string[] = [];
-  const terminal: string[] = [];
+  return selectSafeAssistantFinalWithMetadata(events)?.content ?? null;
+}
+
+export function selectSafeAssistantFinalWithMetadata(
+  events: readonly TaskEvent[],
+): AssistantFinal | null {
+  const groups: AssistantFinal[] = [];
+  const terminal: AssistantFinal[] = [];
   let current = "";
+  let currentCreatedAt = "";
 
   const flush = () => {
     const value = current.trim();
-    if (isSafeAssistantText(value)) groups.push(value);
+    if (isSafeAssistantText(value) && currentCreatedAt) {
+      groups.push({ content: value, createdAt: currentCreatedAt });
+    }
     current = "";
+    currentCreatedAt = "";
   };
 
   for (const event of events) {
@@ -49,7 +66,7 @@ export function selectSafeAssistantFinal(events: readonly TaskEvent[]): string |
     }
     if (payload.terminal === true) {
       flush();
-      terminal.push(text.trim());
+      terminal.push({ content: text.trim(), createdAt: event.createdAt });
       continue;
     }
     if (current.length + text.length > MAX_ASSISTANT_TURN_LENGTH) {
@@ -57,11 +74,20 @@ export function selectSafeAssistantFinal(events: readonly TaskEvent[]): string |
       continue;
     }
     current += text;
+    currentCreatedAt = event.createdAt;
   }
   flush();
 
-  const substantive = groups.filter((text) => !isOperationalNarration(text));
-  return substantive.at(-1) ?? terminal.at(-1) ?? groups.at(-1) ?? null;
+  const substantive = groups.filter(
+    (candidate) => !isOperationalNarration(candidate.content),
+  );
+  if (substantive.length > 0) {
+    return {
+      content: substantive.map((candidate) => candidate.content).join("\n\n"),
+      createdAt: substantive.at(-1)!.createdAt,
+    };
+  }
+  return terminal.at(-1) ?? groups.at(-1) ?? null;
 }
 
 export function reconcileAssistantTurn<T>(input: {
@@ -71,16 +97,18 @@ export function reconcileAssistantTurn<T>(input: {
 }): T | null {
   const conversationId = input.task.conversationId;
   if (!conversationId) return null;
-  const content = selectSafeAssistantFinal(input.events);
-  if (!content) return null;
+  const selected = selectSafeAssistantFinalWithMetadata(input.events);
+  if (!selected) return null;
   return input.appendTurn({
     conversationId,
     taskId: input.task.id,
     role: "assistant",
-    content,
+    content: selected.content,
     contextStrategy: "transcript_fallback",
     modelId: input.task.model,
     providerId: "grok",
+    createdAt: selected.createdAt,
+    replaceExisting: true,
   });
 }
 

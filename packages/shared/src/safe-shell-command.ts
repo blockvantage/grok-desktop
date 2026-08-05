@@ -4,6 +4,12 @@ export type SafeShellClassification =
   | { safe: true; reason: "read_only" | "verification" }
   | { safe: false; reason: string };
 
+export type SafeShellClassificationContext = {
+  cwd: string;
+  /** Resolve symlinks and return an absolute canonical path; null means unresolved. */
+  canonicalizePath: (candidate: string) => string | null;
+};
+
 const READ_ONLY_COMMANDS = new Set(["cat", "head", "ls", "pwd", "rg", "tail", "wc"]);
 const SAFE_GIT_SUBCOMMANDS = new Set([
   "branch",
@@ -29,6 +35,7 @@ const SAFE_PACKAGE_SCRIPTS = new Set([
 export function classifyBalancedShellCommand(
   command: string,
   workspaceRoots: readonly string[] = [],
+  context?: SafeShellClassificationContext,
 ): SafeShellClassification {
   const value = command.trim();
   if (!value) return unsafe("empty command");
@@ -44,6 +51,9 @@ export function classifyBalancedShellCommand(
   }
   if (tokens.some(hasParentTraversal)) {
     return unsafe("parent path traversal is not auto-approved");
+  }
+  if (tokens.some(hasHomeExpansion)) {
+    return unsafe("home-directory expansion is not auto-approved");
   }
   for (const token of tokens) {
     const optionValue = valueAfterEquals(token);
@@ -63,10 +73,28 @@ export function classifyBalancedShellCommand(
   const executable = tokens[0]?.toLowerCase();
   if (!executable) return unsafe("missing executable");
 
+  if (context) {
+    const canonicalCwd = context.canonicalizePath(".");
+    if (
+      !canonicalCwd ||
+      !isPathInsideAnyRoot(canonicalCwd, [...workspaceRoots])
+    ) {
+      return unsafe("command working directory is outside the authorized workspace");
+    }
+  }
+
   if (executable === "pwd" && tokens.length === 1) {
     return { safe: true, reason: "read_only" };
   }
   if (READ_ONLY_COMMANDS.has(executable) && isSafeReadCommand(executable, tokens.slice(1))) {
+    if (context) {
+      for (const candidate of readPathCandidates(executable, tokens.slice(1))) {
+        const canonical = context.canonicalizePath(candidate);
+        if (!canonical || !isPathInsideAnyRoot(canonical, [...workspaceRoots])) {
+          return unsafe("read target resolves outside the authorized workspace");
+        }
+      }
+    }
     return { safe: true, reason: "read_only" };
   }
   if (executable === "git" && isSafeGitCommand(tokens.slice(1))) {
@@ -126,6 +154,10 @@ function hasParentTraversal(token: string): boolean {
   return /(^|[\\/])\.\.([\\/]|$)/.test(token);
 }
 
+function hasHomeExpansion(token: string): boolean {
+  return /^~(?:[A-Za-z0-9._-]+)?(?:[\\/]|$)/.test(token);
+}
+
 function isAbsolutePathToken(token: string): boolean {
   return token.startsWith("/") || /^[A-Za-z]:[\\/]/.test(token);
 }
@@ -159,9 +191,59 @@ function isSafeGitCommand(args: string[]): boolean {
     return false;
   }
   if (subcommand === "branch") {
-    return args.slice(1).every((arg) => arg.startsWith("-") || arg === "list");
+    const safeBranchFlags = new Set([
+      "--all",
+      "--list",
+      "--remotes",
+      "--show-current",
+      "--verbose",
+      "-a",
+      "-l",
+      "-r",
+      "-v",
+      "-vv",
+    ]);
+    return args.slice(1).every((arg) => safeBranchFlags.has(arg));
   }
   return true;
+}
+
+function readPathCandidates(executable: string, args: string[]): string[] {
+  if (executable === "pwd") return [];
+  if (executable === "rg") {
+    const positional: string[] = [];
+    const flagsWithValues = new Set([
+      "-e",
+      "-g",
+      "-t",
+      "--glob",
+      "--regexp",
+      "--type",
+    ]);
+    for (let index = 0; index < args.length; index += 1) {
+      const arg = args[index]!;
+      if (flagsWithValues.has(arg)) {
+        index += 1;
+        continue;
+      }
+      if (arg.startsWith("-")) continue;
+      positional.push(arg);
+    }
+    if (args.includes("--files")) return positional;
+    return positional.slice(1);
+  }
+
+  const candidates: string[] = [];
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index]!;
+    if (arg === "-n" || arg === "-c") {
+      index += 1;
+      continue;
+    }
+    if (/^-[0-9]+$/.test(arg) || arg.startsWith("-")) continue;
+    candidates.push(arg);
+  }
+  return candidates;
 }
 
 function isSafePackageVerification(args: string[]): boolean {

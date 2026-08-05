@@ -323,6 +323,37 @@ describe("AgentProviderEngine", () => {
     expect(events).toContain("done");
   });
 
+  it("reports self-executing ownership after a mediated provider falls back", async () => {
+    const provider = {
+      id: "grok",
+      getCapabilities: async () => ({
+        toolMediation: "provider-permission-rpc",
+        policyEnforceable: true,
+      }),
+      createSession: async () => {
+        throw new Error("acp spawn failed");
+      },
+    } as never;
+    const fallback = {
+      executesOwnTools: true,
+      async run(options: {
+        onEvent: (event: NormalizedEngineEvent) => Promise<"continue" | "abort">;
+      }) {
+        await options.onEvent({ type: "done", summary: "fallback done" });
+      },
+      async cancel() {},
+    } as never;
+    const engine = createAgentProviderEngine(provider, { fallbackEngine: fallback });
+
+    await engine.run({
+      task: task("fallback ownership", ["/tmp"]),
+      systemPreamble: "",
+      onEvent: async () => "continue",
+    });
+
+    expect(engine.executesOwnTools).toBe(true);
+  });
+
   it("opens an engine-wide circuit after provider session initialization fails", async () => {
     const fallbackRuns: string[] = [];
     const createSession = vi.fn(async () => {

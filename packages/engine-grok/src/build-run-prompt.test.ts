@@ -95,6 +95,8 @@ describe("buildRunPrompt intent-aware guidance", () => {
     "How should I fix this?",
     "Can you explain how React updates state?",
     "What should I update in this configuration?",
+    "Please explain how to fix this error",
+    "Show me how to build a React app",
   ])("keeps explanatory code questions conversational: %s", (goal) => {
     const prompt = buildPromptForTest({ ...baseTask, goal });
 

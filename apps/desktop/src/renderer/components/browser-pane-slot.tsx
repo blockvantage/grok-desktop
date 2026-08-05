@@ -118,6 +118,9 @@ export function BrowserPaneSlot({
       )}
       data-browser-pane
       data-task-id={taskId}
+      data-browser-url={status?.url || undefined}
+      data-browser-loading={status ? String(status.loading) : undefined}
+      data-browser-error={status?.error || undefined}
       aria-label={t("workspace.browserPane")}
     >
       <div

@@ -221,3 +221,18 @@ The final verification gate includes focused unit tests, desktop renderer tests,
 - Research answers expose usable citations for time-sensitive claims.
 - Safe web links and citations open in the task-partitioned Desk browser while the conversation remains visible.
 - Loading and streaming preserve layout, avoid repeated pulses/shimmers, and transition smoothly into the final response.
+
+## Adversarial review remediation addendum
+
+The approved implementation must also satisfy these fail-closed invariants:
+
+1. Tool normalization preserves `path`, `command`, and execution-directory fields from top-level and nested `input`/`arguments`/`args` envelopes. A path-bearing tool with no trustworthy target is never authorized as an in-workspace operation.
+2. Unknown or ambiguously classified tools never use a default-allow policy. Command aliases including `exec`, `exec_command`, and `run_command` are shell operations.
+3. Balanced shell authorization rejects home expansion, symlink escapes, mutation-capable git flags, unknown package-script behavior, and any command whose effective working directory or targets cannot be proven to remain inside an authorized root.
+4. Recognized protocol types are dispatched before generic text fields. Protocol-looking content is dropped, rather than displayed, when nested-envelope inspection reaches its depth or size limit.
+5. Provider fallback updates the active execution-ownership contract before fallback events reach the runner; a self-executing fallback is never host-re-executed.
+6. Assistant reconciliation is fenced to the winning run, scans the complete event history, and may correct an existing assistant turn deterministically.
+7. Backfilled assistant turns retain task/event chronology, and transcript ordering remains user/assistant alternating where the task graph says it should.
+8. Final-answer assembly preserves safe text across citations and tool activity. A short answer beginning with “I’ll” or similar language is not discarded solely because of its opening words.
+9. Explicit explanatory requests take precedence over implementation keywords in prompt intent classification.
+10. Link E2E coverage verifies the successful browser receipt and destination, not merely that the browser pane became visible.

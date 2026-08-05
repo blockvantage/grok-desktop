@@ -152,7 +152,9 @@ export function ConversationTurn({
     LIVE_STATES.has(turn.state) &&
     !(turn.state === "waiting_approval" && turn.approval);
   const planOwnsApproval =
-    Boolean(turn.approval) && turn.plan?.status === "awaiting_approval";
+    turn.plan?.status === "awaiting_approval" &&
+    (turn.approval?.payload.kind === "plan_review" ||
+      turn.approval?.payload.planReview === true);
   const foldedArtifacts = useMemo(
     () =>
       foldTurnArtifacts(
@@ -553,6 +555,7 @@ export function ConversationTurn({
         <PlanCard
           plan={turn.plan}
           busy={Boolean(approvalBusy)}
+          actionable={planOwnsApproval}
           onOpenUrl={onOpenUrl}
           onApprove={() => {
             if (!approvalTarget || !onApprove) return;

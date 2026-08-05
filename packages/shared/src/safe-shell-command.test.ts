@@ -40,7 +40,41 @@ describe("classifyBalancedShellCommand", () => {
     "bun --cwd /tmp/outside test",
     "pnpm -C=/tmp/outside test",
     "pnpm -C /tmp/outside test",
+    "cat ~/.ssh/id_rsa",
+    "head ~root/.ssh/id_rsa",
+    "git branch --unset-upstream",
+    "git branch --set-upstream-to=origin/main",
+    "git branch --edit-description",
   ])("keeps risky or unclassified work gated: %s", (command) => {
     expect(classifyBalancedShellCommand(command, roots).safe).toBe(false);
+  });
+
+  it("rejects a relative path when canonical resolution escapes the workspace", () => {
+    type ClassifierWithContext = (
+      command: string,
+      roots: readonly string[],
+      context: {
+        cwd: string;
+        canonicalizePath: (candidate: string) => string | null;
+      },
+    ) => ReturnType<typeof classifyBalancedShellCommand>;
+    const classifyWithContext =
+      classifyBalancedShellCommand as unknown as ClassifierWithContext;
+
+    expect(
+      classifyWithContext("cat ./outside-link", roots, {
+        cwd: roots[0]!,
+        canonicalizePath: () => "/private/secret.txt",
+      }).safe,
+    ).toBe(false);
+  });
+
+  it("rejects verification commands whose working directory resolves outside the workspace", () => {
+    expect(
+      classifyBalancedShellCommand("pnpm test", roots, {
+        cwd: roots[0]!,
+        canonicalizePath: () => "/private/outside-project",
+      }).safe,
+    ).toBe(false);
   });
 });

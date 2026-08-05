@@ -63,6 +63,21 @@ describe("evaluateToolRequest", () => {
     ).toBe("needs_approval");
   });
 
+  it("requires approval for an unknown balanced-mode tool", () => {
+    expect(evaluateToolRequest(balanced, { tool: "other" }).decision).toBe(
+      "needs_approval",
+    );
+  });
+
+  it.each(["read_file", "write_file"] as const)(
+    "does not authorize %s when its target path is missing",
+    (tool) => {
+      expect(evaluateToolRequest(balanced, { tool }).decision).toBe(
+        "needs_approval",
+      );
+    },
+  );
+
   it("requires approval for every write in strict", () => {
     const strict: PolicySnapshot = { ...balanced, approvalMode: "strict" };
     const r = evaluateToolRequest(strict, {

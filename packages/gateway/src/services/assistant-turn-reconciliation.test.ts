@@ -109,6 +109,28 @@ describe("assistant turn reconciliation", () => {
     ).toBe(linkedAnswer);
   });
 
+  it("preserves a multi-part final across citation metadata", () => {
+    expect(
+      selectSafeAssistantFinal([
+        event(1, "message", {
+          role: "assistant",
+          channel: "text",
+          text: "The first finding is confirmed.",
+        }),
+        event(2, "citations", {
+          items: [{ url: "https://example.com/source" }],
+        }),
+        event(3, "message", {
+          role: "assistant",
+          channel: "text",
+          text: "The second finding needs follow-up.",
+        }),
+      ]),
+    ).toBe(
+      "The first finding is confirmed.\n\nThe second finding needs follow-up.",
+    );
+  });
+
   it("appends a complete assistant turn with task metadata", () => {
     const appendTurn = vi.fn((input) => input);
     const result = reconcileAssistantTurn({
@@ -136,6 +158,8 @@ describe("assistant turn reconciliation", () => {
       contextStrategy: "transcript_fallback",
       modelId: "grok-4.5",
       providerId: "grok",
+      createdAt: "2026-08-05T00:00:01.000Z",
+      replaceExisting: true,
     });
   });
 });

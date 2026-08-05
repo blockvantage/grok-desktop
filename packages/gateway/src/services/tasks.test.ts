@@ -38,6 +38,25 @@ describe("TaskService", () => {
     expect(tasks.list()).toHaveLength(1);
   });
 
+  it("reads complete event histories beyond the default page size", () => {
+    const task = tasks.create({ goal: "long run", workspaceRoots: [dir] });
+    const appended = 2_025;
+    for (let index = 0; index < appended; index += 1) {
+      tasks.appendEvent(task.id, "step", {
+        title: `step-${index}`,
+        status: "start",
+      });
+    }
+    const withCompleteHistory = tasks as TaskService & {
+      listAllEvents(taskId: string): ReturnType<TaskService["listEvents"]>;
+    };
+
+    const events = withCompleteHistory.listAllEvents(task.id);
+
+    expect(events.length).toBeGreaterThan(2_000);
+    expect(events.at(-1)?.payload.title).toBe(`step-${appended - 1}`);
+  });
+
   it("rejects relative workspace roots", () => {
     expect(() =>
       tasks.create({

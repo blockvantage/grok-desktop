@@ -1551,6 +1551,7 @@ export function TaskWorkspaceView(props: {
     // The user's click should respond immediately. Navigation can take time on
     // a cold browser process or slow network, so reveal the pane first and let
     // its own loading/error state tell the truth while the host request settles.
+    const wasOpen = browserUi.open;
     setBrowserUi((state) => reduceBrowserUi(state, { type: "user_open" }));
     try {
       const res = await rpc<{ ok?: boolean; output?: string }>(
@@ -1558,6 +1559,9 @@ export function TaskWorkspaceView(props: {
         { taskId: task.id, url },
       );
       if (res?.ok) return;
+      setBrowserUi((state) =>
+        reduceBrowserUi(state, { type: "user_open_failed", wasOpen }),
+      );
       toast({
         description: res?.output || t("workspace.openInBrowserFailed"),
         variant: "destructive",
@@ -1569,6 +1573,9 @@ export function TaskWorkspaceView(props: {
         },
       });
     } catch (error) {
+      setBrowserUi((state) =>
+        reduceBrowserUi(state, { type: "user_open_failed", wasOpen }),
+      );
       toast({
         description:
           error instanceof Error

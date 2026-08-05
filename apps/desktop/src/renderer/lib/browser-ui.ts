@@ -13,6 +13,7 @@ export const initialBrowserUiState = (): BrowserUiState => ({
 export type BrowserUiEvent =
   | { type: "agent_browser_activity" }
   | { type: "user_open" }
+  | { type: "user_open_failed"; wasOpen: boolean }
   | { type: "user_toggle" }
   | { type: "user_collapse" }
   | { type: "user_pin"; pinned: boolean };
@@ -35,6 +36,12 @@ export function reduceBrowserUi(
       return { ...state, open: true };
     case "user_open":
       return { ...state, open: true, keepClosed: false };
+    case "user_open_failed":
+      return {
+        ...state,
+        open: state.pinned || event.wasOpen,
+        keepClosed: false,
+      };
     case "user_toggle":
       if (state.open) {
         return { ...state, open: false, keepClosed: true, pinned: false };

@@ -24,6 +24,13 @@ export interface ToolRequest {
   meta?: Record<string, unknown>;
 }
 
+export type PolicyEvaluationContext = {
+  shell?: {
+    cwd: string;
+    canonicalizePath: (candidate: string) => string | null;
+  };
+};
+
 export type PolicyDecision = "allow" | "deny" | "needs_approval";
 
 export interface PolicyResult {
@@ -34,6 +41,7 @@ export interface PolicyResult {
 export function evaluateToolRequest(
   policy: PolicySnapshot,
   req: ToolRequest,
+  context?: PolicyEvaluationContext,
 ): PolicyResult {
   // Browser tools use evaluateBrowserToolRequest when session state is available.
   // Fallback: gate only on network flag so unknown paths stay safe.
@@ -53,6 +61,18 @@ export function evaluateToolRequest(
     }
   }
 
+  if (
+    (req.tool === "read_file" ||
+      req.tool === "write_file" ||
+      req.tool === "delete_file") &&
+    !req.path
+  ) {
+    return {
+      decision: "needs_approval",
+      reason: "Tool target path is missing",
+    };
+  }
+
   if (req.tool === "shell") {
     if (!policy.allowShell) {
       return { decision: "deny", reason: "Shell is disabled by policy" };
@@ -64,6 +84,7 @@ export function evaluateToolRequest(
       const classification = classifyBalancedShellCommand(
         req.command,
         policy.workspaceRoots,
+        context?.shell,
       );
       if (classification.safe) {
         return {
@@ -131,5 +152,12 @@ export function evaluateToolRequest(
     };
   }
 
-  return { decision: "allow", reason: "Default allow" };
+  if (policy.approvalMode === "balanced") {
+    return {
+      decision: "needs_approval",
+      reason: "Unclassified tool requires approval",
+    };
+  }
+
+  return { decision: "allow", reason: "Autopilot default allow" };
 }

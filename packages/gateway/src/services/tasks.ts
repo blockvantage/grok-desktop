@@ -647,4 +647,19 @@ export class TaskService {
       };
     });
   }
+
+  /** Complete ordered history for reconciliation and other bounded local work. */
+  listAllEvents(taskId: string, pageSize = 2_000): TaskEvent[] {
+    const size = Math.min(Math.max(1, Math.floor(pageSize)), 10_000);
+    const events: TaskEvent[] = [];
+    let afterSeq = 0;
+    for (;;) {
+      const page = this.listEvents(taskId, afterSeq, size);
+      events.push(...page);
+      if (page.length < size) return events;
+      const nextSeq = page.at(-1)?.seq ?? afterSeq;
+      if (nextSeq <= afterSeq) return events;
+      afterSeq = nextSeq;
+    }
+  }
 }

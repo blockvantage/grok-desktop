@@ -163,6 +163,54 @@ describe("conversations / turns (TASK-02)", () => {
     ]);
   });
 
+  it("authoritatively replaces a reconciled assistant turn and preserves chronology", () => {
+    const root = tasks.create({ goal: "First question", workspaceRoots: [dir] });
+    const conversation = conv.ensureForTask({ taskId: root.id });
+    conv.appendTurn({
+      conversationId: conversation.id,
+      taskId: root.id,
+      role: "user",
+      content: root.goal,
+      createdAt: "2026-08-05T10:00:00.000Z",
+    });
+    const provisional = conv.appendTurn({
+      conversationId: conversation.id,
+      taskId: root.id,
+      role: "assistant",
+      content: "Early answer",
+      createdAt: "2026-08-05T10:00:01.000Z",
+    });
+    const corrected = conv.appendTurn({
+      conversationId: conversation.id,
+      taskId: root.id,
+      role: "assistant",
+      content: "Complete authoritative answer",
+      createdAt: "2026-08-05T10:00:02.000Z",
+      replaceExisting: true,
+    });
+    const child = tasks.create({
+      goal: "Second question",
+      workspaceRoots: [dir],
+      parentTaskId: root.id,
+    });
+    conv.appendTurn({
+      conversationId: conversation.id,
+      taskId: child.id,
+      role: "user",
+      content: child.goal,
+      createdAt: "2026-08-05T10:00:03.000Z",
+    });
+
+    expect(corrected.id).toBe(provisional.id);
+    expect(
+      conv.listTurns(conversation.id).map((turn) => [turn.role, turn.content]),
+    ).toEqual([
+      ["user", "First question"],
+      ["assistant", "Complete authoritative answer"],
+      ["user", "Second question"],
+    ]);
+  });
+
   it("requires the user turn to belong to the task's current conversation", () => {
     const root = tasks.create({ goal: "current context", workspaceRoots: [dir] });
     const oldConversation = conv.ensureForTask({ taskId: root.id });

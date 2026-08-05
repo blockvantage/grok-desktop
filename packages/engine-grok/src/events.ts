@@ -94,27 +94,6 @@ function normalizeJsonEvent(
   }
 
   if (
-    type === "assistant" ||
-    type === "message" ||
-    type === "content" ||
-    type === "content_block_delta" ||
-    typeof obj.text === "string" ||
-    typeof obj.content === "string"
-  ) {
-    const text = String(
-      obj.text ?? obj.content ?? obj.message ?? obj.delta ?? obj.data ?? "",
-    );
-    if (!text) return [];
-    const role =
-      obj.role === "user" || obj.role === "assistant"
-        ? (obj.role as "user" | "assistant")
-        : "assistant";
-    const channel =
-      type === "thought" || obj.channel === "thought" ? "thought" : "text";
-    return normalizeVisibleText(text, channel, role, depth);
-  }
-
-  if (
     type === "tool_use" ||
     type === "tool_call" ||
     type === "tool_request" ||
@@ -133,6 +112,10 @@ function normalizeJsonEvent(
       (obj.arguments as Record<string, unknown> | undefined) ??
       (obj.args as Record<string, unknown> | undefined) ??
       obj;
+    const nestedPath =
+      typeof input === "object" && input && "path" in input
+        ? (input as { path?: unknown }).path
+        : undefined;
     return [
       {
         type: "tool_request",
@@ -140,7 +123,12 @@ function normalizeJsonEvent(
           obj.id ?? obj.tool_use_id ?? obj.call_id ?? `tool-${Date.now()}`,
         ),
         tool,
-        path: typeof obj.path === "string" ? obj.path : undefined,
+        path:
+          typeof obj.path === "string"
+            ? obj.path
+            : typeof nestedPath === "string"
+              ? nestedPath
+              : undefined,
         command:
           typeof obj.command === "string"
             ? obj.command
@@ -183,7 +171,9 @@ function normalizeJsonEvent(
     return [
       {
         type: "error",
-        message: String(obj.message ?? obj.error ?? obj.data ?? "Engine error"),
+        message: String(
+          obj.message ?? obj.error ?? obj.data ?? obj.text ?? "Engine error",
+        ),
       },
     ];
   }
@@ -196,6 +186,29 @@ function normalizeJsonEvent(
         status: obj.status === "end" || obj.status === "completed" ? "end" : "start",
       },
     ];
+  }
+
+  // Only generic message-like envelopes may fall back to string fields. Keep
+  // this after every recognized protocol type so content/text cannot turn tool
+  // results, errors, or terminal markers into assistant prose.
+  if (
+    type === "assistant" ||
+    type === "message" ||
+    type === "content" ||
+    type === "content_block_delta" ||
+    (!type &&
+      (typeof obj.text === "string" || typeof obj.content === "string"))
+  ) {
+    const text = String(
+      obj.text ?? obj.content ?? obj.message ?? obj.delta ?? obj.data ?? "",
+    );
+    if (!text) return [];
+    const role =
+      obj.role === "user" || obj.role === "assistant"
+        ? (obj.role as "user" | "assistant")
+        : "assistant";
+    const channel = obj.channel === "thought" ? "thought" : "text";
+    return normalizeVisibleText(text, channel, role, depth);
   }
 
   // Tool-shaped objects without a recognized type still surface as activity.
@@ -291,9 +304,10 @@ function normalizeVisibleText(
   role: "user" | "assistant",
   depth: number,
 ): NormalizedEngineEvent[] {
-  if (depth < MAX_NESTED_ENVELOPE_DEPTH) {
-    const nested = parseNestedProtocolEnvelope(text);
-    if (nested) return normalizeJsonEvent(nested, depth + 1);
+  const nested = parseNestedProtocolEnvelope(text);
+  if (nested) {
+    if (depth >= MAX_NESTED_ENVELOPE_DEPTH) return [];
+    return normalizeJsonEvent(nested, depth + 1);
   }
   if (!isSafeVisibleText(text)) return [];
   return [{ type: "message", role, text, channel }];
@@ -369,7 +383,12 @@ function mapToolName(name: string): MappedTool {
   if (n.includes("read") || n.includes("view") || n.includes("cat")) {
     return "read_file";
   }
-  if (n.includes("bash") || n.includes("shell") || n.includes("terminal")) {
+  if (
+    n.includes("bash") ||
+    n.includes("shell") ||
+    n.includes("terminal") ||
+    /(^|_)(exec|execute|run_command)(_|$)/.test(n)
+  ) {
     return "shell";
   }
   if (/(^|_)(delete|remove|rm)(_|$)/.test(n)) return "delete_file";

@@ -125,6 +125,9 @@ export class ConversationService {
     contextStrategy?: Turn["contextStrategy"];
     modelId?: string | null;
     providerId?: string | null;
+    createdAt?: string;
+    /** Reconciliation may replace an earlier provisional assistant result. */
+    replaceExisting?: boolean;
   }): Turn {
     const turn: Turn = {
       id: randomUUID(),
@@ -137,7 +140,7 @@ export class ConversationService {
       contextStrategy: input.contextStrategy ?? null,
       modelId: input.modelId ?? null,
       providerId: input.providerId ?? null,
-      createdAt: new Date().toISOString(),
+      createdAt: input.createdAt ?? new Date().toISOString(),
     };
     const info = this.db
       .prepare(
@@ -173,14 +176,15 @@ export class ConversationService {
         .get(turn.taskId, turn.role) as Record<string, unknown> | undefined;
       if (
         existing &&
-        String(existing.conversation_id) !== turn.conversationId
+        (String(existing.conversation_id) !== turn.conversationId ||
+          (turn.role === "assistant" && input.replaceExisting === true))
       ) {
         this.db
           .prepare(
             `UPDATE turns
              SET conversation_id = ?, content = ?, parent_turn_id = ?,
                  provider_session_id = ?, context_strategy = ?,
-                 model_id = ?, provider_id = ?
+                 model_id = ?, provider_id = ?, created_at = ?
              WHERE id = ?`,
           )
           .run(
@@ -191,6 +195,7 @@ export class ConversationService {
             turn.contextStrategy,
             turn.modelId,
             turn.providerId,
+            turn.createdAt,
             String(existing.id),
           );
         existing = this.db

@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { BrowserGlobe } from "./browser-globe";
+import { BrowserPaneSlot } from "./browser-pane-slot";
 import {
   DeliverableRow,
   type WorkspaceDeliverable,
@@ -60,5 +61,28 @@ describe("in-app browser surface", () => {
     expect(html).toContain("Agent browser · degraded");
     expect(html).toContain('aria-label="Unpin browser pane"');
     expect(html).toContain("data-browser-pin");
+  });
+
+  it("exposes the exact native-pane URL and loading state for end-to-end verification", () => {
+    const html = renderToStaticMarkup(
+      <BrowserPaneSlot
+        taskId="task-browser"
+        status={{
+          taskId: "task-browser",
+          url: "https://www.electronjs.org/docs/latest/tutorial/security",
+          title: "Electron security guide",
+          loading: false,
+          error: null,
+          active: true,
+          lastAction: "browser_open",
+        }}
+        onBounds={vi.fn()}
+      />,
+    );
+
+    expect(html).toContain(
+      'data-browser-url="https://www.electronjs.org/docs/latest/tutorial/security"',
+    );
+    expect(html).toContain('data-browser-loading="false"');
   });
 });

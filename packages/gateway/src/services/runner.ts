@@ -1,4 +1,5 @@
 import fs from "node:fs/promises";
+import { realpathSync } from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import type { EngineAdapter, NormalizedEngineEvent } from "../engine-types.js";
@@ -961,6 +962,7 @@ export class TaskRunner {
         reason: string,
       ): boolean => {
         if (!attemptId || !this.runAttempts) {
+          if (taskStatus === "done") this.reconcileAssistantTurn?.(taskId);
           this.tasks.setStatus(taskId, taskStatus);
           return true;
         }
@@ -969,6 +971,7 @@ export class TaskRunner {
           attemptStatus,
           reason,
           () => {
+            if (taskStatus === "done") this.reconcileAssistantTurn?.(taskId);
             this.tasks.setStatus(taskId, taskStatus, { emitHooks: false });
           },
         );
@@ -1177,6 +1180,7 @@ export class TaskRunner {
                 event,
                 browserSessionId,
                 attemptId,
+                runEngine.executesOwnTools,
               );
             },
           });
@@ -1211,7 +1215,6 @@ export class TaskRunner {
             keepBrowserSession =
               await this.harvestWorkspaceDeliverables(taskId);
           }
-          this.reconcileAssistantTurn?.(taskId);
           if (
             leaseLost ||
             !completeOwnedTask(
@@ -1540,6 +1543,7 @@ export class TaskRunner {
     event: NormalizedEngineEvent,
     browserSessionId?: string,
     runAttemptId?: string | null,
+    runEngineExecutesOwnTools = this.engine.executesOwnTools,
   ): Promise<"continue" | "abort"> {
     const task = this.tasks.get(taskId);
     if (
@@ -1626,12 +1630,31 @@ export class TaskRunner {
         const meta = (event.meta ?? {}) as Record<string, unknown>;
         // ACP ask / plan-review always parks in the gateway approval UI
         // (broker already decided this needs a human).
-        let decision = evaluateToolRequest(liveTask.policySnapshot, {
-          tool: event.tool,
-          path: event.path,
-          command: event.command,
-          meta: event.meta,
-        });
+        const commandCwd =
+          typeof event.meta?.cwd === "string"
+            ? event.meta.cwd
+            : liveTask.policySnapshot.workspaceRoots[0] ?? process.cwd();
+        let decision = evaluateToolRequest(
+          liveTask.policySnapshot,
+          {
+            tool: event.tool,
+            path: event.path,
+            command: event.command,
+            meta: event.meta,
+          },
+          {
+            shell: {
+              cwd: commandCwd,
+              canonicalizePath: (candidate) => {
+                try {
+                  return realpathSync.native(path.resolve(commandCwd, candidate));
+                } catch {
+                  return null;
+                }
+              },
+            },
+          },
+        );
         if (meta.planReview === true || meta.acpAsk === true) {
           decision = {
             decision: "needs_approval",
@@ -1776,7 +1799,7 @@ export class TaskRunner {
 
         // Only execute host tools when the engine does not (TestEngine).
         // GrokBuildEngine sets executesOwnTools=true and runs tools itself.
-        if (!this.engine.executesOwnTools) {
+        if (!runEngineExecutesOwnTools) {
           const payload = writeFilePayload(event);
           if (payload && event.path) {
             const absWrite = path.resolve(event.path);

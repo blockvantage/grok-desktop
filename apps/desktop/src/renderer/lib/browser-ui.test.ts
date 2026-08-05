@@ -53,6 +53,33 @@ describe("reduceBrowserUi", () => {
 
     expect(s).toMatchObject({ open: true, keepClosed: false });
   });
+
+  it("closes a newly opened blank pane when explicit navigation fails", () => {
+    let state = reduceBrowserUi(initialBrowserUiState(), { type: "user_open" });
+    state = reduceBrowserUi(state, {
+      type: "user_open_failed",
+      wasOpen: false,
+    });
+
+    expect(state).toMatchObject({ open: false, keepClosed: false });
+  });
+
+  it("preserves an existing or pinned pane when a later navigation fails", () => {
+    const existing = reduceBrowserUi(
+      reduceBrowserUi(initialBrowserUiState(), { type: "user_open" }),
+      { type: "user_open_failed", wasOpen: true },
+    );
+    const pinned = reduceBrowserUi(
+      reduceBrowserUi(initialBrowserUiState(), {
+        type: "user_pin",
+        pinned: true,
+      }),
+      { type: "user_open_failed", wasOpen: false },
+    );
+
+    expect(existing.open).toBe(true);
+    expect(pinned.open).toBe(true);
+  });
 });
 
 describe("isBrowserToolPayload", () => {

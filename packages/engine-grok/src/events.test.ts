@@ -232,6 +232,39 @@ describe("parseStreamingJsonLine", () => {
     ).toEqual([]);
   });
 
+  it("dispatches typed protocol envelopes before generic string fields", () => {
+    expect(
+      parseStreamingJsonLine(
+        JSON.stringify({ type: "tool_result", id: "tool-1", content: "secret" }),
+      ),
+    ).toEqual([
+      { type: "tool_result", id: "tool-1", ok: true, output: "secret" },
+    ]);
+    expect(
+      parseStreamingJsonLine(
+        JSON.stringify({ type: "error", text: "provider failed" }),
+      ),
+    ).toEqual([{ type: "error", message: "provider failed" }]);
+    expect(
+      parseStreamingJsonLine(
+        JSON.stringify({ type: "done", text: "actual final" }),
+      ),
+    ).toEqual([{ type: "done", summary: "actual final" }]);
+  });
+
+  it("drops protocol envelopes that exceed the nesting inspection limit", () => {
+    let nested = JSON.stringify({
+      type: "tool_call_update",
+      toolCallId: "image-1",
+      content: "INLINE_IMAGE_DATA",
+    });
+    for (let depth = 0; depth < 4; depth += 1) {
+      nested = JSON.stringify({ type: "text", data: nested });
+    }
+
+    expect(parseStreamingJsonLine(nested)).toEqual([]);
+  });
+
   it("does not render oversized text or binary data URLs", () => {
     expect(
       parseStreamingJsonLine(
@@ -275,8 +308,46 @@ describe("parseStreamingJsonLine", () => {
     if (events[0]?.type === "tool_request") {
       expect(events[0].tool).toBe("write_file");
       expect(events[0].id).toBe("t1");
+      expect(events[0].path).toBe("/tmp/a.md");
     }
   });
+
+  it("extracts nested path and command fields before policy evaluation", () => {
+    expect(
+      parseStreamingJsonLine(
+        JSON.stringify({
+          type: "tool_call",
+          id: "nested-write",
+          name: "write_file",
+          arguments: { path: "/outside/report.md", content: "x" },
+        }),
+      )[0],
+    ).toMatchObject({
+      type: "tool_request",
+      tool: "write_file",
+      path: "/outside/report.md",
+    });
+  });
+
+  it.each(["exec", "exec_command", "run_command"])(
+    "maps command alias %s to shell",
+    (name) => {
+      expect(
+        parseStreamingJsonLine(
+          JSON.stringify({
+            type: "tool_call",
+            id: name,
+            name,
+            input: { command: "rm -rf ./build" },
+          }),
+        )[0],
+      ).toMatchObject({
+        type: "tool_request",
+        tool: "shell",
+        command: "rm -rf ./build",
+      });
+    },
+  );
 
   it("parses use_tool / mcp_call aliases into tool_request", () => {
     const events = parseStreamingJsonLine(

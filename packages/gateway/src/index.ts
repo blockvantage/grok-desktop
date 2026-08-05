@@ -527,7 +527,7 @@ export class Gateway {
         if (!task) return;
         reconcileAssistantTurn({
           task,
-          events: this.tasks.listEvents(taskId),
+          events: this.tasks.listAllEvents(taskId),
           appendTurn: (turn) => this.conversations.appendTurn(turn),
         });
       },
@@ -802,7 +802,7 @@ export class Gateway {
       if (task.status !== "done") continue;
       reconcileAssistantTurn({
         task: this.tasks.get(task.id) ?? task,
-        events: this.tasks.listEvents(task.id),
+        events: this.tasks.listAllEvents(task.id),
         appendTurn: (turn) => this.conversations.appendTurn(turn),
       });
     }

@@ -361,6 +361,35 @@ describe("ConversationTurn", () => {
     expect(html).not.toContain("Review the plan");
   });
 
+  it("does not let an unrelated approval take over an awaiting plan", () => {
+    const planTurn = turn("waiting_approval");
+    planTurn.approval = {
+      approvalId: "shell-approval",
+      eventId: "shell-approval-event",
+      summary: "Run the release verification?",
+      createdAt: "2026-07-15T12:00:05.000Z",
+      payload: { kind: "tool", tool: "shell" },
+    };
+    planTurn.plan = {
+      content: "# Plan\n\nPrepare the release.",
+      status: "awaiting_approval",
+    };
+
+    const html = renderToStaticMarkup(
+      <ConversationTurn
+        turn={planTurn}
+        onApprove={() => {}}
+        onReject={() => {}}
+      />,
+    );
+
+    expect(count(html, "data-approval-actions")).toBe(1);
+    expect(count(html, "data-approve-action")).toBe(1);
+    expect(html).toContain("Run the release verification?");
+    expect(html).toContain('data-plan-status="awaiting_approval"');
+    expect(html).toContain('data-plan-actionable="false"');
+  });
+
   it("keeps a failed turn recovery beside its preserved answer", () => {
     const failed = turn("failed");
     failed.answer = {

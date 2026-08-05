@@ -299,6 +299,59 @@ describe("projectConversation", () => {
     );
   });
 
+  it("promotes the only safe narration message when the turn is terminal", () => {
+    const completed = task("short-final", "done", "2026-01-01T00:00:00.000Z");
+    const snapshot = projectConversation({
+      conversationId: completed.id,
+      title: null,
+      tasks: [completed],
+      eventsByTask: {
+        [completed.id]: [
+          event("short-final-answer", completed.id, 1, "message", {
+            role: "assistant",
+            channel: "text",
+            text: "I’ll explain the tradeoffs directly.",
+          }),
+        ],
+      },
+    });
+
+    expect(snapshot.turns[0]?.answer?.text).toBe(
+      "I’ll explain the tradeoffs directly.",
+    );
+    expect(snapshot.turns[0]?.liveSummary).toBeNull();
+  });
+
+  it("preserves answer paragraphs separated by citation metadata", () => {
+    const completed = task("multi-part", "done", "2026-01-01T00:00:00.000Z");
+    const snapshot = projectConversation({
+      conversationId: completed.id,
+      title: null,
+      tasks: [completed],
+      eventsByTask: {
+        [completed.id]: [
+          event("part-one", completed.id, 1, "message", {
+            role: "assistant",
+            channel: "text",
+            text: "The first finding is confirmed.",
+          }),
+          event("sources", completed.id, 2, "citations", {
+            items: [{ url: "https://example.com/source" }],
+          }),
+          event("part-two", completed.id, 3, "message", {
+            role: "assistant",
+            channel: "text",
+            text: "The second finding needs follow-up.",
+          }),
+        ],
+      },
+    });
+
+    expect(snapshot.turns[0]?.answer?.text).toBe(
+      "The first finding is confirmed.\n\nThe second finding needs follow-up.",
+    );
+  });
+
   it("keeps a substantive answer instead of replacing it with a terminal summary", () => {
     const completed = task("answer-summary", "done", "2026-01-01T00:00:00.000Z");
     const answer =

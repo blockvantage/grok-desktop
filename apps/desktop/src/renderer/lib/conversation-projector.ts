@@ -471,6 +471,8 @@ function projectTurn(
   let answer: AnswerView | null = null;
   let terminalAnswer: AnswerView | null = null;
   let liveSummary: string | null = null;
+  let narrationCandidate: AnswerView | null = null;
+  let answerBoundary = false;
   const pendingApprovals = new Map<string, ApprovalView>();
   let primaryError: ErrorView | null = null;
   const eventArtifacts: Artifact[] = [];
@@ -478,6 +480,7 @@ function projectTurn(
   let citations: CitationItem[] = [];
 
   for (const event of events) {
+    if (event.kind !== "message" && answer) answerBoundary = true;
     if (event.kind === "status_change") {
       const incoming =
         runStateFrom(event.payload.status) ?? runStateFrom(event.payload.to);
@@ -510,6 +513,12 @@ function projectTurn(
       ) {
         if (event.payload.terminal !== true && isOperationalNarration(text)) {
           liveSummary = text;
+          narrationCandidate = {
+            eventId: event.id,
+            text,
+            createdAt: event.createdAt,
+          };
+          if (answer) answerBoundary = true;
         } else if (event.payload.terminal === true) {
           terminalAnswer = {
             eventId: event.id,
@@ -517,7 +526,15 @@ function projectTurn(
             createdAt: event.createdAt,
           };
         } else {
-          answer = { eventId: event.id, text, createdAt: event.createdAt };
+          answer = {
+            eventId: event.id,
+            text:
+              answer && answerBoundary
+                ? `${answer.text}\n\n${text}`
+                : text,
+            createdAt: event.createdAt,
+          };
+          answerBoundary = false;
         }
       }
     }
@@ -682,7 +699,10 @@ function projectTurn(
       completedAt: task.completedAt,
     },
     workers: sortedWorkers,
-    answer: answer ?? terminalAnswer,
+    answer:
+      answer ??
+      terminalAnswer ??
+      (TERMINAL_RUN_STATE_RANK[state] ? narrationCandidate : null),
     liveSummary: TERMINAL_RUN_STATE_RANK[state] ? null : liveSummary,
     work: foldRecoveredWorkEntries(
       coalesceBrowserToolActivity(events)

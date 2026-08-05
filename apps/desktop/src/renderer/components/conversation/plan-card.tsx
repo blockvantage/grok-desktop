@@ -9,15 +9,17 @@ import { cn } from "@/lib/utils";
 export function PlanCard(props: {
   plan: TurnPlan;
   busy?: boolean;
+  actionable?: boolean;
   onOpenUrl?: (url: string) => void;
   onApprove: () => void;
   onRequestChanges: () => void;
   onRunAnyway: () => void;
 }) {
   const t = useT();
-  const { plan, busy, onOpenUrl } = props;
+  const { plan, busy, onOpenUrl, actionable = true } = props;
   const approveRef = useRef<HTMLButtonElement>(null);
   const awaiting = plan.status === "awaiting_approval";
+  const needsUser = awaiting && actionable;
   const approved = plan.status === "approved";
   const statusLabel =
     plan.status === "drafting"
@@ -28,7 +30,7 @@ export function PlanCard(props: {
 
   // Move keyboard focus to the primary plan action when approval is required.
   useEffect(() => {
-    if (!awaiting || busy) return;
+    if (!needsUser || busy) return;
     const el = approveRef.current;
     if (!el || typeof el.focus !== "function") return;
     // Defer so the card is in the layout before focusing.
@@ -40,7 +42,7 @@ export function PlanCard(props: {
       }
     }, 0);
     return () => window.clearTimeout(id);
-  }, [awaiting, busy]);
+  }, [needsUser, busy]);
 
   return (
     <section
@@ -57,7 +59,8 @@ export function PlanCard(props: {
       aria-label={t("conversation.planAriaLabel")}
       aria-busy={Boolean(busy)}
       data-plan-status={plan.status}
-      data-needs-you={awaiting ? "true" : "false"}
+      data-plan-actionable={String(needsUser)}
+      data-needs-you={needsUser ? "true" : "false"}
     >
       <header
         className={
@@ -75,7 +78,7 @@ export function PlanCard(props: {
           {plan.content}
         </Markdown>
       </div>
-      {awaiting && (
+      {needsUser && (
         <footer
           className="mt-3 flex flex-wrap gap-2"
           role="group"

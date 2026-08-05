@@ -73,8 +73,14 @@ type RunIntent = {
 
 /** Keep capability instructions relevant so ordinary chat stays conversational. */
 function classifyRunIntent(goal: string): RunIntent {
+  const conversationalGoal = goal
+    .trim()
+    .replace(/^(?:please\s+|could\s+you\s+please\s+|would\s+you\s+please\s+)/i, "");
   const explanatoryQuestion =
-    /^\s*(?:how|why|what|when|where|who)\b/i.test(goal) ||
+    /^(?:how|why|what|when|where|who)\b/i.test(conversationalGoal) ||
+    /^(?:explain|describe|tell\s+me|walk\s+me\s+through|show\s+me\s+how)\b/i.test(
+      conversationalGoal,
+    ) ||
     /^\s*(?:can|could|would)\s+you\s+(?:explain|describe|tell|walk\s+me\s+through|show\s+me\s+how)\b/i.test(
       goal,
     );

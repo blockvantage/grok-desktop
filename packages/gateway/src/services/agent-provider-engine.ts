@@ -175,6 +175,9 @@ export class AgentProviderEngine implements EngineAdapter {
   }
 
   get executesOwnTools(): boolean {
+    if (this.providerCircuit && this.opts.fallbackEngine) {
+      return this.opts.fallbackEngine.executesOwnTools;
+    }
     return this.executesOwnToolsFlag;
   }
 
