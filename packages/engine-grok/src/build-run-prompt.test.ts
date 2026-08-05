@@ -77,3 +77,50 @@ describe("buildRunPrompt reply language (LANG-1)", () => {
     expect(buildPromptForTest(baseTask)).not.toContain("Reply to the user in");
   });
 });
+
+describe("buildRunPrompt intent-aware guidance", () => {
+  it("answers conversational questions without manufacturing deliverables", () => {
+    const prompt = buildPromptForTest({
+      ...baseTask,
+      goal: "Why is the sky blue?",
+    });
+
+    expect(prompt).toContain("Answer conversational questions directly");
+    expect(prompt).not.toContain("write deliverables here");
+    expect(prompt).not.toContain("List the tool path");
+    expect(prompt).not.toContain("always write");
+  });
+
+  it("adds focused file and preview guidance for a website deliverable", () => {
+    const prompt = buildPromptForTest({
+      ...baseTask,
+      goal: "Build a polished landing page in HTML and preview it",
+    });
+
+    expect(prompt).toContain("Create the requested deliverables");
+    expect(prompt).toContain("write it under the primary workspace");
+    expect(prompt).toContain("browser_open");
+    expect(prompt).not.toContain("image_gen / image_edit / image_to_video");
+  });
+
+  it("asks current research to cite direct web sources without media noise", () => {
+    const prompt = buildPromptForTest({
+      ...baseTask,
+      goal: "Research the latest Electron security guidance",
+    });
+
+    expect(prompt).toContain("cite the sources");
+    expect(prompt).toContain("direct HTTP(S) links");
+    expect(prompt).not.toContain("image_gen / image_edit / image_to_video");
+  });
+
+  it("keeps generation-tool guidance for explicit media requests", () => {
+    const prompt = buildPromptForTest({
+      ...baseTask,
+      goal: "Generate an image of a quiet mountain observatory",
+    });
+
+    expect(prompt).toContain("image_gen / image_edit / image_to_video");
+    expect(prompt).toContain("intended workspace path");
+  });
+});

@@ -211,4 +211,16 @@ describe("motion-system structural wiring", () => {
     const digest = read("components/deliverables-digest.tsx");
     expect(digest).toMatch(/MOTION_SURFACE_CLASSES\.artifactReveal|motion-artifact-reveal/);
   });
+
+  it("keeps the main transcript calm without perpetual loading motion", () => {
+    const loader = read("components/conversation-loading.tsx");
+    const liveWork = read("components/conversation/live-work-card.tsx");
+    const stream = read("components/task-stream.tsx");
+    const css = read("styles/globals.css");
+
+    expect(loader).not.toMatch(/conversation-loading-sheen|animate-pulse/);
+    expect(liveWork).not.toMatch(/animate-pulse/);
+    expect(stream).not.toMatch(/animate-pulse/);
+    expect(css).not.toMatch(/animation:\s*(?:thinking-shimmer|think-bounce|conversation-loading-sheen|avatar-working|stream-caret)[^;]*infinite/);
+  });
 });

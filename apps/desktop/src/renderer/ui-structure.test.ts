@@ -258,7 +258,7 @@ describe("renderer visual structure (design system)", () => {
     const loader = read("components/conversation-loading.tsx");
     expect(loader).toMatch(/data-conversation-loading/);
     expect(loader).toMatch(/conversation-loading-skeleton/);
-    expect(loader).toMatch(/conversation-loading-sheen/);
+    expect(loader).not.toMatch(/conversation-loading-sheen|animate-pulse/);
     expect(loader).not.toMatch(/conversation-loading-(?:orbit|glow|mark)/);
     const hook = read("hooks/use-chat-events.ts");
     expect(hook).toMatch(/loading:\s*boolean/);

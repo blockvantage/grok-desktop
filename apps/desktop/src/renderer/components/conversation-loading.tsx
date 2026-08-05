@@ -42,10 +42,7 @@ export function ConversationLoading({
           <div className="h-2.5 w-[48%] rounded-full bg-white/[0.045]" />
         </div>
       </div>
-      <div className="relative mt-10 h-px overflow-hidden rounded-full bg-white/[0.06]" aria-hidden>
-        <div className="conversation-loading-sheen absolute inset-y-0 w-1/3 rounded-full bg-primary/70" />
-      </div>
-      <div className="mt-3 flex items-baseline justify-between gap-4">
+      <div className="mt-10 flex items-baseline justify-between gap-4 border-t border-white/[0.06] pt-3">
         <p className="text-sm font-medium tracking-tight text-foreground/85">
           {t("workspace.loadingConversation")}
         </p>

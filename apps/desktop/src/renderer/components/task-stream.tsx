@@ -1256,22 +1256,6 @@ type Activity = {
   generic: boolean;
 };
 
-/** i18n keys for playful lines cycled while Grok is thinking with no tool name. */
-const THINKING_KEYS = [
-  "thinking.through",
-  "thinking.connecting",
-  "thinking.chasing",
-  "thinking.weighing",
-  "thinking.lining",
-  "thinking.following",
-  "thinking.untangling",
-  "thinking.sketching",
-  "thinking.between",
-  "thinking.turning",
-  "thinking.math",
-  "thinking.bearings",
-] as const;
-
 /** Live heartbeat pinned to the bottom of the stream while Grok works. */
 function WorkingIndicator({
   activity,
@@ -1285,18 +1269,8 @@ function WorkingIndicator({
   mediaKind?: MediaToolKind | null;
 }) {
   const t = useT();
-  const [i, setI] = useState(0);
-
-  // Only the generic "thinking" state rotates — a concrete action (reading a
-  // file, running a command) is the real progress and speaks for itself.
-  useEffect(() => {
-    if (!activity.generic || mediaKind) return;
-    const id = setInterval(() => setI((n) => n + 1), 2600);
-    return () => clearInterval(id);
-  }, [activity.generic, mediaKind]);
-
   const label = activity.generic
-    ? t(THINKING_KEYS[i % THINKING_KEYS.length]!)
+    ? t("thinking.through")
     : activity.label;
   const elapsedLabel = formatElapsed(elapsedSeconds);
 
@@ -1318,7 +1292,7 @@ function WorkingIndicator({
             className="aspect-video w-full max-w-md overflow-hidden rounded-xl border border-white/[0.07] bg-muted/40"
             aria-hidden="true"
           >
-            <div className="h-full w-full animate-pulse bg-gradient-to-br from-muted/80 via-muted/40 to-muted/70 motion-reduce:animate-none" />
+            <div className="h-full w-full bg-gradient-to-br from-muted/70 via-muted/35 to-muted/60" />
           </div>
           <div className="flex max-w-md items-center gap-2">
             <span className="min-w-0 truncate text-sm font-medium text-foreground/90">
@@ -1343,9 +1317,8 @@ function WorkingIndicator({
       <div className="flex min-w-0 flex-1 flex-col gap-0.5 pt-1.5">
         <div className="flex min-w-0 items-center gap-2">
           <span
-            key={label}
             className={cn(
-              "chat-fade-in min-w-0 truncate text-sm font-medium",
+              "min-w-0 truncate text-sm font-medium",
               activity.generic && "thinking-shimmer",
             )}
           >

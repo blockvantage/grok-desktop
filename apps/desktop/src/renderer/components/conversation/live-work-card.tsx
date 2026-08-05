@@ -57,7 +57,7 @@ export function LiveWorkCard({
           className="aspect-video w-full overflow-hidden rounded-lg border border-white/[0.06] bg-muted/40"
           aria-hidden="true"
         >
-          <div className="h-full w-full animate-pulse bg-gradient-to-br from-ring/20 via-muted/40 to-muted/70 motion-reduce:animate-none" />
+          <div className="h-full w-full bg-gradient-to-br from-ring/15 via-muted/35 to-muted/65" />
         </div>
         <div className="mt-2.5 flex items-center gap-2">
           <p className="min-w-0 truncate text-sm font-medium text-ring">

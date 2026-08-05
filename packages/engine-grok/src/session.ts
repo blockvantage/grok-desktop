@@ -63,11 +63,59 @@ export type BuildRunPromptOpts = {
   primaryCwd: string;
 };
 
+type RunIntent = {
+  deliverable: boolean;
+  media: boolean;
+  html: boolean;
+  browser: boolean;
+  research: boolean;
+};
+
+/** Keep capability instructions relevant so ordinary chat stays conversational. */
+function classifyRunIntent(goal: string): RunIntent {
+  const media =
+    /\b(?:image|video|illustration|poster|logo|graphic|visual|photo|animation)\b/i.test(
+      goal,
+    ) &&
+    /\b(?:generate|create|make|design|edit|transform|render|produce)\b/i.test(
+      goal,
+    );
+  const html =
+    /\b(?:website|web\s*site|landing\s+page|html|webpage|web\s+page)\b/i.test(
+      goal,
+    );
+  const browser =
+    /\b(?:open|show|preview|browse|visit|navigate|load)\b/i.test(goal) &&
+    /\b(?:browser|site|website|page|url|https?)\b/i.test(goal);
+  const research =
+    /\b(?:research|latest|current|recent|today|news|sources?|look\s+up|find\s+online|check\s+online)\b/i.test(
+      goal,
+    );
+  const codeChange =
+    /\b(?:build|implement|refactor|fix|update)\b/i.test(goal);
+  const artifactAction =
+    /\b(?:create|write|edit|generate|design|make|produce|export|save)\b/i.test(
+      goal,
+    ) &&
+    /\b(?:file|code|app|application|feature|component|page|website|report|document|image|video|logo|poster|script|project|readme|tests?)\b/i.test(
+      goal,
+    );
+
+  return {
+    deliverable: media || html || codeChange || artifactAction,
+    media,
+    html,
+    browser: browser || html,
+    research,
+  };
+}
+
 /**
  * Pure prompt assembly for headless `-p` runs (unit-tested; used by GrokBuildEngine).
  */
 export function buildRunPrompt(opts: BuildRunPromptOpts): string {
   const { task, systemPreamble = "", extras = "", primaryCwd } = opts;
+  const intent = classifyRunIntent(task.goal);
   const extraRoots = (task.policySnapshot?.workspaceRoots ?? []).slice(1);
   const localeLine =
     task.locale && task.locale !== "en" && LANGUAGE_NAMES[task.locale]
@@ -79,17 +127,30 @@ export function buildRunPrompt(opts: BuildRunPromptOpts): string {
     `Task goal:\n${task.goal}`,
     localeLine,
     "",
-    `Primary workspace (write deliverables here — images, videos, reports): ${primaryCwd}`,
+    `Primary workspace: ${primaryCwd}`,
     extraRoots.length
       ? `Additional project folders (read/edit project files here; do not dump chat-only media into them):\n${extraRoots.map((r) => `- ${r}`).join("\n")}`
       : "",
-    "Produce useful deliverable files in the primary workspace when appropriate.",
-    "When you create images or videos: you MUST call image_gen / image_edit / image_to_video (or equivalent). The tool writes under the session folder; Desk will copy media into the primary workspace images/ (or videos/) directory after the run — do NOT shell-cp from $GROK_HOME/sessions (sandbox blocks that). List the tool path and the intended workspace path in your final reply. Never only describe an image without calling the tool.",
-    "The registered desk-browser MCP provides the in-app browser. Prefer its `browser_open` tool (underscore form) and never use Chrome/Chrome DevTools unless the user explicitly requests an external browser.",
-    "When you create an HTML page/website, write it under the primary workspace, then call browser_open once with the absolute index.html path.",
-    "When the user asks to open a site in the in-app browser: locate the target, use the registered browser_open tool once, and wait for its result before summarizing. If tool discovery is needed, make one search_tool attempt; do not retry alternate spellings or call host APIs directly.",
-    "If browser_open is unavailable or fails, report that failure truthfully and do not claim that the pane opened.",
-    "When finished, always write a short final user-facing summary and list deliverable paths.",
+    "Answer conversational questions directly in a natural voice. Do not create files unless the user asked for a deliverable or file change.",
+    "Avoid repetitive process narration. Share only brief progress when it materially helps, then give one clear final response.",
+    intent.deliverable
+      ? "Create the requested deliverables in the primary workspace. In the final response, mention only the files you actually created or changed."
+      : "Give one concise, user-facing final response. Mention files only if you actually created or changed them.",
+    intent.media
+      ? "When you create images or videos: you MUST call image_gen / image_edit / image_to_video (or equivalent). The tool writes under the session folder; Desk will copy media into the primary workspace images/ (or videos/) directory after the run — do NOT shell-cp from $GROK_HOME/sessions (sandbox blocks that). List the tool path and the intended workspace path in your final reply. Never only describe an image without calling the tool."
+      : "",
+    intent.research
+      ? "For current or web research, use available network or browser tools and cite the sources you relied on with direct HTTP(S) links."
+      : "",
+    intent.browser
+      ? "The registered desk-browser MCP provides the in-app browser. Prefer its `browser_open` tool (underscore form) and never use Chrome/Chrome DevTools unless the user explicitly requests an external browser."
+      : "",
+    intent.html
+      ? "When you create an HTML page or website, write it under the primary workspace, then call browser_open once with the absolute index.html path."
+      : "",
+    intent.browser
+      ? "When opening or previewing a site, use browser_open once and wait for its result before summarizing. If it is unavailable or fails, report that truthfully and do not claim that the pane opened."
+      : "",
   ];
   return promptParts.filter(Boolean).join("\n");
 }
