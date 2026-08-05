@@ -347,6 +347,13 @@ describe("ipc schemas", () => {
         params: { offset: 1.5 },
       }),
     ).toThrow();
+    expect(() =>
+      parseIpcRequest({
+        id: "al9",
+        method: "audit.list",
+        params: { offset: "10" },
+      }),
+    ).toThrow();
 
     // Contract: any finite int is accepted at parse; server clamps to [1, 500].
     // Do not regress to .positive().max(500) here (events.page style).
@@ -358,6 +365,17 @@ describe("ipc schemas", () => {
       });
       expect(req.method).toBe("audit.list");
       expect(req.params).toEqual({ limit });
+    }
+
+    // Offset: accept any int at parse (incl. negative/0); server clamps to ≥0.
+    for (const offset of [0, -1, 1, 10, 500, 9999]) {
+      const req = parseIpcRequest({
+        id: `al-off-${offset}`,
+        method: "audit.list",
+        params: { offset },
+      });
+      expect(req.method).toBe("audit.list");
+      expect(req.params).toEqual({ offset });
     }
   });
 

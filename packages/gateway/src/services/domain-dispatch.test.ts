@@ -126,6 +126,35 @@ describe("dispatchDomainMethod", () => {
       limit: 5,
       offset: undefined,
     });
+    // Page metadata (incl. offset) is returned as-is for honest multi-page trails.
+    expect((r as { result: typeof page }).result.offset).toBe(0);
+    expect((r as { result: typeof page }).result.hasMore).toBe(true);
+    expect((r as { result: typeof page }).result.total).toBe(12);
+  });
+
+  it("forwards audit.list offset through domain dispatch for multi-page trails", async () => {
+    const deps = emptyDeps();
+    const page = {
+      entries: [{ id: "e2", decision: "info" }],
+      hasMore: false,
+      total: 15,
+      limit: 5,
+      offset: 10,
+    };
+    deps.sideData.auditList = vi.fn(() => page);
+    const r = await dispatchDomainMethod(
+      "audit.list",
+      { taskId: "task-2", decision: "info", limit: 5, offset: 10 },
+      deps,
+    );
+    expect(r).toEqual({ handled: true, result: page });
+    expect(deps.sideData.auditList).toHaveBeenCalledWith({
+      taskId: "task-2",
+      decision: "info",
+      limit: 5,
+      offset: 10,
+    });
+    expect((r as { result: typeof page }).result.offset).toBe(10);
   });
 
   it("returns handled false for unknown", async () => {

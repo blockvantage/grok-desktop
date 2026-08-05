@@ -90,7 +90,11 @@ describe("isAuditSecretKey", () => {
     expect(isAuditSecretKey("PRIVATE_KEY")).toBe(true);
     expect(isAuditSecretKey("productKey")).toBe(true);
     expect(isAuditSecretKey("grantToken")).toBe(true);
+    expect(isAuditSecretKey("grant")).toBe(true);
     expect(isAuditSecretKey("lease")).toBe(true);
+    expect(isAuditSecretKey("nonce")).toBe(true);
+    expect(isAuditSecretKey("sig")).toBe(true);
+    expect(isAuditSecretKey("signature")).toBe(true);
     expect(isAuditSecretKey("devicePrivateKey")).toBe(true);
     expect(isAuditSecretKey("d")).toBe(true);
     expect(isAuditSecretKey("path")).toBe(false);
@@ -166,7 +170,11 @@ describe("redactAuditDetail", () => {
       privateKey: "canary-private-key-material-xx",
       productKey: "GD1.canary-body.CANARY_SIG_GD1_NEVER_LEAK",
       grantToken: "canary-download-grant-token-NEVER-LEAK",
+      grant: "canary-grant-blob-NEVER-LEAK",
       lease: "eyJhbGciOiJFZERTQSIsInR5cCI6Imdyb2tkZXNrLWxlYXNlK2p3dCJ9.payload.sig",
+      nonce: "canary-nonce-NEVER-LEAK",
+      sig: "canary-sig-NEVER-LEAK",
+      signature: "canary-signature-NEVER-LEAK",
       path: "/workspace/safe",
       tool: {
         meta: {
@@ -178,15 +186,32 @@ describe("redactAuditDetail", () => {
     expect(out.privateKey).toBe("[REDACTED]");
     expect(out.productKey).toBe("[REDACTED]");
     expect(out.grantToken).toBe("[REDACTED]");
+    expect(out.grant).toBe("[REDACTED]");
     expect(out.lease).toBe("[REDACTED]");
+    expect(out.nonce).toBe("[REDACTED]");
+    expect(out.sig).toBe("[REDACTED]");
+    expect(out.signature).toBe("[REDACTED]");
     expect(out.path).toBe("/workspace/safe");
     const tool = out.tool as Record<string, unknown>;
     const meta = tool.meta as Record<string, unknown>;
     expect(meta.devicePrivateKey).toBe("[REDACTED]");
     expect(meta.note).toBe("ok");
     expect(JSON.stringify(out)).not.toMatch(
-      /canary-private-key|GD1\.canary|canary-download-grant|nested-device-private/,
+      /canary-private-key|GD1\.canary|canary-download-grant|nested-device-private|canary-grant-blob|canary-nonce|canary-sig|canary-signature/,
     );
+  });
+
+  it("caps nested walk depth so pathological trees cannot blow IPC", () => {
+    // Nest deeper than REDACT_MAX_DEPTH (24): leaf must be replaced with [REDACTED].
+    let nested: unknown = { secret: "sk-live-deep-secret-xx", leaf: "visible-if-shallow" };
+    for (let i = 0; i < 30; i++) {
+      nested = { child: nested };
+    }
+    const out = redactAuditDetail({ root: nested });
+    const json = JSON.stringify(out);
+    expect(json).not.toMatch(/sk-live-deep-secret/);
+    // Deep cap collapses the remaining tree rather than walking forever.
+    expect(json).toContain("[REDACTED]");
   });
 });
 
@@ -486,6 +511,55 @@ describe("listAuditEntries", () => {
     expect(page.entries[0]?.decision).toBe("info");
     expect(page.entries[0]?.detail._unknownDecision).toBe("_empty");
     expect(page.entries[0]?.detail.x).toBe(1);
+    expect(page.offset).toBe(0);
+  });
+
+  it("decision:info includes NULL stored decisions (defensive for legacy/migrated rows)", () => {
+    // Production schema is NOT NULL; rebuild nullable to exercise IS NULL filter path.
+    db.exec(`
+      CREATE TABLE audit_entries_nullable (
+        id TEXT PRIMARY KEY,
+        task_id TEXT,
+        action TEXT NOT NULL,
+        detail_json TEXT NOT NULL,
+        decision TEXT,
+        created_at TEXT NOT NULL
+      );
+      INSERT INTO audit_entries_nullable SELECT * FROM audit_entries;
+      DROP TABLE audit_entries;
+      ALTER TABLE audit_entries_nullable RENAME TO audit_entries;
+    `);
+    db.prepare(
+      `INSERT INTO audit_entries (id, task_id, action, detail_json, decision, created_at)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+    ).run(
+      "null-dec-1",
+      "t-null",
+      "null.decision",
+      JSON.stringify({ y: 2 }),
+      null,
+      "2026-08-01T10:00:00.000Z",
+    );
+    db.prepare(
+      `INSERT INTO audit_entries (id, task_id, action, detail_json, decision, created_at)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+    ).run(
+      "allow-1",
+      "t-null",
+      "stored.allow",
+      "{}",
+      "allow",
+      "2026-08-01T11:00:00.000Z",
+    );
+
+    const page = listAuditEntries(db, { taskId: "t-null", decision: "info" });
+    expect(page.entries).toHaveLength(1);
+    expect(page.entries[0]?.id).toBe("null-dec-1");
+    expect(page.entries[0]?.decision).toBe("info");
+    expect(page.entries[0]?.detail._unknownDecision).toBe("_null");
+    expect(page.entries[0]?.detail.y).toBe(2);
+    expect(page.total).toBe(1);
+    expect(page.offset).toBe(0);
   });
 
   it("redacts secret-like fields in listed detail including nested tool", () => {
@@ -567,6 +641,22 @@ describe("listAuditEntries", () => {
     expect(full.entries).toHaveLength(5);
     expect(full.hasMore).toBe(false);
     expect(full.total).toBe(5);
+    expect(full.offset).toBe(0);
+
+    // Negative / non-finite offsets clamp to 0 (honest page.offset echo).
+    const neg = listAuditEntries(db, {
+      taskId: "task-page",
+      limit: 2,
+      offset: -5,
+    });
+    expect(neg.offset).toBe(0);
+    expect(neg.entries.map((r) => r.action)).toEqual(["action.4", "action.3"]);
+    const nanOff = listAuditEntries(db, {
+      taskId: "task-page",
+      limit: 2,
+      offset: Number.NaN,
+    });
+    expect(nanOff.offset).toBe(0);
   });
 
   it("caps limit at 500", () => {
