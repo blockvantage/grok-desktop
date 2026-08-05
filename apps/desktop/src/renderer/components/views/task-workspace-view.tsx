@@ -182,7 +182,7 @@ import {
   type BrowserStatusDto,
 } from "@/lib/api";
 import { TaskOverflowMenu } from "@/components/chat-actions-menu";
-import { AuditDrawer, deriveAuditTaskIds } from "@/components/audit-drawer";
+import { WorkspaceAuditDrawer } from "@/components/audit-drawer";
 import { DictationButton } from "@/components/dictation-button";
 import { useDictation } from "@/hooks/use-dictation";
 import { getActiveLocale } from "@/i18n/active";
@@ -971,20 +971,6 @@ export function TaskWorkspaceView(props: {
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [auditOpen, setAuditOpen] = useState(false);
-  /**
-   * Stable thread task ids for AuditDrawer. Content-keyed (set-stable sort) so
-   * parent re-renders / order-only thread list churn do not thrash filter identity.
-   * Derivation lives in deriveAuditTaskIds (unit-tested) — never []/global.
-   */
-  const threadTaskIdsKey = props.threadTasks?.length
-    ? deriveAuditTaskIds(props.threadTasks, task.id).join("\0")
-    : "";
-  const auditTaskIds = useMemo(
-    () => deriveAuditTaskIds(props.threadTasks, task.id),
-    // threadTaskIdsKey captures set membership; task.id covers empty-thread fallback.
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- content-stable key
-    [threadTaskIdsKey, task.id],
-  );
   const [preview, setPreview] = useState<TextPreview | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
@@ -3311,12 +3297,13 @@ export function TaskWorkspaceView(props: {
       {/*
         Thread-wide audit: every turn has its own taskId; filtering only the
         latest would hide prior approvals after a quiet follow-up (fail-closed
-        false-negative). Pass all open-chat task ids.
+        false-negative). WorkspaceAuditDrawer derives all open-chat task ids.
       */}
-      <AuditDrawer
+      <WorkspaceAuditDrawer
         open={auditOpen}
         onOpenChange={setAuditOpen}
-        taskIds={auditTaskIds}
+        threadTasks={props.threadTasks}
+        taskId={task.id}
         taskLabel={props.chatTitle || task.goal}
       />
     </div>

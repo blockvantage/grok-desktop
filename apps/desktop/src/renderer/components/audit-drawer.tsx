@@ -202,6 +202,52 @@ export function deriveAuditTaskIds(
 }
 
 /**
+ * Production hook used by TaskWorkspaceView / WorkspaceAuditDrawer.
+ * Content-keyed (set-stable sort) so parent re-renders or order-only
+ * threadTasks reshuffles do not thrash AuditDrawer filter identity / re-fetch.
+ *
+ * - Non-empty thread → all turn ids (sorted unique)
+ * - Empty / missing thread → [currentTaskId] only (never [] / global)
+ */
+export function useWorkspaceAuditTaskIds(
+  threadTasks: ReadonlyArray<{ id: string }> | null | undefined,
+  currentTaskId: string,
+): string[] {
+  const threadTaskIdsKey =
+    threadTasks && threadTasks.length > 0
+      ? deriveAuditTaskIds(threadTasks, currentTaskId).join("\0")
+      : "";
+  return useMemo(
+    () => deriveAuditTaskIds(threadTasks, currentTaskId),
+    // threadTaskIdsKey captures set membership; currentTaskId covers empty-thread fallback.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- content-stable membership key
+    [threadTaskIdsKey, currentTaskId],
+  );
+}
+
+/**
+ * Production workspace audit host: derives thread-wide taskIds and renders the drawer.
+ * TaskWorkspaceView composes this so open→list scope cannot drift from derive/hook rules.
+ */
+export function WorkspaceAuditDrawer(props: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  threadTasks?: ReadonlyArray<{ id: string }> | null;
+  taskId: string;
+  taskLabel?: string;
+}) {
+  const taskIds = useWorkspaceAuditTaskIds(props.threadTasks, props.taskId);
+  return (
+    <AuditDrawer
+      open={props.open}
+      onOpenChange={props.onOpenChange}
+      taskIds={taskIds}
+      taskLabel={props.taskLabel}
+    />
+  );
+}
+
+/**
  * Normalize filter ids: taskIds wins when it yields valid ids; then single taskId;
  * empty = global. Dedupes, drops blanks, returns set-stable sorted order.
  *

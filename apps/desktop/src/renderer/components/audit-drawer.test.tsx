@@ -28,6 +28,8 @@ import {
   shouldApplyAuditResult,
   sortNewestFirst,
   stripSpoofedProvenance,
+  useWorkspaceAuditTaskIds,
+  WorkspaceAuditDrawer,
 } from "./audit-drawer";
 
 // React 19 createRoot + act requires this flag in non-RTL environments.
@@ -680,8 +682,49 @@ describe("AuditDrawer uncontrolled async fetch", () => {
 
     expect(listMock).toHaveBeenCalled();
     expect(container.innerHTML).toContain('data-testid="audit-error"');
+    expect(container.innerHTML).toMatch(/IPC fail for bad turn|Could not load audit trail/i);
     expect(container.innerHTML).not.toContain('data-audit-empty="true"');
     expect(container.innerHTML).not.toContain('data-audit-action="tool.ok"');
+    // Partial rows from the good turn must not paint as success.
+    expect(container.innerHTML).not.toContain('data-audit-decision="info"');
+  });
+
+  it("multi-task one-of-N malformed page shows audit-error UI (not empty/partial success)", async () => {
+    listMock.mockImplementation(async (params: { taskId?: string }) => {
+      if (params.taskId === "bad") {
+        return {
+          entries: null,
+          total: 0,
+          hasMore: false,
+          limit: 100,
+          offset: 0,
+        };
+      }
+      return {
+        entries: [
+          entry({
+            id: "ok1",
+            taskId: "good",
+            action: "tool.ok",
+            decision: "allow",
+          }),
+        ],
+        total: 1,
+        hasMore: false,
+        limit: 100,
+        offset: 0,
+      };
+    });
+
+    mount({ open: true, taskIds: ["good", "bad"] });
+    await flushLoad();
+
+    expect(listMock).toHaveBeenCalled();
+    expect(container.innerHTML).toContain('data-testid="audit-error"');
+    expect(container.innerHTML).toMatch(/invalid/i);
+    expect(container.innerHTML).not.toContain('data-audit-empty="true"');
+    expect(container.innerHTML).not.toContain('data-audit-action="tool.ok"');
+    expect(container.innerHTML).not.toMatch(/no decisions yet/i);
   });
 
   it("same taskIds membership in different array order does not re-fetch", async () => {
@@ -1751,9 +1794,24 @@ describe("parseAuditListPage (fail-closed)", () => {
     });
     expect(missing.ok).toBe(true);
     if (missing.ok) {
+      // reportedTotal = rawCount when total omitted → hasMore false (no false truncation).
       expect(missing.total).toBe(1);
       expect(missing.hasMore).toBe(false);
       expect(missing.entries).toHaveLength(1);
+    }
+
+    const undefinedTotal = parseAuditListPage({
+      entries: [
+        entry({ id: "1", action: "tool.a", decision: "allow" }),
+        entry({ id: "2", action: "tool.b", decision: "deny" }),
+      ],
+      total: undefined,
+      hasMore: false,
+    });
+    expect(undefinedTotal.ok).toBe(true);
+    if (undefinedTotal.ok) {
+      expect(undefinedTotal.total).toBe(2);
+      expect(undefinedTotal.hasMore).toBe(false);
     }
 
     const nanTotal = parseAuditListPage({
@@ -1776,6 +1834,18 @@ describe("parseAuditListPage (fail-closed)", () => {
     if (infTotal.ok) {
       expect(infTotal.total).toBe(1);
       expect(infTotal.hasMore).toBe(false);
+    }
+
+    const stringTotal = parseAuditListPage({
+      entries: [entry({ id: "1", action: "tool.a", decision: "allow" })],
+      total: "99" as unknown as number,
+      hasMore: false,
+    });
+    expect(stringTotal.ok).toBe(true);
+    if (stringTotal.ok) {
+      // Non-number total must not invent a larger reportedTotal / false hasMore.
+      expect(stringTotal.total).toBe(1);
+      expect(stringTotal.hasMore).toBe(false);
     }
 
     // Explicit hasMore:true still wins for pagination honesty.
@@ -1825,6 +1895,268 @@ describe("deriveAuditTaskIds (workspace → drawer scope)", () => {
     const ids = deriveAuditTaskIds([{ id: "t1" }], "t1");
     expect(ids.length).toBeGreaterThan(0);
     expect(ids).not.toEqual([]);
+  });
+});
+
+// ── production WorkspaceAuditDrawer / useWorkspaceAuditTaskIds (behavioral) ─
+
+describe("useWorkspaceAuditTaskIds + WorkspaceAuditDrawer (production scope)", () => {
+  let container: HTMLDivElement;
+  let root: Root;
+
+  beforeEach(() => {
+    listMock.mockReset();
+    container = document.createElement("div");
+    document.body.appendChild(container);
+    root = createRoot(container);
+  });
+
+  afterEach(() => {
+    act(() => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  async function flushLoad() {
+    await act(async () => {
+      const pending = listMock.mock.results
+        .map((r) => r.value)
+        .filter(
+          (v) =>
+            v != null && typeof (v as Promise<unknown>).then === "function",
+        ) as Promise<unknown>[];
+      await Promise.all(
+        pending.map((p) => p.then(() => undefined, () => undefined)),
+      );
+      await Promise.resolve();
+    });
+  }
+
+  it("multi-turn threadTasks → lists every sorted turn id (not only current)", async () => {
+    listMock.mockImplementation(async (params: { taskId?: string }) => ({
+      entries: [
+        entry({
+          id: `${params.taskId}-1`,
+          taskId: params.taskId ?? "x",
+          action: `tool.${params.taskId}`,
+          decision: "approve",
+        }),
+      ],
+      total: 1,
+      hasMore: false,
+      limit: 100,
+      offset: 0,
+    }));
+
+    // Unsorted thread — production hook must sort + include all turns.
+    const thread = [{ id: "turn-b" }, { id: "turn-a" }];
+    act(() => {
+      root.render(
+        createElement(WorkspaceAuditDrawer, {
+          open: true,
+          onOpenChange: vi.fn(),
+          threadTasks: thread,
+          taskId: "turn-b",
+          taskLabel: "Chat",
+        }),
+      );
+    });
+    await flushLoad();
+
+    expect(listMock).toHaveBeenCalledWith({ taskId: "turn-a", limit: 100 });
+    expect(listMock).toHaveBeenCalledWith({ taskId: "turn-b", limit: 100 });
+    expect(listMock).toHaveBeenCalledTimes(2);
+    expect(container.innerHTML).toContain('data-audit-task-count="2"');
+    expect(container.innerHTML).toContain('data-audit-action="tool.turn-a"');
+    expect(container.innerHTML).toContain('data-audit-action="tool.turn-b"');
+    // Not global
+    expect(container.innerHTML).not.toContain('data-audit-filter="global"');
+  });
+
+  it("empty threadTasks → [task.id] only — never []/global", async () => {
+    listMock.mockResolvedValueOnce({
+      entries: [
+        entry({
+          id: "solo-1",
+          taskId: "solo-task",
+          action: "tool.shell",
+          decision: "allow",
+        }),
+      ],
+      total: 1,
+      hasMore: false,
+      limit: 100,
+      offset: 0,
+    });
+
+    act(() => {
+      root.render(
+        createElement(WorkspaceAuditDrawer, {
+          open: true,
+          onOpenChange: vi.fn(),
+          threadTasks: [],
+          taskId: "solo-task",
+        }),
+      );
+    });
+    await flushLoad();
+
+    expect(listMock).toHaveBeenCalledTimes(1);
+    expect(listMock).toHaveBeenCalledWith({
+      taskId: "solo-task",
+      limit: 100,
+    });
+    expect(listMock.mock.calls[0][0]).not.toEqual({ limit: 100 });
+    expect(container.innerHTML).toContain('data-audit-task-count="1"');
+    expect(container.innerHTML).not.toContain('data-audit-filter="global"');
+  });
+
+  it("missing threadTasks falls back to current taskId (not global)", async () => {
+    listMock.mockResolvedValueOnce({
+      entries: [],
+      total: 0,
+      hasMore: false,
+      limit: 100,
+      offset: 0,
+    });
+
+    act(() => {
+      root.render(
+        createElement(WorkspaceAuditDrawer, {
+          open: true,
+          onOpenChange: vi.fn(),
+          taskId: "current-only",
+        }),
+      );
+    });
+    await flushLoad();
+
+    expect(listMock).toHaveBeenCalledWith({
+      taskId: "current-only",
+      limit: 100,
+    });
+    expect(container.innerHTML).not.toContain('data-audit-filter="global"');
+  });
+
+  it("order-only threadTasks reshuffle does not re-fetch (hook + drawer)", async () => {
+    listMock.mockResolvedValue({
+      entries: [
+        entry({ id: "1", taskId: "a", action: "tool.a", decision: "allow" }),
+      ],
+      total: 1,
+      hasMore: false,
+      limit: 100,
+      offset: 0,
+    });
+
+    act(() => {
+      root.render(
+        createElement(WorkspaceAuditDrawer, {
+          open: true,
+          onOpenChange: vi.fn(),
+          threadTasks: [{ id: "b" }, { id: "a" }],
+          taskId: "b",
+        }),
+      );
+    });
+    await flushLoad();
+    const callsAfterFirst = listMock.mock.calls.length;
+    expect(callsAfterFirst).toBe(2);
+
+    // Parent thrash: same membership, fresh map() order (production risk).
+    act(() => {
+      root.render(
+        createElement(WorkspaceAuditDrawer, {
+          open: true,
+          onOpenChange: vi.fn(),
+          threadTasks: [{ id: "a" }, { id: "b" }],
+          taskId: "a",
+        }),
+      );
+    });
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(listMock.mock.calls.length).toBe(callsAfterFirst);
+  });
+
+  it("useWorkspaceAuditTaskIds exposes sorted membership via probe mount", async () => {
+    let latest: string[] = [];
+    function Probe(props: {
+      threadTasks: ReadonlyArray<{ id: string }> | null | undefined;
+      taskId: string;
+    }) {
+      latest = useWorkspaceAuditTaskIds(props.threadTasks, props.taskId);
+      return createElement(
+        "div",
+        { "data-testid": "ids", "data-ids": latest.join(",") },
+        latest.join(","),
+      );
+    }
+
+    act(() => {
+      root.render(
+        createElement(Probe, {
+          threadTasks: [{ id: "z" }, { id: "a" }],
+          taskId: "z",
+        }),
+      );
+    });
+    expect(latest).toEqual(["a", "z"]);
+    expect(container.innerHTML).toContain("a,z");
+
+    act(() => {
+      root.render(
+        createElement(Probe, {
+          threadTasks: [],
+          taskId: "solo",
+        }),
+      );
+    });
+    expect(latest).toEqual(["solo"]);
+    expect(latest).not.toEqual([]);
+  });
+
+  it("multi-task one-of-N list failure surfaces audit-error via WorkspaceAuditDrawer UI", async () => {
+    // Uncontrolled async on the production workspace host (not pure loadAuditListPages).
+    listMock.mockImplementation(async (params: { taskId?: string }) => {
+      if (params.taskId === "bad") {
+        throw new Error("IPC fail for bad turn");
+      }
+      return {
+        entries: [
+          entry({
+            id: "ok1",
+            taskId: "good",
+            action: "tool.ok",
+            decision: "info",
+          }),
+        ],
+        total: 1,
+        hasMore: false,
+        limit: 100,
+        offset: 0,
+      };
+    });
+
+    act(() => {
+      root.render(
+        createElement(WorkspaceAuditDrawer, {
+          open: true,
+          onOpenChange: vi.fn(),
+          threadTasks: [{ id: "good" }, { id: "bad" }],
+          taskId: "good",
+        }),
+      );
+    });
+    await flushLoad();
+
+    expect(listMock).toHaveBeenCalled();
+    expect(container.innerHTML).toContain('data-testid="audit-error"');
+    expect(container.innerHTML).not.toContain('data-audit-empty="true"');
+    expect(container.innerHTML).not.toContain('data-audit-action="tool.ok"');
   });
 });
 
@@ -2166,7 +2498,7 @@ describe("loadAuditListPages (production list path)", () => {
 });
 
 describe("audit drawer wiring (structural)", () => {
-  it("task workspace wires overflow View audit with stable sorted thread taskIds", async () => {
+  it("task workspace wires overflow View audit via WorkspaceAuditDrawer", async () => {
     const fs = await import("node:fs");
     const path = await import("node:path");
     const { fileURLToPath } = await import("node:url");
@@ -2177,12 +2509,12 @@ describe("audit drawer wiring (structural)", () => {
     );
     expect(ws).toMatch(/onViewAudit=\{\(\) => setAuditOpen\(true\)\}/);
     expect(ws).toMatch(/task-overflow-view-audit|onViewAudit/);
-    expect(ws).toMatch(/<AuditDrawer/);
-    // Thread-wide: stable useMemo'd auditTaskIds via deriveAuditTaskIds
-    expect(ws).toMatch(/taskIds=\{auditTaskIds\}/);
-    expect(ws).toMatch(/const auditTaskIds = useMemo/);
-    expect(ws).toMatch(/threadTaskIdsKey/);
-    expect(ws).toMatch(/deriveAuditTaskIds/);
+    // Production host owns thread-wide scope (not inline invent taskIds / single taskId).
+    expect(ws).toMatch(/WorkspaceAuditDrawer/);
+    expect(ws).toMatch(/threadTasks=\{props\.threadTasks\}/);
+    expect(ws).toMatch(/taskId=\{task\.id\}/);
+    expect(ws).not.toMatch(/taskIds=\{auditTaskIds\}/);
+    // Must not pass only the focused turn as a single-task filter.
     expect(ws).not.toMatch(
       /<AuditDrawer[\s\S]*taskId=\{task\.id\}[\s\S]*\/>/,
     );
@@ -2242,7 +2574,7 @@ describe("audit drawer wiring (structural)", () => {
   });
 });
 
-// ── runtime open → list proof (entry points, not source scans) ──────────────
+// ── runtime open → list proof (production entry points) ─────────────────────
 
 describe("audit drawer entry-point runtime open→list", () => {
   let container: HTMLDivElement;
@@ -2277,7 +2609,9 @@ describe("audit drawer entry-point runtime open→list", () => {
     });
   }
 
-  it("overflow View audit opens thread drawer and lists each taskId", async () => {
+  it("overflow View audit opens WorkspaceAuditDrawer and lists each thread taskId", async () => {
+    // Production pieces TaskWorkspaceView composes: overflow menu + WorkspaceAuditDrawer
+    // (hook-derived thread scope — no invented taskIds array).
     const { useState } = await import("react");
     const { TaskOverflowMenu } = await import("./chat-actions-menu");
 
@@ -2296,28 +2630,31 @@ describe("audit drawer entry-point runtime open→list", () => {
       offset: 0,
     }));
 
-    function Harness() {
-      const [open, setOpen] = useState(false);
+    const threadTasks = [{ id: "turn-b" }, { id: "turn-a" }];
+
+    function TaskWorkspaceAuditEntry() {
+      // Mirrors TaskWorkspaceView: auditOpen state + overflow + WorkspaceAuditDrawer.
+      const [auditOpen, setAuditOpen] = useState(false);
       return createElement(
         "div",
         null,
         createElement(TaskOverflowMenu, {
           taskId: "turn-b",
           onExport: () => undefined,
-          onViewAudit: () => setOpen(true),
+          onViewAudit: () => setAuditOpen(true),
         }),
-        createElement(AuditDrawer, {
-          open,
-          onOpenChange: setOpen,
-          // Mirrors task-workspace thread-wide auditTaskIds
-          taskIds: ["turn-a", "turn-b"],
+        createElement(WorkspaceAuditDrawer, {
+          open: auditOpen,
+          onOpenChange: setAuditOpen,
+          threadTasks,
+          taskId: "turn-b",
           taskLabel: "Thread",
         }),
       );
     }
 
     act(() => {
-      root.render(createElement(Harness));
+      root.render(createElement(TaskWorkspaceAuditEntry));
     });
     // Closed: no list yet
     expect(listMock).not.toHaveBeenCalled();
@@ -2336,8 +2673,10 @@ describe("audit drawer entry-point runtime open→list", () => {
     await flushLoad();
     expect(listMock).toHaveBeenCalledWith({ taskId: "turn-a", limit: 100 });
     expect(listMock).toHaveBeenCalledWith({ taskId: "turn-b", limit: 100 });
+    expect(listMock).toHaveBeenCalledTimes(2);
     expect(container.innerHTML).toContain('data-audit-action="tool.a"');
     expect(container.innerHTML).toContain('data-audit-action="tool.b"');
+    expect(container.innerHTML).toContain('data-audit-task-count="2"');
   });
 
   it("permissions Recent decisions opens global AuditDrawer (no taskId)", async () => {
@@ -2361,6 +2700,10 @@ describe("audit drawer entry-point runtime open→list", () => {
       permissions: {
         accessibility: "granted",
         screenRecording: "granted",
+        captureGranted: true,
+        captureDetail: "ok",
+        inputGranted: true,
+        inputDetail: "ok",
       },
       machine: {
         enabled: false,
@@ -2371,7 +2714,10 @@ describe("audit drawer entry-point runtime open→list", () => {
     (window as unknown as { grokdesk: unknown }).grokdesk = {
       desktop: {
         getPermissions,
+        setMachine: vi.fn(),
         setMachineEnabled: vi.fn(),
+        openCaptureSettings: vi.fn(),
+        openInputSettings: vi.fn(),
         openAccessibility: vi.fn(),
         openScreenRecording: vi.fn(),
       },
@@ -2415,52 +2761,46 @@ describe("audit drawer entry-point runtime open→list", () => {
     }
   });
 
-  it("overflow View audit uses deriveAuditTaskIds-style thread scope (not single task)", async () => {
-    // Prove production derive helper + overflow menu + drawer together:
-    // multi-turn ids drive multi-task list (not only current turn).
+  it("overflow View audit with empty thread scopes to current taskId only", async () => {
     const { useState } = await import("react");
     const { TaskOverflowMenu } = await import("./chat-actions-menu");
 
-    listMock.mockImplementation(async (params: { taskId?: string }) => ({
+    listMock.mockResolvedValueOnce({
       entries: [
         entry({
-          id: `${params.taskId}-1`,
-          taskId: params.taskId ?? "x",
-          action: `tool.${params.taskId}`,
-          decision: "allow",
+          id: "only",
+          taskId: "solo",
+          action: "tool.solo",
+          decision: "deny",
         }),
       ],
       total: 1,
       hasMore: false,
       limit: 100,
       offset: 0,
-    }));
+    });
 
-    const thread = [{ id: "turn-z" }, { id: "turn-a" }];
-    const scoped = deriveAuditTaskIds(thread, "turn-z");
-    expect(scoped).toEqual(["turn-a", "turn-z"]);
-
-    function Harness() {
-      const [open, setOpen] = useState(false);
+    function Entry() {
+      const [auditOpen, setAuditOpen] = useState(false);
       return createElement(
         "div",
         null,
         createElement(TaskOverflowMenu, {
-          taskId: "turn-z",
+          taskId: "solo",
           onExport: () => undefined,
-          onViewAudit: () => setOpen(true),
+          onViewAudit: () => setAuditOpen(true),
         }),
-        createElement(AuditDrawer, {
-          open,
-          onOpenChange: setOpen,
-          taskIds: scoped,
-          taskLabel: "Thread",
+        createElement(WorkspaceAuditDrawer, {
+          open: auditOpen,
+          onOpenChange: setAuditOpen,
+          threadTasks: [],
+          taskId: "solo",
         }),
       );
     }
 
     act(() => {
-      root.render(createElement(Harness));
+      root.render(createElement(Entry));
     });
     const item = container.querySelector(
       '[data-testid="task-overflow-view-audit"]',
@@ -2469,11 +2809,9 @@ describe("audit drawer entry-point runtime open→list", () => {
       item.click();
     });
     await flushLoad();
-    expect(listMock).toHaveBeenCalledWith({ taskId: "turn-a", limit: 100 });
-    expect(listMock).toHaveBeenCalledWith({ taskId: "turn-z", limit: 100 });
-    // Not scoped to current turn only
-    expect(listMock.mock.calls.some((c) => c[0]?.taskId === "turn-a")).toBe(
-      true,
-    );
+    expect(listMock).toHaveBeenCalledTimes(1);
+    expect(listMock).toHaveBeenCalledWith({ taskId: "solo", limit: 100 });
+    expect(container.innerHTML).not.toContain('data-audit-filter="global"');
+    expect(container.innerHTML).toContain('data-audit-action="tool.solo"');
   });
 });
