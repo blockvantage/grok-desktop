@@ -8,9 +8,11 @@ import {
   AUDIT_DETAIL_STRING_MAX,
   clampAuditListLimit,
   clampAuditListOffset,
+  isAuditSecretKey,
   listAuditEntries,
   parseAuditDecision,
   redactAuditDetail,
+  unknownDecisionMarker,
 } from "./audit-list.js";
 
 describe("clampAuditListLimit", () => {
@@ -62,6 +64,37 @@ describe("parseAuditDecision", () => {
     expect(parseAuditDecision("")).toBe("info");
     expect(parseAuditDecision(null)).toBe("info");
     expect(parseAuditDecision(42)).toBe("info");
+  });
+});
+
+describe("unknownDecisionMarker", () => {
+  it("returns null for known decisions", () => {
+    expect(unknownDecisionMarker("allow")).toBeNull();
+    expect(unknownDecisionMarker("info")).toBeNull();
+  });
+
+  it("marks empty, null, non-string, and unknown strings", () => {
+    expect(unknownDecisionMarker("")).toBe("_empty");
+    expect(unknownDecisionMarker(null)).toBe("_null");
+    expect(unknownDecisionMarker(undefined)).toBe("_null");
+    expect(unknownDecisionMarker(42)).toBe("_type:number");
+    expect(unknownDecisionMarker("bogus")).toBe("bogus");
+  });
+});
+
+describe("isAuditSecretKey", () => {
+  it("matches generic secret keys and commerce field names", () => {
+    expect(isAuditSecretKey("apiKey")).toBe(true);
+    expect(isAuditSecretKey("password")).toBe(true);
+    expect(isAuditSecretKey("privateKey")).toBe(true);
+    expect(isAuditSecretKey("PRIVATE_KEY")).toBe(true);
+    expect(isAuditSecretKey("productKey")).toBe(true);
+    expect(isAuditSecretKey("grantToken")).toBe(true);
+    expect(isAuditSecretKey("lease")).toBe(true);
+    expect(isAuditSecretKey("devicePrivateKey")).toBe(true);
+    expect(isAuditSecretKey("d")).toBe(true);
+    expect(isAuditSecretKey("path")).toBe(false);
+    expect(isAuditSecretKey("action")).toBe(false);
   });
 });
 
@@ -127,6 +160,34 @@ describe("redactAuditDetail", () => {
     expect(s.length).toBe(AUDIT_DETAIL_STRING_MAX + "…[truncated]".length);
     expect(s.startsWith("x".repeat(100))).toBe(true);
   });
+
+  it("redacts commerce/entitlement secret field names (privateKey, productKey, …)", () => {
+    const out = redactAuditDetail({
+      privateKey: "canary-private-key-material-xx",
+      productKey: "GD1.canary-body.CANARY_SIG_GD1_NEVER_LEAK",
+      grantToken: "canary-download-grant-token-NEVER-LEAK",
+      lease: "eyJhbGciOiJFZERTQSIsInR5cCI6Imdyb2tkZXNrLWxlYXNlK2p3dCJ9.payload.sig",
+      path: "/workspace/safe",
+      tool: {
+        meta: {
+          devicePrivateKey: "nested-device-private-xx",
+          note: "ok",
+        },
+      },
+    });
+    expect(out.privateKey).toBe("[REDACTED]");
+    expect(out.productKey).toBe("[REDACTED]");
+    expect(out.grantToken).toBe("[REDACTED]");
+    expect(out.lease).toBe("[REDACTED]");
+    expect(out.path).toBe("/workspace/safe");
+    const tool = out.tool as Record<string, unknown>;
+    const meta = tool.meta as Record<string, unknown>;
+    expect(meta.devicePrivateKey).toBe("[REDACTED]");
+    expect(meta.note).toBe("ok");
+    expect(JSON.stringify(out)).not.toMatch(
+      /canary-private-key|GD1\.canary|canary-download-grant|nested-device-private/,
+    );
+  });
 });
 
 describe("listAuditEntries", () => {
@@ -145,7 +206,7 @@ describe("listAuditEntries", () => {
     fs.rmSync(dir, { recursive: true, force: true });
   });
 
-  it("returns newest first for a taskId", () => {
+  it("returns newest first for a taskId and preserves createdAt", () => {
     const taskId = "task-order";
     audit.append({
       taskId,
@@ -173,11 +234,47 @@ describe("listAuditEntries", () => {
     expect(page.entries).toHaveLength(2);
     expect(page.entries[0]?.action).toBe("second.action");
     expect(page.entries[1]?.action).toBe("first.action");
+    expect(page.entries[0]?.createdAt).toBe("2026-08-01T12:00:00.000Z");
+    expect(page.entries[1]?.createdAt).toBe("2026-08-01T10:00:00.000Z");
     expect(page.entries.every((r) => r.taskId === taskId)).toBe(true);
     expect(page.hasMore).toBe(false);
     expect(page.total).toBe(2);
     expect(page.limit).toBe(10);
     expect(page.offset).toBe(0);
+  });
+
+  it("orders stably under created_at ties (id DESC secondary key)", () => {
+    const tie = "2026-08-01T15:00:00.000Z";
+    const taskId = "task-tie";
+    // Force known ids so order is deterministic under id DESC.
+    const ids = ["id-aaa", "id-mmm", "id-zzz"];
+    for (const id of ids) {
+      db.prepare(
+        `INSERT INTO audit_entries (id, task_id, action, detail_json, decision, created_at)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+      ).run(id, taskId, `action.${id}`, "{}", "info", tie);
+    }
+
+    const page = listAuditEntries(db, { taskId, limit: 10 });
+    expect(page.entries).toHaveLength(3);
+    expect(page.entries.every((r) => r.createdAt === tie)).toBe(true);
+    // id DESC: zzz, mmm, aaa
+    expect(page.entries.map((r) => r.id)).toEqual([
+      "id-zzz",
+      "id-mmm",
+      "id-aaa",
+    ]);
+
+    const page1 = listAuditEntries(db, { taskId, limit: 2, offset: 0 });
+    const page2 = listAuditEntries(db, { taskId, limit: 2, offset: 2 });
+    expect(page1.entries.map((r) => r.id)).toEqual(["id-zzz", "id-mmm"]);
+    expect(page2.entries.map((r) => r.id)).toEqual(["id-aaa"]);
+    // No duplicates / skips across pages under ties.
+    const allIds = [
+      ...page1.entries.map((r) => r.id),
+      ...page2.entries.map((r) => r.id),
+    ];
+    expect(new Set(allIds).size).toBe(3);
   });
 
   it("filters by decision when provided with taskId", () => {
@@ -367,6 +464,28 @@ describe("listAuditEntries", () => {
     expect(page.entries[0]?.decision).toBe("info");
     expect(page.entries[0]?.detail._unknownDecision).toBe("bogus-decision");
     expect(page.entries[0]?.detail.ok).toBe(true);
+  });
+
+  it("marks empty stored decisions with _unknownDecision provenance", () => {
+    // Schema is NOT NULL on decision; empty string is the corrupt-in-DB case.
+    // null/non-string markers are covered by unknownDecisionMarker unit tests.
+    const emptyRow = audit.append({
+      taskId: "t-empty",
+      action: "empty.decision",
+      detail: { x: 1 },
+      decision: "info",
+      createdAt: "2026-08-01T10:00:00.000Z",
+    });
+    db.prepare(`UPDATE audit_entries SET decision = ? WHERE id = ?`).run(
+      "",
+      emptyRow.id,
+    );
+
+    const page = listAuditEntries(db, { taskId: "t-empty", decision: "info" });
+    expect(page.entries).toHaveLength(1);
+    expect(page.entries[0]?.decision).toBe("info");
+    expect(page.entries[0]?.detail._unknownDecision).toBe("_empty");
+    expect(page.entries[0]?.detail.x).toBe(1);
   });
 
   it("redacts secret-like fields in listed detail including nested tool", () => {

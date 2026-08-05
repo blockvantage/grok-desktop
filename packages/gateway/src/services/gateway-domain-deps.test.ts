@@ -115,6 +115,7 @@ describe("buildDomainDispatchDeps", () => {
       hasMore: false,
       total: 1,
       limit: 20,
+      offset: 0,
     }));
     const bag = {
       paths: { dataDir: "/data" },
@@ -196,13 +197,30 @@ describe("buildDomainDispatchDeps", () => {
       deps,
     );
     expect(out.handled).toBe(true);
+    // Dispatch always passes offset (undefined when unset) — assert full shape.
     expect(auditList).toHaveBeenCalledWith({
       taskId: "task-1",
       decision: "deny",
       limit: 20,
+      offset: undefined,
     });
     // Guards against wiring that drops params: auditList: () => g.audit.list({})
     expect(auditList).not.toHaveBeenCalledWith({});
+
+    // Explicit offset must reach the bag too.
+    auditList.mockClear();
+    await dispatchDomainMethod(
+      "audit.list",
+      { taskId: "task-1", decision: "deny", limit: 20, offset: 40 },
+      deps,
+    );
+    expect(auditList).toHaveBeenCalledWith({
+      taskId: "task-1",
+      decision: "deny",
+      limit: 20,
+      offset: 40,
+    });
+
     expect(out.result).toEqual({
       entries: [
         {
@@ -217,6 +235,7 @@ describe("buildDomainDispatchDeps", () => {
       hasMore: false,
       total: 1,
       limit: 20,
+      offset: 0,
     });
   });
 });

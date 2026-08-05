@@ -106,18 +106,22 @@ export function dispatchSideDataMethod(
         typeof params.taskId === "string" && params.taskId
           ? params.taskId
           : undefined;
-      // Fail closed: empty/missing decision → no filter; unknown non-empty
-      // strings throw (do not silently return the full unfiltered trail).
-      const decisionRaw =
-        typeof params.decision === "string" ? params.decision : undefined;
+      // Fail closed: empty/missing decision → no filter.
+      // Non-string or unknown non-empty decision throws (never silently
+      // disable the filter and return an unfiltered trail).
       let decision: AuditEntry["decision"] | undefined;
-      if (decisionRaw !== undefined && decisionRaw !== "") {
-        if (!AUDIT_DECISION_FILTER.has(decisionRaw)) {
-          throw new Error(`invalid audit decision filter: ${decisionRaw}`);
-        }
-        decision = decisionRaw as AuditEntry["decision"];
-      } else {
+      if (params.decision === undefined || params.decision === null) {
         decision = undefined;
+      } else if (typeof params.decision !== "string") {
+        throw new Error(
+          `invalid audit decision filter: expected string, got ${typeof params.decision}`,
+        );
+      } else if (params.decision === "") {
+        decision = undefined;
+      } else if (!AUDIT_DECISION_FILTER.has(params.decision)) {
+        throw new Error(`invalid audit decision filter: ${params.decision}`);
+      } else {
+        decision = params.decision as AuditEntry["decision"];
       }
       const limit =
         typeof params.limit === "number" && Number.isFinite(params.limit)

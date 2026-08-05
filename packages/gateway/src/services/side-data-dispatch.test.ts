@@ -232,4 +232,32 @@ describe("dispatchSideDataMethod", () => {
     ).toThrow(/invalid audit decision filter/);
     expect(auditList).not.toHaveBeenCalled();
   });
+
+  it("fails closed on non-string decision (does not silently drop filter)", () => {
+    const auditList = vi.fn(() => ({
+      entries: [],
+      hasMore: false,
+      total: 0,
+      limit: 100,
+      offset: 0,
+    }));
+    const deps = baseDeps({ auditList });
+    expect(() =>
+      dispatchSideDataMethod(
+        "audit.list",
+        { decision: 42 } as Record<string, unknown>,
+        deps,
+      ),
+    ).toThrow(/expected string/);
+    expect(auditList).not.toHaveBeenCalled();
+
+    expect(() =>
+      dispatchSideDataMethod(
+        "audit.list",
+        { decision: { ok: true } } as Record<string, unknown>,
+        deps,
+      ),
+    ).toThrow(/expected string/);
+    expect(auditList).not.toHaveBeenCalled();
+  });
 });

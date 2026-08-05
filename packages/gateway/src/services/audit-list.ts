@@ -4,14 +4,19 @@
  * Honesty:
  * - Returns { entries, hasMore, total, limit, offset } so truncation is never silent.
  * - Offset pagination lets consumers load older rows past the first page (limit max 500).
+ * - Newest-first order is stable under timestamp ties (`ORDER BY created_at DESC, id DESC`).
  * - Isolates corrupt detail_json per row (does not fail the whole list).
- * - Validates decision enum; unknown DB values become "info" + _unknownDecision.
+ * - Validates decision enum; unknown/empty/null DB values become "info" + _unknownDecision.
  * - decision:"info" filter includes remapped/unknown stored decisions (matches display).
- * - Deep-redacts secret-like detail (keys, nested tool/command, shared secret patterns)
- *   before IPC.
+ * - Deep-redacts secret-like + commerce field names (privateKey, productKey, lease, …)
+ *   and shared secret value patterns before IPC.
  */
 
-import { redactSecretString, type AuditEntry } from "@grokdesk/shared";
+import {
+  COMMERCE_SECRET_FIELD_NAMES,
+  redactSecretString,
+  type AuditEntry,
+} from "@grokdesk/shared";
 import type { Db } from "../db.js";
 
 export const AUDIT_DECISIONS = [
@@ -27,11 +32,17 @@ const AUDIT_DECISION_SET = new Set<string>(AUDIT_DECISIONS);
 /** Known mediation outcomes stored as-is (not remapped to info). */
 const KNOWN_DECISION_SQL = "('allow','deny','approve','reject','info')";
 
+/** Generic secret-like key fragments (case-insensitive). */
 const SECRET_KEY_RE =
-  /secret|token|password|api[_-]?key|authorization|credential/i;
+  /secret|token|password|api[_-]?key|authorization|credential|private[_-]?key|product[_-]?key|grant|lease|nonce/i;
 
 const ASSIGNMENT_SECRET_RE =
-  /(password|token|api[_-]?key|secret|authorization)\s*[:=]\s*\S+/gi;
+  /(password|token|api[_-]?key|secret|authorization|private[_-]?key|product[_-]?key|grant|lease|nonce|sig)\s*[:=]\s*\S+/gi;
+
+/** Lowercased commerce field names for exact key redaction. */
+const COMMERCE_FIELD_LOWER = new Set(
+  (COMMERCE_SECRET_FIELD_NAMES as readonly string[]).map((f) => f.toLowerCase()),
+);
 
 /** Max depth when walking nested audit detail (tool_request trees, etc.). */
 const REDACT_MAX_DEPTH = 24;
@@ -108,11 +119,13 @@ export function listAuditEntries(
     .get(...binds) as { c: number } | undefined;
   const total = Number(totalRow?.c ?? 0);
 
+  // Secondary id DESC keeps OFFSET pages stable when created_at ties
+  // (same pattern as tasks.list newest-first).
   const rows = db
     .prepare(
       `SELECT id, task_id, action, detail_json, decision, created_at
        FROM audit_entries ${where}
-       ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+       ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?`,
     )
     .all(...binds, limit, offset) as Record<string, unknown>[];
 
@@ -151,12 +164,11 @@ function mapAuditRow(r: Record<string, unknown>): AuditEntry {
   const rawDecision = r.decision;
   const decision = parseAuditDecision(rawDecision);
   let detail = parseAuditDetail(r.detail_json);
-  if (
-    typeof rawDecision === "string" &&
-    rawDecision &&
-    !AUDIT_DECISION_SET.has(rawDecision)
-  ) {
-    detail = { ...detail, _unknownDecision: rawDecision };
+  const unknownMarker = unknownDecisionMarker(rawDecision);
+  if (unknownMarker !== null) {
+    // Provenance for remapped rows (including empty/null/non-string), so UI
+    // never confuses deliberate "info" with corrupt missing mediation outcomes.
+    detail = { ...detail, _unknownDecision: unknownMarker };
   }
   return {
     id: r.id as string,
@@ -166,6 +178,23 @@ function mapAuditRow(r: Record<string, unknown>): AuditEntry {
     decision,
     createdAt: r.created_at as string,
   };
+}
+
+/**
+ * Marker for any stored decision that is not a known mediation enum value.
+ * Returns null when the raw value is already a known decision.
+ */
+export function unknownDecisionMarker(raw: unknown): string | null {
+  if (typeof raw === "string" && AUDIT_DECISION_SET.has(raw)) {
+    return null;
+  }
+  if (typeof raw === "string") {
+    return raw === "" ? "_empty" : raw;
+  }
+  if (raw === null || raw === undefined) {
+    return "_null";
+  }
+  return `_type:${typeof raw}`;
 }
 
 /**
@@ -199,13 +228,22 @@ function parseAuditDetail(raw: unknown): Record<string, unknown> {
 /**
  * Deep-redact secret-like keys and values for Settings / task inspection.
  * Walks nested objects/arrays (e.g. approval detail.tool.command/meta), applies
- * shared secret-value patterns (sk-, Bearer, commerce/JWT canaries), assignment
- * scrub, and string length truncation.
+ * shared secret-value patterns (sk-, Bearer, commerce/JWT canaries), commerce
+ * field names (privateKey, productKey, …), assignment scrub, and truncation.
  */
 export function redactAuditDetail(
   detail: Record<string, unknown>,
 ): Record<string, unknown> {
   return redactAuditValue(detail, 0) as Record<string, unknown>;
+}
+
+/** True when a detail key must be fully redacted (never wire the value). */
+export function isAuditSecretKey(key: string): boolean {
+  if (SECRET_KEY_RE.test(key)) return true;
+  const lower = key.toLowerCase();
+  // JWK private parameter `d` (same rule as shared isCommerceSecretFieldName).
+  if (lower === "d") return true;
+  return COMMERCE_FIELD_LOWER.has(lower);
 }
 
 function redactAuditValue(value: unknown, depth: number): unknown {
@@ -220,7 +258,7 @@ function redactAuditValue(value: unknown, depth: number): unknown {
   }
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
-    if (SECRET_KEY_RE.test(k)) {
+    if (isAuditSecretKey(k)) {
       out[k] = "[REDACTED]";
       continue;
     }
