@@ -507,7 +507,8 @@
     "eventsRetry": "Réessayer",
     "queueRemoveShort": "Retirer",
     "composerSaveWhenReady": "Enregistrer quand le moteur est prêt",
-    "composerTryAgain": "Réessayer"
+    "composerTryAgain": "Réessayer",
+    "viewAudit": "Voir l’audit"
   },
   "conversation": {
     "viewWork": "Voir le travail",
@@ -673,7 +674,11 @@
       "safety": "Les gestionnaires de mots de passe et certaines apps de sécurité sont bloqués si détectés. Un risque résiduel existe pour les champs mot de passe — vérifiez les actions.",
       "enableConfirm": "Le contrôle du bureau permet à Grok Desk de déplacer la souris et de taper sur cet ordinateur. Activez-le uniquement pour des tâches de confiance. Pause possible depuis la barre de menu.",
       "statusGranted": "Accordé",
-      "statusMissing": "Manquant / inconnu"
+      "statusMissing": "Manquant / inconnu",
+      "auditSection": "Historique des décisions",
+      "recentDecisions": "Décisions récentes",
+      "recentDecisionsDesc": "Parcourez les décisions de permissions et d’outils enregistrées sur cette machine.",
+      "recentDecisionsHint": "Ouvre la piste d’audit complète (toutes les tâches)."
     },
     "languageTitle": "Langue",
     "languageDescription": "Choisissez la langue de l’interface Grok Desk. Prend effet immédiatement.",
@@ -1699,5 +1704,18 @@
     "expandsOnSend": "S'étend à l'envoi",
     "workflows": "Flux",
     "placeholder": "Ajouter des détails (facultatif)…"
+  },
+  "audit": {
+    "title": "Décisions d’audit",
+    "titleTask": "Audit · {label}",
+    "subtitle": "Décisions de permissions et d’outils pour cette tâche. Uniquement les lignes réellement enregistrées.",
+    "subtitleGlobal": "Décisions récentes de permissions et d’outils. Uniquement les lignes réellement enregistrées.",
+    "emptyTitle": "Aucune décision pour l’instant",
+    "emptyDesc": "Lorsque Grok demande une approbation ou qu’un outil s’exécute sous politique, les décisions apparaissent ici.",
+    "loading": "Chargement de l’audit…",
+    "loadFailed": "Impossible de charger l’historique d’audit",
+    "hasMore": "Affichage de {shown} sur {total} — entrées plus anciennes non chargées",
+    "refresh": "Actualiser",
+    "globalLabel": "Toutes les tâches"
   }
 }

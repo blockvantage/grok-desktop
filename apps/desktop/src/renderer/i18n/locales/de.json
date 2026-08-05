@@ -507,7 +507,8 @@
     "eventsRetry": "Erneut versuchen",
     "queueRemoveShort": "Entfernen",
     "composerSaveWhenReady": "Speichern, wenn die Engine bereit ist",
-    "composerTryAgain": "Erneut versuchen"
+    "composerTryAgain": "Erneut versuchen",
+    "viewAudit": "Audit anzeigen"
   },
   "conversation": {
     "viewWork": "Arbeit anzeigen",
@@ -673,7 +674,11 @@
       "safety": "Passwortmanager und einige Sicherheits-Apps werden nach Möglichkeit blockiert. Bei Passwortfeldern bleibt ein Restrisiko — prüfen Sie Aktionen sorgfältig.",
       "enableConfirm": "Die Desktop-Steuerung lässt Grok Desk Maus und Tastatur auf diesem Computer steuern. Nur für vertrauenswürdige Aufgaben aktivieren. Pause jederzeit über die Menüleiste.",
       "statusGranted": "Erteilt",
-      "statusMissing": "Fehlt / unbekannt"
+      "statusMissing": "Fehlt / unbekannt",
+      "auditSection": "Entscheidungs-Verlauf",
+      "recentDecisions": "Aktuelle Entscheidungen",
+      "recentDecisionsDesc": "Berechtigungs- und Tool-Entscheidungen auf diesem Gerät durchsuchen.",
+      "recentDecisionsHint": "Öffnet den vollständigen Audit-Verlauf (alle Aufgaben)."
     },
     "languageTitle": "Sprache",
     "languageDescription": "Sprache der Grok Desk-Oberfläche. Wirkt sofort.",
@@ -1699,5 +1704,18 @@
     "expandsOnSend": "Wird beim Senden erweitert",
     "workflows": "Workflows",
     "placeholder": "Details hinzufügen (optional)…"
+  },
+  "audit": {
+    "title": "Audit-Entscheidungen",
+    "titleTask": "Audit · {label}",
+    "subtitle": "Berechtigungs- und Tool-Entscheidungen für diese Aufgabe. Nur echte protokollierte Einträge.",
+    "subtitleGlobal": "Aktuelle Berechtigungs- und Tool-Entscheidungen. Nur echte protokollierte Einträge.",
+    "emptyTitle": "Noch keine Entscheidungen",
+    "emptyDesc": "Wenn Grok um Freigabe bittet oder Tools unter Richtlinie laufen, erscheinen Entscheidungen hier.",
+    "loading": "Audit wird geladen…",
+    "loadFailed": "Audit-Verlauf konnte nicht geladen werden",
+    "hasMore": "{shown} von {total} angezeigt — ältere Einträge nicht geladen",
+    "refresh": "Aktualisieren",
+    "globalLabel": "Alle Aufgaben"
   }
 }

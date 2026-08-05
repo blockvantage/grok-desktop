@@ -21,7 +21,7 @@ import {
   enableRecommendedConnectors,
 } from "./connector-ops.js";
 import type { AppSettings } from "./settings.js";
-import type { TaskEvent } from "@grokdesk/shared";
+import type { AuditEntry, TaskEvent } from "@grokdesk/shared";
 import {
   buildBrowserCapabilityHandshake,
   detectDeskControlPlanes,
@@ -98,7 +98,14 @@ export type GatewayDomainServiceBag = {
       taskId?: string | null;
       decision?: "allow" | "deny" | "approve" | "reject" | "info" | null;
       limit?: number;
-    }) => unknown;
+      offset?: number;
+    }) => {
+      entries: AuditEntry[];
+      hasMore: boolean;
+      total: number;
+      limit: number;
+      offset: number;
+    };
   };
   settings: {
     getAll: () => unknown;

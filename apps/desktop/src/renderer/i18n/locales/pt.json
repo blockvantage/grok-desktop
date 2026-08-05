@@ -507,7 +507,8 @@
     "eventsRetry": "Tentar novamente",
     "queueRemoveShort": "Remover",
     "composerSaveWhenReady": "Guardar quando o motor estiver pronto",
-    "composerTryAgain": "Tentar de novo"
+    "composerTryAgain": "Tentar de novo",
+    "viewAudit": "Ver auditoria"
   },
   "conversation": {
     "viewWork": "Ver trabalho",
@@ -673,7 +674,11 @@
       "safety": "Gerenciadores de senha e alguns apps de segurança são bloqueados quando detectados. Há risco residual em campos de senha — revise as ações.",
       "enableConfirm": "O controle da área de trabalho permite que o Grok Desk mova o mouse e digite neste computador. Ative só em tarefas confiáveis. Pause a qualquer momento pela bandeja.",
       "statusGranted": "Concedido",
-      "statusMissing": "Ausente / desconhecido"
+      "statusMissing": "Ausente / desconhecido",
+      "auditSection": "Histórico de decisões",
+      "recentDecisions": "Decisões recentes",
+      "recentDecisionsDesc": "Consulta as decisões de permissões e ferramentas registadas neste computador.",
+      "recentDecisionsHint": "Abre o historial de auditoria completo (todas as tarefas)."
     },
     "languageTitle": "Idioma",
     "languageDescription": "Escolha o idioma da interface do Grok Desk. Tem efeito imediato.",
@@ -1699,5 +1704,18 @@
     "expandsOnSend": "Expande ao enviar",
     "workflows": "Fluxos",
     "placeholder": "Adicionar detalhes (opcional)…"
+  },
+  "audit": {
+    "title": "Decisões de auditoria",
+    "titleTask": "Auditoria · {label}",
+    "subtitle": "Decisões de permissões e ferramentas desta tarefa. Só linhas realmente registadas.",
+    "subtitleGlobal": "Decisões recentes de permissões e ferramentas. Só linhas realmente registadas.",
+    "emptyTitle": "Ainda sem decisões",
+    "emptyDesc": "Quando o Grok pedir aprovação ou as ferramentas correrem sob política, as decisões aparecem aqui.",
+    "loading": "A carregar auditoria…",
+    "loadFailed": "Não foi possível carregar o historial de auditoria",
+    "hasMore": "A mostrar {shown} de {total} — entradas antigas não carregadas",
+    "refresh": "Atualizar",
+    "globalLabel": "Todas as tarefas"
   }
 }

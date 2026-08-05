@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { ScrollText } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,6 +13,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Spinner } from "@/components/ui/spinner";
+import { AuditDrawer } from "@/components/audit-drawer";
 import { useT } from "@/i18n";
 import { humanizeError } from "@/lib/errors";
 import type {
@@ -32,6 +34,7 @@ export function PermissionsTab() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [confirmEnable, setConfirmEnable] = useState(false);
+  const [auditOpen, setAuditOpen] = useState(false);
 
   const refresh = useCallback(async () => {
     try {
@@ -134,6 +137,29 @@ export function PermissionsTab() {
         </div>
       </SettingsSection>
 
+      <SettingsSection
+        title={t("settings.permissions.auditSection")}
+        description={t("settings.permissions.recentDecisionsDesc")}
+      >
+        <SettingsRow
+          label={t("settings.permissions.recentDecisions")}
+          description={t("settings.permissions.recentDecisionsHint")}
+          control={
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="gap-1.5"
+              onClick={() => setAuditOpen(true)}
+              data-testid="permissions-recent-decisions"
+            >
+              <ScrollText className="h-3.5 w-3.5" />
+              {t("settings.permissions.recentDecisions")}
+            </Button>
+          }
+        />
+      </SettingsSection>
+
       <p className="text-xs text-muted-foreground">
         {t("settings.permissions.safety")}
       </p>
@@ -165,6 +191,9 @@ export function PermissionsTab() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Global audit list — no taskId filter (fail-closed real rows only). */}
+      <AuditDrawer open={auditOpen} onOpenChange={setAuditOpen} />
     </div>
   );
 }

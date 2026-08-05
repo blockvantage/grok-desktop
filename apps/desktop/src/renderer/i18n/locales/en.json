@@ -527,7 +527,21 @@
     "eventsRetry": "Retry",
     "queueRemoveShort": "Remove",
     "composerSaveWhenReady": "Save when engine is ready",
-    "composerTryAgain": "Try again"
+    "composerTryAgain": "Try again",
+    "viewAudit": "View audit"
+  },
+  "audit": {
+    "title": "Audit decisions",
+    "titleTask": "Audit · {label}",
+    "subtitle": "Permission and tool decisions recorded for this task. Only real logged rows appear here.",
+    "subtitleGlobal": "Recent permission and tool decisions across tasks. Only real logged rows appear here.",
+    "emptyTitle": "No decisions yet",
+    "emptyDesc": "When Grok asks for approval or tools run under policy, decisions show up here.",
+    "loading": "Loading audit…",
+    "loadFailed": "Could not load audit trail",
+    "hasMore": "Showing {shown} of {total} — older entries not loaded",
+    "refresh": "Refresh",
+    "globalLabel": "All tasks"
   },
   "conversation": {
     "viewWork": "View work",
@@ -693,7 +707,11 @@
       "safety": "Password managers and some system security apps are blocked when detected. Residual risk remains for password fields — review agent actions carefully.",
       "enableConfirm": "Desktop control lets Grok Desk move the mouse and type on this computer. Only enable for tasks you trust. You can pause anytime from the tray.",
       "statusGranted": "Granted",
-      "statusMissing": "Missing / unknown"
+      "statusMissing": "Missing / unknown",
+      "auditSection": "Decision history",
+      "recentDecisions": "Recent decisions",
+      "recentDecisionsDesc": "Browse permission and tool decisions recorded on this machine.",
+      "recentDecisionsHint": "Opens the full audit trail (all tasks)."
     },
     "languageTitle": "Language",
     "languageDescription": "Choose the language for the Grok Desk interface. Takes effect immediately.",

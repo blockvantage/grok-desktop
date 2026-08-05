@@ -9,6 +9,7 @@ import {
   Square,
   PanelRightClose,
   PanelRightOpen,
+  ScrollText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,6 +47,8 @@ export function TaskOverflowMenu(props: {
   onImagine?: () => void;
   onHelp?: () => void;
   onOpenFolder?: () => void;
+  /** Open audit trail for this task (permission / tool decisions). */
+  onViewAudit?: () => void;
   onResume?: () => void;
   showResume?: boolean;
   onCancel?: () => void;
@@ -111,6 +114,15 @@ export function TaskOverflowMenu(props: {
           <Download className="mr-2 h-3.5 w-3.5" />
           {t("workspace.saveConversation")}
         </DropdownMenuItem>
+        {props.onViewAudit && (
+          <DropdownMenuItem
+            onClick={props.onViewAudit}
+            data-testid="task-overflow-view-audit"
+          >
+            <ScrollText className="mr-2 h-3.5 w-3.5" />
+            {t("workspace.viewAudit")}
+          </DropdownMenuItem>
+        )}
         {props.onRemember && (
           <DropdownMenuItem onClick={props.onRemember}>
             <BookMarked className="mr-2 h-3.5 w-3.5" />

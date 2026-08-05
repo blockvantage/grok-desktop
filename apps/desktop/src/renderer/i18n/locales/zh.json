@@ -507,7 +507,8 @@
     "eventsRetry": "重试",
     "queueRemoveShort": "移除",
     "composerSaveWhenReady": "引擎就绪后保存",
-    "composerTryAgain": "重试"
+    "composerTryAgain": "重试",
+    "viewAudit": "查看审计"
   },
   "conversation": {
     "viewWork": "查看工作",
@@ -673,7 +674,11 @@
       "safety": "检测到密码管理器等敏感应用时会阻止操作。密码输入框仍有残留风险，请仔细核对代理操作。",
       "enableConfirm": "启用桌面控制后，Grok Desk 可在本机移动鼠标并输入文字。请仅对可信任务开启。可随时从菜单栏暂停。",
       "statusGranted": "已授予",
-      "statusMissing": "缺失 / 未知"
+      "statusMissing": "缺失 / 未知",
+      "auditSection": "决策历史",
+      "recentDecisions": "最近决策",
+      "recentDecisionsDesc": "浏览本机记录的权限与工具决策。",
+      "recentDecisionsHint": "打开完整审计轨迹（全部任务）。"
     },
     "languageTitle": "语言",
     "languageDescription": "选择 Grok Desk 界面语言，立即生效。",
@@ -1699,5 +1704,18 @@
     "expandsOnSend": "发送时展开",
     "workflows": "工作流",
     "placeholder": "添加细节（可选）…"
+  },
+  "audit": {
+    "title": "审计决策",
+    "titleTask": "审计 · {label}",
+    "subtitle": "此任务的权限与工具决策。仅显示真实记录的条目。",
+    "subtitleGlobal": "跨任务的最近权限与工具决策。仅显示真实记录的条目。",
+    "emptyTitle": "尚无决策",
+    "emptyDesc": "当 Grok 请求批准或工具在策略下运行时，决策会出现在这里。",
+    "loading": "正在加载审计…",
+    "loadFailed": "无法加载审计记录",
+    "hasMore": "显示 {shown} / {total} — 更早条目未加载",
+    "refresh": "刷新",
+    "globalLabel": "全部任务"
   }
 }

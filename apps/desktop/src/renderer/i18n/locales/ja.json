@@ -507,7 +507,8 @@
     "eventsRetry": "再試行",
     "queueRemoveShort": "削除",
     "composerSaveWhenReady": "エンジンの準備ができたら保存",
-    "composerTryAgain": "再試行"
+    "composerTryAgain": "再試行",
+    "viewAudit": "監査を表示"
   },
   "conversation": {
     "viewWork": "作業を表示",
@@ -673,7 +674,11 @@
       "safety": "パスワードマネージャー等は検出時にブロックします。パスワード欄には残留リスクがあります。操作を確認してください。",
       "enableConfirm": "デスクトップ操作を有効にすると、Grok Desk がこの Mac/PC でマウスとキーボードを操作します。信頼できるタスクだけ有効にし、いつでも一時停止できます。",
       "statusGranted": "許可済み",
-      "statusMissing": "未許可 / 不明"
+      "statusMissing": "未許可 / 不明",
+      "auditSection": "決定履歴",
+      "recentDecisions": "最近の決定",
+      "recentDecisionsDesc": "このマシンに記録された権限・ツールの決定を確認します。",
+      "recentDecisionsHint": "全タスクの監査トレイルを開きます。"
     },
     "languageTitle": "言語",
     "languageDescription": "Grok Desk の表示言語を選びます。すぐに反映されます。",
@@ -1699,5 +1704,18 @@
     "expandsOnSend": "送信時に展開",
     "workflows": "ワークフロー",
     "placeholder": "詳細を追加（任意）…"
+  },
+  "audit": {
+    "title": "監査の決定",
+    "titleTask": "監査 · {label}",
+    "subtitle": "このタスクの権限・ツール決定。記録された実データのみ表示します。",
+    "subtitleGlobal": "最近の権限・ツール決定。記録された実データのみ表示します。",
+    "emptyTitle": "まだ決定がありません",
+    "emptyDesc": "Grok が承認を求めたり、ポリシー下でツールが実行されると、ここに決定が表示されます。",
+    "loading": "監査を読み込み中…",
+    "loadFailed": "監査履歴を読み込めませんでした",
+    "hasMore": "{total} 件中 {shown} 件を表示 — 古いエントリは未読込",
+    "refresh": "更新",
+    "globalLabel": "すべてのタスク"
   }
 }

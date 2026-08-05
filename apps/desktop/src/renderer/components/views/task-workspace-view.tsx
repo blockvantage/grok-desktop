@@ -182,6 +182,7 @@ import {
   type BrowserStatusDto,
 } from "@/lib/api";
 import { TaskOverflowMenu } from "@/components/chat-actions-menu";
+import { AuditDrawer } from "@/components/audit-drawer";
 import { DictationButton } from "@/components/dictation-button";
 import { useDictation } from "@/hooks/use-dictation";
 import { getActiveLocale } from "@/i18n/active";
@@ -969,6 +970,7 @@ export function TaskWorkspaceView(props: {
   const splitContainerRef = useRef<HTMLDivElement>(null);
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [auditOpen, setAuditOpen] = useState(false);
   const [preview, setPreview] = useState<TextPreview | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
@@ -1878,6 +1880,7 @@ export function TaskWorkspaceView(props: {
                       }
                     });
                 }}
+                onViewAudit={() => setAuditOpen(true)}
                 onRemember={
                   props.onRememberTakeaways
                     ? () => props.onRememberTakeaways?.(task.id)
@@ -3290,6 +3293,13 @@ export function TaskWorkspaceView(props: {
           />
         </Suspense>
       ) : null}
+
+      <AuditDrawer
+        open={auditOpen}
+        onOpenChange={setAuditOpen}
+        taskId={task.id}
+        taskLabel={props.chatTitle || task.goal}
+      />
     </div>
   );
 }
