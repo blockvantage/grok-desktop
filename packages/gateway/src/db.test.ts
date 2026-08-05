@@ -23,7 +23,7 @@ describe("db schema", () => {
     const row = db
       .prepare("SELECT value FROM meta WHERE key = 'schema_version'")
       .get() as { value: string } | undefined;
-    expect(row?.value).toBe("13");
+    expect(row?.value).toBe("14");
   });
 
   it("creates conversation_outbox table (v12 migration)", () => {
@@ -150,6 +150,47 @@ describe("db schema", () => {
       "idx_operation_receipts_one_task_submit",
       "idx_turns_one_user_per_task",
     ]);
+  });
+
+  it("adds one durable assistant turn per completed task (v14)", () => {
+    const row = db
+      .prepare(
+        "SELECT name FROM sqlite_master WHERE type = 'index' AND name = ?",
+      )
+      .get("idx_turns_one_assistant_per_task") as { name: string } | undefined;
+    expect(row?.name).toBe("idx_turns_one_assistant_per_task");
+  });
+
+  it("v14 keeps the assistant turn linked to the task conversation", () => {
+    db.exec(`
+      DROP INDEX idx_turns_one_assistant_per_task;
+      UPDATE meta SET value = '13' WHERE key = 'schema_version';
+      INSERT INTO conversations (id, provider_id, created_at, updated_at)
+      VALUES
+        ('assistant-old-conversation', 'grok', '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z'),
+        ('assistant-current-conversation', 'grok', '2026-01-02T00:00:00.000Z', '2026-01-02T00:00:00.000Z');
+      INSERT INTO tasks (
+        id, goal, mode, status, model, effort, policy_json,
+        created_at, updated_at, conversation_id
+      ) VALUES (
+        'assistant-task', 'goal', 'interactive', 'done', 'grok-4.5',
+        'normal', '{}', '2026-01-01T00:00:00.000Z',
+        '2026-01-02T00:00:00.000Z', 'assistant-current-conversation'
+      );
+      INSERT INTO turns
+        (id, conversation_id, task_id, role, content, created_at)
+      VALUES
+        ('assistant-old', 'assistant-old-conversation', 'assistant-task', 'assistant', 'stale', '2026-01-01T00:00:00.000Z'),
+        ('assistant-current', 'assistant-current-conversation', 'assistant-task', 'assistant', 'current', '2026-01-02T00:00:00.000Z');
+    `);
+    db.close();
+    db = openDatabase(path.join(dir, "test.sqlite"));
+
+    expect(
+      db.prepare(
+        "SELECT id, content FROM turns WHERE task_id = 'assistant-task' AND role = 'assistant'",
+      ).all(),
+    ).toEqual([{ id: "assistant-current", content: "current" }]);
   });
 
   it("v9 keeps the user turn linked by the task when deduplicating legacy binds", () => {
@@ -300,7 +341,7 @@ describe("db schema", () => {
     const row = db
       .prepare("SELECT value FROM meta WHERE key = 'schema_version'")
       .get() as { value: string };
-    expect(row.value).toBe("13");
+    expect(row.value).toBe("14");
   });
 
   it("creates remote device tables (v3 migration)", () => {

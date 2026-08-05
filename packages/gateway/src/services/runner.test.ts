@@ -59,6 +59,27 @@ describe("TaskRunner", () => {
     expect(fs.existsSync(path.join(ws, "grokdesk-output.md"))).toBe(true);
   });
 
+  it("reconciles the assistant turn before publishing done status", async () => {
+    const calls: Array<{ taskId: string; status: string | undefined }> = [];
+    runner = new TaskRunner(tasks, audit, new TestEngine(), {
+      reconcileAssistantTurn: (taskId) => {
+        calls.push({ taskId, status: tasks.get(taskId)?.status });
+      },
+    });
+    const ws = path.join(dir, "ws-assistant-ledger");
+    fs.mkdirSync(ws);
+    const task = tasks.create({
+      goal: "Persist my answer",
+      workspaceRoots: [ws],
+      approvalMode: "autopilot",
+    });
+
+    await runner.start(task.id);
+
+    expect(calls).toEqual([{ taskId: task.id, status: "running" }]);
+    expect(tasks.get(task.id)?.status).toBe("done");
+  });
+
   it("strict mode waits for approval then completes on approve", async () => {
     const ws = path.join(dir, "ws");
     fs.mkdirSync(ws);

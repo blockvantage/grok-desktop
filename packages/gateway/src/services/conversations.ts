@@ -159,14 +159,18 @@ export class ConversationService {
         turn.providerId,
         turn.createdAt,
       );
-    if (info.changes === 0 && turn.taskId && turn.role === "user") {
+    if (
+      info.changes === 0 &&
+      turn.taskId &&
+      (turn.role === "user" || turn.role === "assistant")
+    ) {
       let existing = this.db
         .prepare(
           `SELECT * FROM turns
-           WHERE task_id = ? AND role = 'user'
+           WHERE task_id = ? AND role = ?
            ORDER BY created_at ASC, id ASC LIMIT 1`,
         )
-        .get(turn.taskId) as Record<string, unknown> | undefined;
+        .get(turn.taskId, turn.role) as Record<string, unknown> | undefined;
       if (
         existing &&
         String(existing.conversation_id) !== turn.conversationId

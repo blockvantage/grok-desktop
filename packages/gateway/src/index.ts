@@ -63,6 +63,7 @@ import { TaskSubmissionService } from "./services/task-submission.js";
 import { TaskCreateAcceptanceService } from "./services/task-create-acceptance.js";
 import { OperationReceiptService } from "./services/operation-receipts.js";
 import { ConversationService } from "./services/conversations.js";
+import { reconcileAssistantTurn } from "./services/assistant-turn-reconciliation.js";
 import { ConversationOutboxRepository } from "./services/conversation-outbox.js";
 import { OutboxDrainCoordinator } from "./services/outbox-drain.js";
 import { DeclaredArtifactService } from "./services/declared-artifacts.js";
@@ -521,6 +522,15 @@ export class Gateway {
       // Phase 3 bridge: registry capabilities authorize fail-closed/degraded before engine run.
       providerPreflight: createProviderPreflight(this.providers),
       onRunSettled: () => this.outboxDrain?.schedule(),
+      reconcileAssistantTurn: (taskId) => {
+        const task = this.tasks.get(taskId);
+        if (!task) return;
+        reconcileAssistantTurn({
+          task,
+          events: this.tasks.listEvents(taskId),
+          appendTurn: (turn) => this.conversations.appendTurn(turn),
+        });
+      },
     });
 
     // Entitlement enforcement: path + public JWKS only (main sets env before spawn).
@@ -787,6 +797,14 @@ export class Gateway {
     for (const task of tasks) {
       this.reconcileRolePackStandingMemory(task);
       tryBindTaskConversation(task, conversation);
+    }
+    for (const task of tasks) {
+      if (task.status !== "done") continue;
+      reconcileAssistantTurn({
+        task: this.tasks.get(task.id) ?? task,
+        events: this.tasks.listEvents(task.id),
+        appendTurn: (turn) => this.conversations.appendTurn(turn),
+      });
     }
     for (const task of tasks) {
       if (task.status !== "queued") continue;

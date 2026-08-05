@@ -245,6 +245,8 @@ export class TaskRunner {
   private entitlementGuard: EntitlementGuard | null = null;
   /** Fired when a run leaves the in-flight map (kick outbox drain, etc.). */
   private onRunSettled: (() => void) | null = null;
+  /** Persist the terminal assistant response before publishing done status. */
+  private reconcileAssistantTurn: ((taskId: string) => void) | null = null;
 
   constructor(
     private tasks: TaskService,
@@ -268,10 +270,12 @@ export class TaskRunner {
       entitlementGuard?: EntitlementGuard | null;
       /** After a run settles — e.g. schedule outbox drain. */
       onRunSettled?: () => void;
+      reconcileAssistantTurn?: (taskId: string) => void;
     },
   ) {
     this.maxConcurrent = clampMaxConcurrent(opts?.maxConcurrent ?? 3);
     this.onRunSettled = opts?.onRunSettled ?? null;
+    this.reconcileAssistantTurn = opts?.reconcileAssistantTurn ?? null;
     this.hostBridge = opts?.hostBridge ?? new NullHostBridge();
     this.desktopMachineProvider = opts?.desktopMachineProvider ?? null;
     this.inheritUserGrokProvider = opts?.inheritUserGrokProvider ?? null;
@@ -1207,6 +1211,7 @@ export class TaskRunner {
             keepBrowserSession =
               await this.harvestWorkspaceDeliverables(taskId);
           }
+          this.reconcileAssistantTurn?.(taskId);
           if (
             leaseLost ||
             !completeOwnedTask(
@@ -1840,7 +1845,7 @@ export class TaskRunner {
           isUsefulDoneSummary,
         );
         if (msg) {
-          this.tasks.appendEvent(taskId, "message", msg);
+          this.tasks.appendEvent(taskId, "message", { ...msg, terminal: true });
         }
         return "continue";
       }

@@ -34,7 +34,7 @@ describe("conversations / turns (TASK-02)", () => {
     const ver = db
       .prepare("SELECT value FROM meta WHERE key = 'schema_version'")
       .get() as { value: string };
-    expect(Number(ver.value)).toBe(13);
+    expect(Number(ver.value)).toBe(14);
     const tables = (
       db
         .prepare(
@@ -118,6 +118,49 @@ describe("conversations / turns (TASK-02)", () => {
 
     expect(turn2.id).toBe(turn1.id);
     expect(conv.listTurns(first.id)).toHaveLength(1);
+  });
+
+  it("idempotently keeps one assistant turn and an alternating transcript", () => {
+    const root = tasks.create({ goal: "Build the page", workspaceRoots: [dir] });
+    const conversation = conv.ensureForTask({ taskId: root.id });
+    conv.appendTurn({
+      conversationId: conversation.id,
+      taskId: root.id,
+      role: "user",
+      content: root.goal,
+    });
+    const first = conv.appendTurn({
+      conversationId: conversation.id,
+      taskId: root.id,
+      role: "assistant",
+      content: "The page is ready.",
+    });
+    const duplicate = conv.appendTurn({
+      conversationId: conversation.id,
+      taskId: root.id,
+      role: "assistant",
+      content: "Duplicate completion.",
+    });
+    const child = tasks.create({
+      goal: "Open it",
+      workspaceRoots: [dir],
+      parentTaskId: root.id,
+    });
+    conv.appendTurn({
+      conversationId: conversation.id,
+      taskId: child.id,
+      role: "user",
+      content: child.goal,
+    });
+
+    expect(duplicate.id).toBe(first.id);
+    expect(
+      conv.listTurns(conversation.id).map((turn) => [turn.role, turn.content]),
+    ).toEqual([
+      ["user", "Build the page"],
+      ["assistant", "The page is ready."],
+      ["user", "Open it"],
+    ]);
   });
 
   it("requires the user turn to belong to the task's current conversation", () => {

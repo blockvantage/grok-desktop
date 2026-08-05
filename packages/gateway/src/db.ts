@@ -409,10 +409,37 @@ CREATE INDEX IF NOT EXISTS idx_conversation_outbox_accepted_task
       }
     },
   },
+  {
+    // Completed responses are part of the durable conversation ledger. Keep
+    // reconciliation idempotent across retries and crash recovery.
+    version: 14,
+    sql: `
+DELETE FROM turns
+WHERE role = 'assistant'
+  AND task_id IS NOT NULL
+  AND rowid NOT IN (
+    SELECT COALESCE(
+      MIN(CASE
+        WHEN candidate.conversation_id = task.conversation_id
+        THEN candidate.rowid
+      END),
+      MIN(candidate.rowid)
+    )
+    FROM turns AS candidate
+    LEFT JOIN tasks AS task ON task.id = candidate.task_id
+    WHERE candidate.role = 'assistant' AND candidate.task_id IS NOT NULL
+    GROUP BY candidate.task_id
+  );
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_turns_one_assistant_per_task
+  ON turns(task_id)
+  WHERE role = 'assistant' AND task_id IS NOT NULL;
+`,
+  },
 ];
 
 /** Latest applied schema version (must match last MIGRATIONS entry). */
-export const CURRENT_SCHEMA_VERSION = 13;
+export const CURRENT_SCHEMA_VERSION = 14;
 
 function getSchemaVersion(db: Db): number {
   const table = db
