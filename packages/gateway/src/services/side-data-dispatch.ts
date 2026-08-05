@@ -1,8 +1,9 @@
 /**
- * Schedule / memory / inbox IPC dispatch (Phase 6 extract from Gateway.dispatch).
+ * Schedule / memory / inbox / audit IPC dispatch (Phase 6 extract from Gateway.dispatch).
  * Keeps Gateway.index thinner by isolating side-data service passthroughs.
  */
 
+import type { AuditEntry } from "@grokdesk/shared";
 import { okResponse } from "./simple-ok.js";
 
 export type SideDataDeps = {
@@ -16,6 +17,11 @@ export type SideDataDeps = {
   inboxList: () => unknown;
   inboxMarkRead: (id: string) => void;
   inboxDismiss: (id: string) => void;
+  auditList: (params: {
+    taskId?: string | null;
+    decision?: AuditEntry["decision"] | null;
+    limit?: number;
+  }) => unknown;
 };
 
 export const SIDE_DATA_METHODS = new Set([
@@ -29,6 +35,7 @@ export const SIDE_DATA_METHODS = new Set([
   "inbox.list",
   "inbox.markRead",
   "inbox.dismiss",
+  "audit.list",
 ]);
 
 export function isSideDataMethod(method: string): boolean {
@@ -36,7 +43,7 @@ export function isSideDataMethod(method: string): boolean {
 }
 
 /**
- * Dispatch a schedule/memory/inbox method. Throws when method is unknown.
+ * Dispatch a schedule/memory/inbox/audit method. Throws when method is unknown.
  */
 export function dispatchSideDataMethod(
   method: string,
@@ -83,6 +90,21 @@ export function dispatchSideDataMethod(
       if (!id) throw new Error("id required");
       deps.inboxDismiss(id);
       return okResponse();
+    }
+    case "audit.list": {
+      const taskId =
+        typeof params.taskId === "string" && params.taskId
+          ? params.taskId
+          : undefined;
+      const decision =
+        typeof params.decision === "string" && params.decision
+          ? (params.decision as AuditEntry["decision"])
+          : undefined;
+      const limit =
+        typeof params.limit === "number" && Number.isFinite(params.limit)
+          ? params.limit
+          : undefined;
+      return deps.auditList({ taskId, decision, limit });
     }
     default:
       throw new Error(`Unhandled side-data method: ${method}`);

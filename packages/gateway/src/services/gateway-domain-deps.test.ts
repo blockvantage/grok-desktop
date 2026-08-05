@@ -30,7 +30,7 @@ describe("buildDomainDispatchDeps", () => {
         pumpQueue: vi.fn(async () => {}),
         harvestWorkspaceDeliverables: vi.fn(() => 0),
       },
-      audit: { append: vi.fn() },
+      audit: { append: vi.fn(), list: vi.fn(() => []) },
       settings: {
         getAll: vi.fn(() => ({})),
         getBundledSkillsInfo: vi.fn(() => ({

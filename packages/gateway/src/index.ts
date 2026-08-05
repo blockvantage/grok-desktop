@@ -959,6 +959,7 @@ export class Gateway {
             decision: normalizeAuditDecision(entry.decision),
           });
         },
+        list: (params) => this.audit.list(params),
       },
       settings: this.settings,
       scheduler: {

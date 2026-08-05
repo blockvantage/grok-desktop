@@ -1,4 +1,5 @@
 import type {
+  AuditEntry,
   PrivacyState,
   UpdateActionResult,
   UpdateStatus,
@@ -191,6 +192,19 @@ export async function rpc<T>(
   return res.result as T;
 }
 
+export type ListAuditParams = {
+  taskId?: string;
+  decision?: AuditEntry["decision"];
+  limit?: number;
+};
+
+/** Newest-first audit rows (optional taskId / decision filter; limit capped at 500). */
+export async function listAudit(
+  params: ListAuditParams = {},
+): Promise<AuditEntry[]> {
+  return rpc<AuditEntry[]>("audit.list", { ...params });
+}
+
 export async function pickDirectory(): Promise<string | null> {
   if (!window.grokdesk?.pickDirectory) return null;
   return window.grokdesk.pickDirectory();
@@ -319,6 +333,22 @@ export async function deleteTask(
 ): Promise<{ ok: boolean; deletedIds: string[] }> {
   return rpc<{ ok: boolean; deletedIds: string[] }>("tasks.delete", { taskId });
 }
+
+/** List audit entries (newest first). Optional taskId / decision filters; limit capped at 500. */
+export async function listAudit(
+  params: {
+    taskId?: string;
+    decision?: AuditEntry["decision"];
+    limit?: number;
+  } = {},
+): Promise<AuditEntry[]> {
+  return rpc<AuditEntry[]>("audit.list", { ...params });
+}
+
+/** Namespace-style access used by audit drawer / Settings deep links. */
+export const audit = {
+  list: listAudit,
+};
 
 /** SuperGrok usage (main process; no tokens in result). */
 export async function getUsage(force = false): Promise<UsageSnapshot> {

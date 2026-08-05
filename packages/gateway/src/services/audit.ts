@@ -1,6 +1,10 @@
 import { randomUUID } from "node:crypto";
 import type { Db } from "../db.js";
 import type { AuditEntry } from "@grokdesk/shared";
+import {
+  listAuditEntries,
+  type AuditListParams,
+} from "./audit-list.js";
 
 export class AuditService {
   constructor(private db: Db) {}
@@ -30,5 +34,10 @@ export class AuditService {
         full.createdAt,
       );
     return full;
+  }
+
+  /** Newest-first audit rows with optional taskId / decision filters (limit max 500). */
+  list(params: AuditListParams = {}): AuditEntry[] {
+    return listAuditEntries(this.db, params);
   }
 }

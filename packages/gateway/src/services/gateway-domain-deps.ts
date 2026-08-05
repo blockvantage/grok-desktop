@@ -94,6 +94,11 @@ export type GatewayDomainServiceBag = {
       detail: Record<string, unknown>;
       decision?: string | null;
     }) => void;
+    list: (params?: {
+      taskId?: string | null;
+      decision?: "allow" | "deny" | "approve" | "reject" | "info" | null;
+      limit?: number;
+    }) => unknown;
   };
   settings: {
     getAll: () => unknown;
@@ -311,6 +316,7 @@ export function buildDomainDispatchDeps(
       inboxList: () => g.inbox.list(),
       inboxMarkRead: (id) => g.inbox.markRead(id),
       inboxDismiss: (id) => g.inbox.dismiss(id),
+      auditList: (params) => g.audit.list(params),
     },
     eventsExport: {
       listEvents: (taskId, afterSeq) =>

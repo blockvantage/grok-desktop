@@ -67,6 +67,7 @@ function emptyDeps() {
       inboxList: vi.fn(() => []),
       inboxMarkRead: vi.fn(),
       inboxDismiss: vi.fn(),
+      auditList: vi.fn(() => []),
     },
     eventsExport: {
       listEvents: vi.fn(() => []),
