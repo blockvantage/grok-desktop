@@ -146,7 +146,9 @@ export function ConversationTurn({
   const selectedWorkerId =
     controlledWorkerId !== undefined ? controlledWorkerId : internalWorkerId;
   const workers = useMemo(() => workerListForTurn(turn.workers), [turn.workers]);
-  const showLiveWork = LIVE_STATES.has(turn.state);
+  const showLiveWork =
+    LIVE_STATES.has(turn.state) &&
+    !(turn.state === "waiting_approval" && turn.approval);
   const foldedArtifacts = useMemo(
     () =>
       foldTurnArtifacts(
@@ -382,12 +384,29 @@ export function ConversationTurn({
         </p>
       ) : null}
 
+      <div
+        className={cn(
+          "space-y-3",
+          (showLiveWork || turn.approval || turn.answer) && "min-h-6",
+        )}
+        data-turn-response-slot
+        data-turn-response-state={
+          turn.approval
+            ? "approval"
+            : showLiveWork
+              ? "working"
+              : turn.answer
+                ? "answer"
+                : "idle"
+        }
+      >
+
       {showLiveWork ? (
         <LiveWorkCard
           run={turn.primaryRun}
           workers={workers}
           work={turn.work}
-          activityCaption={activityCaption}
+          activityCaption={turn.liveSummary ?? activityCaption}
           events={turn.work.map((w) => ({
             kind: w.kind,
             payload: w.payload,
@@ -420,7 +439,7 @@ export function ConversationTurn({
             approvalBusy === "reject" &&
               "border-destructive/40 bg-destructive/[0.08]",
             approvalBusy === null &&
-              "approval-arrive border-warning/35 bg-warning/[0.08]",
+              "border-warning/35 bg-warning/[0.08]",
           )}
           role="region"
           aria-label={t("conversation.waitingApproval")}
@@ -639,6 +658,7 @@ export function ConversationTurn({
           ) : null}
         </div>
       ) : null}
+      </div>
 
       {foldedArtifacts.kind === "digest" ? (
         <div data-turn-artifacts data-turn-artifacts-digest>

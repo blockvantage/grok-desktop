@@ -93,6 +93,8 @@ export type ConversationTurn = {
   primaryRun: PrimaryRunView;
   workers: Record<string, WorkerView>;
   answer: AnswerView | null;
+  /** Short operational narration shown only while the turn is live. */
+  liveSummary: string | null;
   work: WorkEntry[];
   artifacts: Artifact[];
   approval: ApprovalView | null;
@@ -143,6 +145,45 @@ const PROVIDER_NOISE_PATTERNS = [
 export function isProviderNoise(text: string): boolean {
   const normalized = text.trim();
   return PROVIDER_NOISE_PATTERNS.some((pattern) => pattern.test(normalized));
+}
+
+export function isOperationalNarration(text: string): boolean {
+  const normalized = text.trim();
+  if (!normalized || normalized.length > 280) return false;
+  return /^(?:let me\b|i(?:'|’)?ll\b|i will\b|i(?:'|’)?m (?:going to|checking|looking|opening|reading|researching|running|working)\b|i am (?:going to|checking|looking|opening|reading|researching|running|working)\b|(?:checking|looking|opening|reading|researching|running|working)\b)/i.test(
+    normalized,
+  );
+}
+
+export function isSafeAssistantDisplayText(text: string): boolean {
+  const normalized = text.trim();
+  if (!normalized || normalized.length > 96_000) return false;
+  if (/^data:[^;,]+;base64,/i.test(normalized)) return false;
+  if (
+    normalized.length >= 4_096 &&
+    !/\s/.test(normalized) &&
+    /^[A-Za-z0-9+/]+=*$/.test(normalized)
+  ) {
+    return false;
+  }
+  if (normalized.startsWith("{") && normalized.endsWith("}")) {
+    try {
+      const parsed = JSON.parse(normalized) as Record<string, unknown>;
+      const type = typeof parsed.type === "string" ? parsed.type.toLowerCase() : "";
+      if (
+        type === "tool_call_update" ||
+        type === "tool_call" ||
+        type === "tool_result" ||
+        type === "thought" ||
+        (Array.isArray(parsed.content) && "toolCallId" in parsed)
+      ) {
+        return false;
+      }
+    } catch {
+      // A prose response may legitimately contain braces.
+    }
+  }
+  return true;
 }
 
 /**
@@ -428,6 +469,7 @@ function projectTurn(
   ];
   const workers: Record<string, WorkerView> = {};
   let answer: AnswerView | null = null;
+  let liveSummary: string | null = null;
   const pendingApprovals = new Map<string, ApprovalView>();
   let primaryError: ErrorView | null = null;
   const eventArtifacts: Artifact[] = [];
@@ -462,9 +504,17 @@ function projectTurn(
         role === "assistant" &&
         channel === "text" &&
         text &&
-        !isProviderNoise(text)
+        !isProviderNoise(text) &&
+        isSafeAssistantDisplayText(text)
       ) {
-        answer = { eventId: event.id, text, createdAt: event.createdAt };
+        if (
+          event.payload.terminal !== true &&
+          isOperationalNarration(text)
+        ) {
+          liveSummary = text;
+        } else {
+          answer = { eventId: event.id, text, createdAt: event.createdAt };
+        }
       }
     }
 
@@ -629,6 +679,7 @@ function projectTurn(
     },
     workers: sortedWorkers,
     answer,
+    liveSummary: TERMINAL_RUN_STATE_RANK[state] ? null : liveSummary,
     work: foldRecoveredWorkEntries(
       coalesceBrowserToolActivity(events)
         .filter((event) => {

@@ -216,6 +216,17 @@ describe("renderer visual structure (design system)", () => {
     expect(stream).not.toMatch(/<ThinkingTrail/);
     expect(stream).not.toMatch(/conversation\.queued\.map/);
     expect(stream).not.toMatch(/data-queued-turns/);
+    const turn = read("components/conversation/conversation-turn.tsx");
+    expect(turn).toMatch(/data-turn-response-slot/);
+    expect(turn).not.toMatch(/approval-arrive border-warning/);
+    const approvalBannerStart = ws.indexOf("{pendingApprovalTarget && (");
+    const approvalBannerEnd = ws.indexOf(
+      "{/* The conversation is the hero",
+      approvalBannerStart,
+    );
+    const approvalBanner = ws.slice(approvalBannerStart, approvalBannerEnd);
+    expect(approvalBanner).toMatch(/data-approval-jump/);
+    expect(approvalBanner).not.toMatch(/runApprove|runReject|<Button/);
   });
 
   it("fetches and projects the same full workspace thread", () => {

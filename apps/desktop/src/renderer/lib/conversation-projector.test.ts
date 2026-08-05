@@ -264,6 +264,57 @@ describe("projectConversation", () => {
     expect(snapshot.turns[1]?.error?.message).toBe("Authentication expired");
   });
 
+  it("keeps operational narration as live progress without replacing the answer", () => {
+    const active = task("progress-answer", "running", "2026-01-01T00:00:00.000Z");
+    const snapshot = projectConversation({
+      conversationId: active.id,
+      title: null,
+      tasks: [active],
+      eventsByTask: {
+        [active.id]: [
+          event("answer", active.id, 1, "message", {
+            role: "assistant",
+            channel: "text",
+            text: "The settings are valid.",
+          }),
+          event("progress", active.id, 2, "message", {
+            role: "assistant",
+            channel: "text",
+            text: "I’ll check the remaining files now.",
+          }),
+        ],
+      },
+    });
+
+    expect(snapshot.turns[0]?.answer?.text).toBe("The settings are valid.");
+    expect(snapshot.turns[0]?.liveSummary).toBe(
+      "I’ll check the remaining files now.",
+    );
+  });
+
+  it("quarantines stored protocol envelopes from the answer", () => {
+    const completed = task("protocol-noise", "done", "2026-01-01T00:00:00.000Z");
+    const snapshot = projectConversation({
+      conversationId: completed.id,
+      title: null,
+      tasks: [completed],
+      eventsByTask: {
+        [completed.id]: [
+          event("protocol", completed.id, 1, "message", {
+            role: "assistant",
+            channel: "text",
+            text: JSON.stringify({
+              type: "tool_call_update",
+              content: [{ type: "image", data: "A".repeat(4_096) }],
+            }),
+          }),
+        ],
+      },
+    });
+
+    expect(snapshot.turns[0]?.answer).toBeNull();
+  });
+
   it("projects one isolated turn and primary run per accepted task", () => {
     const t1 = task("task-1", "done", "2026-01-01T00:00:00.000Z");
     const t2 = task(

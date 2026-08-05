@@ -37,6 +37,7 @@ function turn(
     },
     workers: {},
     answer: null,
+    liveSummary: null,
     work: [],
     artifacts: [],
     approval: null,

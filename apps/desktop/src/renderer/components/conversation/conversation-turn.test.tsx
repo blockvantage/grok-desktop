@@ -66,6 +66,7 @@ function turn(
         result: "Draft ready",
       },
     },
+    liveSummary: state === "running" ? "Checking the changelog" : null,
     answer:
       state === "done"
         ? {
@@ -305,6 +306,8 @@ describe("ConversationTurn", () => {
     expect(html).toContain('tabindex="-1"');
     expect(html).toContain('aria-live="assertive"');
     expect(html).toContain('data-approval-id="approval-1"');
+    expect(count(html, "data-turn-response-slot")).toBe(1);
+    expect(html).not.toContain("data-live-work-card");
   });
 
   it("keeps a dangling approval on a terminal turn passive", () => {

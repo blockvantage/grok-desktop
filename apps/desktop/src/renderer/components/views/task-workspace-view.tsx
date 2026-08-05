@@ -237,7 +237,6 @@ import {
 } from "@/lib/conversation-projector";
 import {
   beginApprovalBusy,
-  busyDecisionForApproval,
   endApprovalBusy,
   type ApprovalActionTarget,
   type ApprovalBusyState,
@@ -1037,10 +1036,6 @@ export function TaskWorkspaceView(props: {
       });
     },
     [onRejectProp],
-  );
-  const pendingApprovalBusy = busyDecisionForApproval(
-    approving,
-    pendingApprovalTarget,
   );
   const [browserUi, setBrowserUi] = useState(initialBrowserUiState);
   const [browserStatus, setBrowserStatus] = useState<BrowserStatusDto | null>(
@@ -1916,111 +1911,27 @@ export function TaskWorkspaceView(props: {
 
         {pendingApprovalTarget && (
           <div
-            className={cn(
-              "flex flex-wrap items-center gap-x-3 gap-y-2 border-b px-6 py-2 transition-colors duration-200",
-              pendingApprovalBusy === "approve" &&
-                "border-success/35 bg-success/10",
-              pendingApprovalBusy === "reject" &&
-                "border-destructive/35 bg-destructive/10",
-              pendingApprovalBusy === null &&
-                "approval-arrive border-warning/35 bg-warning/10",
-            )}
-            role="group"
+            className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-warning/20 bg-warning/[0.05] px-6 py-2"
+            role="status"
             aria-label={t("workspace.approvalNeeded")}
-            data-approval-busy={pendingApprovalBusy ?? undefined}
           >
             <ShieldAlert
-              className={cn(
-                "h-4 w-4 shrink-0",
-                pendingApprovalBusy === "approve" && "text-success",
-                pendingApprovalBusy === "reject" &&
-                  "text-destructive-text",
-                pendingApprovalBusy === null && "text-warning",
-              )}
+              className="h-4 w-4 shrink-0 text-warning"
               aria-hidden="true"
             />
-            <span
-              className={cn(
-                "text-sm font-medium",
-                pendingApprovalBusy === "approve" && "text-success",
-                pendingApprovalBusy === "reject" &&
-                  "text-destructive-text",
-                pendingApprovalBusy === null && "text-warning",
-              )}
-            >
-              {pendingApprovalBusy === "approve"
-                ? t("workspace.approving")
-                : pendingApprovalBusy === "reject"
-                  ? t("workspace.rejecting")
-                  : t("workspace.approvalNeeded")}
+            <span className="text-sm font-medium text-warning">
+              {t("workspace.approvalNeeded")}
             </span>
             <button
               type="button"
-              className={cn(
-                "text-xs font-normal underline-offset-2 transition-colors hover:underline",
-                pendingApprovalBusy === null
-                  ? "text-warning/80 hover:text-warning"
-                  : "text-muted-foreground",
-              )}
+              className="text-xs font-normal text-warning/80 underline-offset-2 transition-colors hover:text-warning hover:underline"
+              data-approval-jump
               onClick={() => {
                 streamRef.current?.focusApproval(pendingApprovalTarget);
               }}
             >
               {t("workspace.jumpToApproval")}
             </button>
-            <div className="ml-auto flex shrink-0 items-center gap-1.5">
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                disabled={pendingApprovalBusy !== null}
-                className={
-                  pendingApprovalBusy === "reject"
-                    ? "text-destructive-text"
-                    : undefined
-                }
-                onClick={() =>
-                  void runReject(pendingApprovalTarget).catch((err) => {
-                    toast({
-                      description: humanizeError(err, t),
-                      variant: "destructive",
-                    });
-                  })
-                }
-              >
-                {pendingApprovalBusy === "reject" ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
-                ) : null}
-                {pendingApprovalBusy === "reject"
-                  ? t("workspace.rejecting")
-                  : t("workspace.reject")}
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                disabled={pendingApprovalBusy !== null}
-                className={
-                  pendingApprovalBusy === "approve"
-                    ? "border-success/40 bg-success/20 text-success hover:bg-success/25"
-                    : undefined
-                }
-                onClick={() =>
-                  void runApprove(pendingApprovalTarget).catch((err) => {
-                    toast({
-                      description: humanizeError(err, t),
-                      variant: "destructive",
-                    });
-                  })
-                }
-              >
-                {pendingApprovalBusy === "approve" ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
-                ) : null}
-                {pendingApprovalBusy === "approve"
-                  ? t("workspace.approving")
-                  : t("workspace.approve")}
-              </Button>
-            </div>
           </div>
         )}
 
