@@ -971,6 +971,20 @@ export function TaskWorkspaceView(props: {
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [auditOpen, setAuditOpen] = useState(false);
+  /**
+   * Stable thread task ids for AuditDrawer. Content-keyed so parent re-renders
+   * (events/status) do not pass a fresh array identity every frame.
+   */
+  const threadTaskIdsKey =
+    props.threadTasks?.map((threadTask) => threadTask.id).join("\0") ?? "";
+  const auditTaskIds = useMemo(() => {
+    if (props.threadTasks?.length) {
+      return props.threadTasks.map((threadTask) => threadTask.id);
+    }
+    return [task.id];
+    // threadTaskIdsKey captures id content; task.id covers empty-thread fallback.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- content-stable key
+  }, [threadTaskIdsKey, task.id]);
   const [preview, setPreview] = useState<TextPreview | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
@@ -3302,11 +3316,7 @@ export function TaskWorkspaceView(props: {
       <AuditDrawer
         open={auditOpen}
         onOpenChange={setAuditOpen}
-        taskIds={
-          props.threadTasks?.length
-            ? props.threadTasks.map((threadTask) => threadTask.id)
-            : [task.id]
-        }
+        taskIds={auditTaskIds}
         taskLabel={props.chatTitle || task.goal}
       />
     </div>

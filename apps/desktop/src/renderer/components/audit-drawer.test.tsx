@@ -1,7 +1,7 @@
 /**
  * Audit drawer (trust Phase A2): empty + row render, pure helpers, load honesty,
- * task/global filter params, integrity markers, truncated-trail signal, wiring.
- * Node/vitest: mock Sheet so content is SSR-safe without Radix portals.
+ * view-phase resolver, task/global filter params, integrity markers, truncated-trail
+ * signal, wiring. Fail-closed: never invent empty success from malformed rows.
  */
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -15,7 +15,9 @@ import {
   entryIntegrity,
   loadAuditListPages,
   normalizeAuditTaskIds,
+  normalizeEntryDetail,
   parseAuditListPage,
+  resolveAuditDrawerView,
   shouldApplyAuditResult,
   sortNewestFirst,
 } from "./audit-drawer";
@@ -108,6 +110,23 @@ function render(
   );
 }
 
+/** Uncontrolled render (no entries prop) — first paint before effects. */
+function renderUncontrolled(
+  props: Partial<React.ComponentProps<typeof AuditDrawer>> &
+    Pick<React.ComponentProps<typeof AuditDrawer>, "open"> = { open: true },
+) {
+  const { entries: _omit, ...rest } = props as {
+    entries?: AuditEntry[];
+  } & typeof props;
+  void _omit;
+  return renderToStaticMarkup(
+    createElement(AuditDrawer, {
+      onOpenChange: vi.fn(),
+      ...rest,
+    }),
+  );
+}
+
 describe("AuditDrawer (controlled render)", () => {
   it("shows empty copy when no entries", () => {
     const html = render({
@@ -188,6 +207,19 @@ describe("AuditDrawer (controlled render)", () => {
     expect(html).toMatch(/older entries not loaded/i);
   });
 
+  it("never shows empty + hasMore together (0 rows + truncation)", () => {
+    const html = render({
+      open: true,
+      entries: [],
+      hasMore: true,
+      total: 5,
+    });
+    expect(html).not.toContain('data-audit-empty="true"');
+    expect(html).not.toMatch(/no decisions yet/i);
+    expect(html).toContain('data-testid="audit-has-more"');
+    expect(html).toMatch(/Showing 0 of 5/i);
+  });
+
   it("surfaces gateway _unknownDecision and _corruptDetail provenance", () => {
     const html = render({
       open: true,
@@ -226,6 +258,197 @@ describe("AuditDrawer (controlled render)", () => {
     });
     expect(html).toMatch(/this conversation/i);
     expect(html).toContain('data-audit-task-count="2"');
+  });
+
+  it("uses global subtitle and data-audit-filter=global with no task filter", () => {
+    const html = render({
+      open: true,
+      entries: [],
+    });
+    expect(html).toMatch(/Recent permission and tool decisions/i);
+    expect(html).toContain('data-audit-filter="global"');
+    expect(html).toContain('data-audit-task-count="0"');
+  });
+
+  it("uses single-task subtitle for one taskId", () => {
+    const html = render({
+      open: true,
+      entries: [entry({ id: "1", action: "tool.shell", decision: "approve" })],
+      taskId: "solo-task",
+    });
+    expect(html).toMatch(/for this task/i);
+    expect(html).toContain('data-audit-task-count="1"');
+    // Single-task: no per-row task id attribution needed
+    expect(html).not.toContain('data-testid="audit-entry-task"');
+  });
+
+  it("attributes taskId on rows for multi-task and global filters", () => {
+    const multi = render({
+      open: true,
+      taskIds: ["t1", "t2"],
+      entries: [
+        entry({
+          id: "1",
+          taskId: "t1",
+          action: "tool.shell",
+          decision: "approve",
+        }),
+      ],
+    });
+    expect(multi).toContain('data-testid="audit-entry-task"');
+    expect(multi).toContain('data-audit-task="t1"');
+    expect(multi).toMatch(/>t1</);
+
+    const global = render({
+      open: true,
+      entries: [
+        entry({
+          id: "2",
+          taskId: "task-x",
+          action: "tool.read",
+          decision: "allow",
+        }),
+      ],
+    });
+    expect(global).toContain('data-audit-filter="global"');
+    expect(global).toContain('data-testid="audit-entry-task"');
+    expect(global).toMatch(/>task-x</);
+  });
+});
+
+describe("AuditDrawer uncontrolled first paint (pre-effect honesty)", () => {
+  it("shows loading — not empty — when open with no settled fetch yet", () => {
+    // renderToStaticMarkup does not run effects; mirrors first paint after open.
+    const html = renderUncontrolled({ open: true, taskId: "t1" });
+    expect(html).toContain('data-testid="audit-loading"');
+    expect(html).toMatch(/Loading audit/i);
+    expect(html).not.toContain('data-audit-empty="true"');
+    expect(html).not.toMatch(/no decisions yet/i);
+    expect(html).toContain('data-testid="audit-refresh"');
+  });
+
+  it("shows loading for global uncontrolled open", () => {
+    const html = renderUncontrolled({ open: true });
+    expect(html).toContain('data-testid="audit-loading"');
+    expect(html).toContain('data-audit-filter="global"');
+    expect(html).not.toContain('data-audit-empty="true"');
+  });
+});
+
+describe("resolveAuditDrawerView (fail-closed phases)", () => {
+  it("pending open/filter → loading, never empty", () => {
+    const v = resolveAuditDrawerView({
+      controlled: false,
+      open: true,
+      loading: false,
+      resultFilterKey: null,
+      filterKey: "t1",
+      error: null,
+      rowCount: 0,
+      hasMore: false,
+      total: 0,
+    });
+    expect(v.showLoading).toBe(true);
+    expect(v.showEmpty).toBe(false);
+    expect(v.showError).toBe(false);
+  });
+
+  it("loading true → loading", () => {
+    const v = resolveAuditDrawerView({
+      controlled: false,
+      open: true,
+      loading: true,
+      resultFilterKey: null,
+      filterKey: "",
+      error: null,
+      rowCount: 3,
+      hasMore: false,
+      total: 3,
+    });
+    expect(v.showLoading).toBe(true);
+    expect(v.showRows).toBe(false);
+  });
+
+  it("settled error → error UI, not empty", () => {
+    const v = resolveAuditDrawerView({
+      controlled: false,
+      open: true,
+      loading: false,
+      resultFilterKey: "t1",
+      filterKey: "t1",
+      error: "Audit response was invalid — trail not shown.",
+      rowCount: 0,
+      hasMore: false,
+      total: 0,
+    });
+    expect(v.showError).toBe(true);
+    expect(v.showEmpty).toBe(false);
+    expect(v.showLoading).toBe(false);
+  });
+
+  it("settled empty success → empty only", () => {
+    const v = resolveAuditDrawerView({
+      controlled: false,
+      open: true,
+      loading: false,
+      resultFilterKey: "",
+      filterKey: "",
+      error: null,
+      rowCount: 0,
+      hasMore: false,
+      total: 0,
+    });
+    expect(v.showEmpty).toBe(true);
+    expect(v.showHasMore).toBe(false);
+  });
+
+  it("0 rows + hasMore/total → hasMore honesty, not empty", () => {
+    const v = resolveAuditDrawerView({
+      controlled: false,
+      open: true,
+      loading: false,
+      resultFilterKey: "a",
+      filterKey: "a",
+      error: null,
+      rowCount: 0,
+      hasMore: true,
+      total: 9,
+    });
+    expect(v.showEmpty).toBe(false);
+    expect(v.showHasMore).toBe(true);
+  });
+
+  it("filter key mismatch treats prior result as pending", () => {
+    const v = resolveAuditDrawerView({
+      controlled: false,
+      open: true,
+      loading: false,
+      resultFilterKey: "old",
+      filterKey: "new",
+      error: null,
+      rowCount: 2,
+      hasMore: false,
+      total: 2,
+    });
+    expect(v.showLoading).toBe(true);
+    expect(v.showRows).toBe(false);
+  });
+
+  it("rows + hasMore shows both rows and truncation banner", () => {
+    const v = resolveAuditDrawerView({
+      controlled: false,
+      open: true,
+      loading: false,
+      resultFilterKey: "t",
+      filterKey: "t",
+      error: null,
+      rowCount: 5,
+      hasMore: true,
+      total: 20,
+    });
+    expect(v.showRows).toBe(true);
+    expect(v.showHasMore).toBe(true);
+    expect(v.showEmpty).toBe(false);
   });
 });
 
@@ -293,6 +516,17 @@ describe("pure helpers", () => {
     });
   });
 
+  it("normalizeEntryDetail marks non-object detail as corrupt", () => {
+    expect(normalizeEntryDetail(undefined)).toEqual({});
+    expect(normalizeEntryDetail(null)).toEqual({});
+    expect(normalizeEntryDetail({ command: "ls" })).toEqual({ command: "ls" });
+    expect(normalizeEntryDetail("not-an-object")).toEqual({
+      _corruptDetail: true,
+    });
+    expect(normalizeEntryDetail(42)).toEqual({ _corruptDetail: true });
+    expect(normalizeEntryDetail(["array"])).toEqual({ _corruptDetail: true });
+  });
+
   it("normalizeAuditTaskIds prefers taskIds over taskId and dedupes", () => {
     expect(normalizeAuditTaskIds(["t2", "t1", "t2", ""], "ignored")).toEqual([
       "t2",
@@ -303,9 +537,14 @@ describe("pure helpers", () => {
     expect(normalizeAuditTaskIds(undefined, undefined)).toEqual([]);
   });
 
-  it("auditFilterKey is empty for global and stable for ids", () => {
+  it("auditFilterKey is empty for global and stable for ids across array identity", () => {
     expect(auditFilterKey([])).toBe("");
     expect(auditFilterKey(["a", "b"])).toBe("a\0b");
+    // Same content, new array → same key (effect must not re-fire)
+    expect(auditFilterKey(["a", "b"])).toBe(auditFilterKey(["a", "b"]));
+    expect(auditFilterKey(normalizeAuditTaskIds(["t1", "t2"]))).toBe(
+      auditFilterKey(normalizeAuditTaskIds(["t1", "t2"])),
+    );
   });
 
   it("shouldApplyAuditResult only accepts matching generation", () => {
@@ -341,7 +580,7 @@ describe("parseAuditListPage (fail-closed)", () => {
     expect(parseAuditListPage("nope").ok).toBe(false);
   });
 
-  it("skips invalid rows but keeps valid ones when entries is an array", () => {
+  it("skips invalid rows but keeps valid ones and marks incomplete trail", () => {
     const page = parseAuditListPage({
       entries: [
         { garbage: true },
@@ -349,13 +588,66 @@ describe("parseAuditListPage (fail-closed)", () => {
         { id: "bad", action: "x", decision: "not-a-decision", createdAt: "t" },
       ],
       total: 9,
-      hasMore: true,
+      hasMore: false,
     });
     expect(page.ok).toBe(true);
     if (page.ok) {
       expect(page.entries.map((e) => e.id)).toEqual(["ok"]);
+      // Drops + total > shown → hasMore honesty even if server flag was false
       expect(page.hasMore).toBe(true);
       expect(page.total).toBe(9);
+    }
+  });
+
+  it("all-invalid entries array is malformed — not empty success", () => {
+    const page = parseAuditListPage({
+      entries: [
+        { garbage: true },
+        { id: "bad", action: "x", decision: "not-a-decision", createdAt: "t" },
+        null,
+        "string-row",
+      ],
+      total: 4,
+      hasMore: false,
+    });
+    expect(page.ok).toBe(false);
+    if (!page.ok) {
+      expect(page.reason).toBe("malformed");
+    }
+  });
+
+  it("marks non-object detail with _corruptDetail", () => {
+    const page = parseAuditListPage({
+      entries: [
+        {
+          id: "c1",
+          taskId: "t1",
+          action: "tool.shell",
+          decision: "approve",
+          createdAt: "2026-08-04T12:00:00.000Z",
+          detail: "corrupt-string",
+        },
+      ],
+      total: 1,
+      hasMore: false,
+    });
+    expect(page.ok).toBe(true);
+    if (page.ok) {
+      expect(page.entries[0].detail).toEqual({ _corruptDetail: true });
+      expect(entryIntegrity(page.entries[0].detail).corruptDetail).toBe(true);
+    }
+  });
+
+  it("truly empty entries array is ok empty success", () => {
+    const page = parseAuditListPage({
+      entries: [],
+      total: 0,
+      hasMore: false,
+    });
+    expect(page.ok).toBe(true);
+    if (page.ok) {
+      expect(page.entries).toEqual([]);
+      expect(page.hasMore).toBe(false);
     }
   });
 });
@@ -462,6 +754,21 @@ describe("loadAuditListPages (production list path)", () => {
     }
   });
 
+  it("fail-closes when all entries soft-skip (corrupt page)", async () => {
+    const listFn = vi.fn(async () => ({
+      entries: [{ garbage: true }] as unknown as AuditEntry[],
+      total: 1,
+      hasMore: false,
+      limit: 100,
+      offset: 0,
+    }));
+    const result = await loadAuditListPages(listFn, { taskId: "t1" });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.reason).toBe("malformed");
+    }
+  });
+
   it("marks hasMore when any per-task page is truncated", async () => {
     const listFn = vi.fn(async (params: { taskId?: string }) => {
       if (params.taskId === "a") {
@@ -495,10 +802,98 @@ describe("loadAuditListPages (production list path)", () => {
       expect(result.total).toBe(6);
     }
   });
+
+  it("caps merged multi-task results to limit and sets hasMore", async () => {
+    const listFn = vi.fn(async (params: { taskId?: string }) => {
+      const tid = params.taskId ?? "x";
+      // Each task returns 3 entries → 6 merged; limit 2 → cap + hasMore
+      return {
+        entries: [1, 2, 3].map((n) =>
+          entry({
+            id: `${tid}-${n}`,
+            taskId: tid,
+            action: `tool.${tid}`,
+            decision: "info",
+            createdAt: `2026-08-04T1${n}:00:00.000Z`,
+          }),
+        ),
+        total: 3,
+        hasMore: false,
+        limit: 100,
+        offset: 0,
+      };
+    });
+    const result = await loadAuditListPages(listFn, {
+      taskIds: ["a", "b"],
+      limit: 2,
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.entries).toHaveLength(2);
+      expect(result.hasMore).toBe(true);
+      expect(result.total).toBe(6);
+    }
+  });
+
+  it("multi-task: one of N throws → whole load reason error", async () => {
+    const listFn = vi.fn(async (params: { taskId?: string }) => {
+      if (params.taskId === "bad") {
+        throw new Error("IPC fail for bad");
+      }
+      return {
+        entries: [
+          entry({ id: "ok1", taskId: "good", action: "x", decision: "info" }),
+        ],
+        total: 1,
+        hasMore: false,
+        limit: 100,
+        offset: 0,
+      };
+    });
+    const result = await loadAuditListPages(listFn, {
+      taskIds: ["good", "bad"],
+      limit: 100,
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.reason).toBe("error");
+    }
+  });
+
+  it("multi-task: one of N returns non-array entries → malformed", async () => {
+    const listFn = vi.fn(async (params: { taskId?: string }) => {
+      if (params.taskId === "bad") {
+        return {
+          entries: null as unknown as AuditEntry[],
+          total: 0,
+          hasMore: false,
+          limit: 100,
+          offset: 0,
+        };
+      }
+      return {
+        entries: [
+          entry({ id: "ok1", taskId: "good", action: "x", decision: "info" }),
+        ],
+        total: 1,
+        hasMore: false,
+        limit: 100,
+        offset: 0,
+      };
+    });
+    const result = await loadAuditListPages(listFn, {
+      taskIds: ["good", "bad"],
+      limit: 100,
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.reason).toBe("malformed");
+    }
+  });
 });
 
 describe("audit drawer wiring (structural)", () => {
-  it("task workspace wires overflow View audit with thread taskIds", async () => {
+  it("task workspace wires overflow View audit with stable thread taskIds", async () => {
     const fs = await import("node:fs");
     const path = await import("node:path");
     const { fileURLToPath } = await import("node:url");
@@ -510,9 +905,10 @@ describe("audit drawer wiring (structural)", () => {
     expect(ws).toMatch(/onViewAudit=\{\(\) => setAuditOpen\(true\)\}/);
     expect(ws).toMatch(/task-overflow-view-audit|onViewAudit/);
     expect(ws).toMatch(/<AuditDrawer/);
-    // Thread-wide: taskIds from threadTasks, not only latest task.id
-    expect(ws).toMatch(/taskIds=\{/);
-    expect(ws).toMatch(/threadTasks\.map/);
+    // Thread-wide: stable useMemo'd auditTaskIds (not inline map every render)
+    expect(ws).toMatch(/taskIds=\{auditTaskIds\}/);
+    expect(ws).toMatch(/const auditTaskIds = useMemo/);
+    expect(ws).toMatch(/threadTaskIdsKey/);
     expect(ws).not.toMatch(
       /<AuditDrawer[\s\S]*taskId=\{task\.id\}[\s\S]*\/>/,
     );
