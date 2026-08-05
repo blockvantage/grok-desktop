@@ -4,15 +4,13 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import Database from "better-sqlite3";
-import { openDatabase, type Db } from "./db.js";
+import { CURRENT_SCHEMA_VERSION, openDatabase, type Db } from "./db.js";
 // Database used for raw fixture load before openDatabase migrates.
 
 const fixturesDir = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   "../testdata/migrations",
 );
-
-const CURRENT_SCHEMA_VERSION = 13;
 
 function loadSqlFixture(name: string): string {
   return fs.readFileSync(path.join(fixturesDir, name), "utf8");

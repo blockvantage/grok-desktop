@@ -88,7 +88,9 @@ describe("tasks.create acceptance recovery through Gateway", () => {
     expect(counts).toEqual({
       tasks: 1,
       attempts: 1,
-      turns: 1,
+      // The recovered accepted input and its reconciled assistant final are
+      // both durable after restart.
+      turns: 2,
       mutations: 1,
       submits: 1,
       standingMemory: 1,

@@ -127,7 +127,7 @@ process.exit(0);
     expect(captured).not.toContain("--trust");
     expect(captured).not.toContain("Do not search_tool for browser tools");
     expect(captured).toContain(
-      "If browser_open is unavailable or fails, report that failure truthfully",
+      "If it is unavailable or fails, report that truthfully",
     );
   });
 });
