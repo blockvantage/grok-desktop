@@ -1,7 +1,10 @@
 import { describe, it, expect, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { ensureDeskPlanesEngine } from "./ensure-desk-planes-engine.js";
+import {
+  ensureDeskPlanesEngine,
+  resolveDeskPlaneMcpServers,
+} from "./ensure-desk-planes-engine.js";
 import type { AppSettings } from "./settings.js";
 import type { EngineAdapter } from "../engine-types.js";
 
@@ -19,6 +22,26 @@ const baseSettings = {
 } satisfies AppSettings;
 
 describe("ensureDeskPlanesEngine", () => {
+  it("resolves browser and desktop planes for provider fallback composition", () => {
+    const mcpServers = resolveDeskPlaneMcpServers({
+      mcpServers: [],
+      env: {
+        GROKDESK_BROWSER_URL: "http://127.0.0.1:9",
+        GROKDESK_BROWSER_TOKEN: "browser-token",
+        GROKDESK_BROWSER_MCP_PATH: "/tmp/browser-mcp.js",
+        GROKDESK_DESKTOP_URL: "http://127.0.0.1:10",
+        GROKDESK_DESKTOP_TOKEN: "desktop-token",
+        GROKDESK_DESKTOP_MCP_PATH: "/tmp/desktop-mcp.js",
+      },
+      existsSync: () => true,
+    });
+
+    expect(mcpServers.map((server) => server.id)).toEqual([
+      "desk-desktop",
+      "desk-browser",
+    ]);
+  });
+
   it("composition preserves an already-selected AgentProvider engine", () => {
     const source = readFileSync(
       fileURLToPath(new URL("../index.ts", import.meta.url)),
@@ -27,6 +50,9 @@ describe("ensureDeskPlanesEngine", () => {
     expect(source).toMatch(
       /ensureDeskBrowserEngine\(\s*engineSelection\.mode === "agent-provider",?\s*\)/,
     );
+    expect(
+      source.match(/mcpServers:\s*resolveDeskPlaneMcpServers\(/g),
+    ).toHaveLength(2);
   });
 
   it("skips when engine override is set", async () => {

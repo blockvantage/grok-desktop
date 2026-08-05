@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import {
   FakeAgentProvider,
   type AgentProvider,
@@ -321,6 +321,47 @@ describe("AgentProviderEngine", () => {
     });
     expect(events.some((m) => m.includes("falling back"))).toBe(true);
     expect(events).toContain("done");
+  });
+
+  it("opens an engine-wide circuit after provider session initialization fails", async () => {
+    const fallbackRuns: string[] = [];
+    const createSession = vi.fn(async () => {
+      throw new Error("ACP initialization timed out");
+    });
+    const provider = {
+      id: "grok",
+      getCapabilities: async () => ({
+        toolMediation: "provider-permission-rpc",
+        policyEnforceable: true,
+      }),
+      createSession,
+    } as never;
+    const fallback = {
+      executesOwnTools: true,
+      async run(options: { task: Task }) {
+        fallbackRuns.push(options.task.id);
+      },
+      async cancel() {},
+    } as never;
+    const engine = createAgentProviderEngine(provider, {
+      fallbackEngine: fallback,
+      executesOwnTools: true,
+    });
+    const onEvent = async () => "continue" as const;
+
+    await engine.run({
+      task: task("first", ["/tmp"], "task-a"),
+      systemPreamble: "",
+      onEvent,
+    });
+    await engine.run({
+      task: task("second", ["/tmp"], "task-b"),
+      systemPreamble: "",
+      onEvent,
+    });
+
+    expect(createSession).toHaveBeenCalledTimes(1);
+    expect(fallbackRuns).toEqual(["task-a", "task-b"]);
   });
 
   it("resolves executesOwnTools=false from gateway-mediated Fake caps", async () => {

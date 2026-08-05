@@ -34,7 +34,10 @@ import { ProactivityService } from "./services/proactivity.js";
 import type { AppSettings } from "./services/settings.js";
 import { engineSettingsChanged } from "./services/engine-settings.js";
 import { applyEngineSettingsRebuild } from "./services/engine-rebuild.js";
-import { ensureDeskPlanesEngine } from "./services/ensure-desk-planes-engine.js";
+import {
+  ensureDeskPlanesEngine,
+  resolveDeskPlaneMcpServers,
+} from "./services/ensure-desk-planes-engine.js";
 import { NullHostBridge, type HostBridge } from "./host-bridge.js";
 import {
   loadRemoteConfig,
@@ -478,7 +481,11 @@ export class Gateway {
       const fallbackEngine = await createDefaultEngine({
         managedBinaryPath:
           process.env.GROKDESK_MANAGED_GROK_BINARY_RESOLVED ?? null,
-        mcpServers: this.settings.getMcpServersResolved(),
+        mcpServers: resolveDeskPlaneMcpServers({
+          mcpServers: this.settings.getMcpServersResolved(),
+          env: process.env,
+          existsSync: (candidate) => fs.existsSync(candidate),
+        }),
         skillsPaths: this.settings.getEffectiveSkillsPaths(),
       });
       this.engine = createAgentProviderEngine(provider, {
@@ -1350,7 +1357,11 @@ export class Gateway {
           const fallbackEngine = await createDefaultEngine({
             managedBinaryPath:
               process.env.GROKDESK_MANAGED_GROK_BINARY_RESOLVED ?? null,
-            mcpServers: this.settings.getMcpServersResolved(),
+            mcpServers: resolveDeskPlaneMcpServers({
+              mcpServers: this.settings.getMcpServersResolved(),
+              env: process.env,
+              existsSync: (candidate) => fs.existsSync(candidate),
+            }),
             skillsPaths: this.settings.getEffectiveSkillsPaths(),
           });
           return createAgentProviderEngine(provider, {

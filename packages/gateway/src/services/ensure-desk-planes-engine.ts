@@ -31,6 +31,24 @@ export interface EnsureDeskPlanesEngineDeps {
   readPlane?: (env: NodeJS.ProcessEnv) => DeskPlaneEnv;
 }
 
+export function resolveDeskPlaneMcpServers(input: {
+  mcpServers: AppSettings["mcpServers"];
+  env?: NodeJS.ProcessEnv;
+  existsSync: (path: string) => boolean;
+}): AppSettings["mcpServers"] {
+  const env = input.env ?? process.env;
+  const plane = readDeskPlaneEnv(env);
+  const detection = detectDeskControlPlanes(plane, input.existsSync);
+  if (!detection.hasBrowser && !detection.hasDesktop) return input.mcpServers;
+
+  const prepend = buildDeskMcpPrepend(plane, detection);
+  const merged = mergeDeskMcpServers(input.mcpServers, prepend);
+  return filterExternalBrowserMcp(merged, {
+    externalAllowed: env.GROKDESK_ALLOW_EXTERNAL_BROWSER === "1",
+    deskBrowserReady: detection.hasBrowser,
+  });
+}
+
 /**
  * If desk control plane MCP scripts are configured and on disk, rebuild the
  * engine with those servers prepended. Non-fatal on failure.
@@ -47,13 +65,10 @@ export async function ensureDeskPlanesEngine(
 
   try {
     const s = deps.getSettings();
-    const prepend = buildDeskMcpPrepend(plane, detection);
-    const merged = mergeDeskMcpServers(s.mcpServers ?? [], prepend);
-    // Never silently fall back to Chrome/headless MCP when desk-browser is ready.
-    const externalAllowed = env.GROKDESK_ALLOW_EXTERNAL_BROWSER === "1";
-    const mcpServers = filterExternalBrowserMcp(merged, {
-      externalAllowed,
-      deskBrowserReady: detection.hasBrowser,
+    const mcpServers = resolveDeskPlaneMcpServers({
+      mcpServers: s.mcpServers ?? [],
+      env,
+      existsSync: deps.existsSync,
     });
     const engine = await deps.createEngine({
       mcpServers,

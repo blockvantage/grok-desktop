@@ -166,6 +166,7 @@ const MAX_AGENT_SESSIONS = 64;
 export class AgentProviderEngine implements EngineAdapter {
   private sessions = new Map<string, AgentSession>();
   private fellBack = new Set<string>();
+  private providerCircuit: { openedAt: number; reason: string } | null = null;
   private executesOwnToolsFlag: boolean;
   private capsResolved = false;
 
@@ -208,7 +209,11 @@ export class AgentProviderEngine implements EngineAdapter {
   async run(options: EngineRunOptions): Promise<void> {
     const { task, systemPreamble, onEvent } = options;
 
-    if (this.fellBack.has(task.id) && this.opts.fallbackEngine) {
+    if (
+      (this.fellBack.has(task.id) || this.providerCircuit) &&
+      this.opts.fallbackEngine
+    ) {
+      this.fellBack.add(task.id);
       return this.opts.fallbackEngine.run(options);
     }
 
@@ -265,6 +270,10 @@ export class AgentProviderEngine implements EngineAdapter {
         this.cacheSession(task.id, session);
       } catch (e) {
         if (this.opts.fallbackEngine) {
+          this.providerCircuit = {
+            openedAt: Date.now(),
+            reason: e instanceof Error ? e.message : String(e),
+          };
           this.fellBack.add(task.id);
           await onEvent({
             type: "run_progress",
