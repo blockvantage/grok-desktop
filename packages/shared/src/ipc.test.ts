@@ -305,6 +305,17 @@ describe("ipc schemas", () => {
       offset: 10,
     });
 
+    // All first-class decisions accepted on the positive path.
+    for (const decision of ["allow", "approve", "reject", "info", "deny"] as const) {
+      const req = parseIpcRequest({
+        id: `al-dec-${decision}`,
+        method: "audit.list",
+        params: { decision },
+      });
+      expect(req.method).toBe("audit.list");
+      expect(req.params).toEqual({ decision });
+    }
+
     expect(() =>
       parseIpcRequest({
         id: "al3",

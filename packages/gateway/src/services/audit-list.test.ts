@@ -6,12 +6,14 @@ import { openDatabase, type Db } from "../db.js";
 import { AuditService } from "./audit.js";
 import {
   AUDIT_DETAIL_STRING_MAX,
+  AUDIT_DEPTH_TRUNCATED,
   clampAuditListLimit,
   clampAuditListOffset,
   isAuditSecretKey,
   listAuditEntries,
   parseAuditDecision,
   redactAuditDetail,
+  stripSpoofedProvenance,
   unknownDecisionMarker,
 } from "./audit-list.js";
 
@@ -83,9 +85,13 @@ describe("unknownDecisionMarker", () => {
 });
 
 describe("isAuditSecretKey", () => {
-  it("matches generic secret keys and commerce field names", () => {
+  it("matches generic secret keys, env-key convention, and commerce field names", () => {
     expect(isAuditSecretKey("apiKey")).toBe(true);
     expect(isAuditSecretKey("password")).toBe(true);
+    expect(isAuditSecretKey("passwd")).toBe(true);
+    expect(isAuditSecretKey("AUTH")).toBe(true);
+    expect(isAuditSecretKey("PASSWD")).toBe(true);
+    expect(isAuditSecretKey("FOO_AUTH")).toBe(true);
     expect(isAuditSecretKey("privateKey")).toBe(true);
     expect(isAuditSecretKey("PRIVATE_KEY")).toBe(true);
     expect(isAuditSecretKey("productKey")).toBe(true);
@@ -201,17 +207,50 @@ describe("redactAuditDetail", () => {
     );
   });
 
-  it("caps nested walk depth so pathological trees cannot blow IPC", () => {
-    // Nest deeper than REDACT_MAX_DEPTH (24): leaf must be replaced with [REDACTED].
-    let nested: unknown = { secret: "sk-live-deep-secret-xx", leaf: "visible-if-shallow" };
+  it("caps nested walk depth with depth-truncated marker (not secret redaction)", () => {
+    // Nest deeper than REDACT_MAX_DEPTH (24).
+    let nested: unknown = {
+      secret: "sk-live-deep-secret-xx",
+      leaf: "visible-if-shallow",
+    };
     for (let i = 0; i < 30; i++) {
       nested = { child: nested };
     }
     const out = redactAuditDetail({ root: nested });
     const json = JSON.stringify(out);
     expect(json).not.toMatch(/sk-live-deep-secret/);
-    // Deep cap collapses the remaining tree rather than walking forever.
-    expect(json).toContain("[REDACTED]");
+    // Deep cap collapses with a distinct marker so operators don't confuse
+    // truncation with secret scrubbing.
+    expect(json).toContain(AUDIT_DEPTH_TRUNCATED);
+    expect(json).not.toMatch(/"child":"\[REDACTED\]"/);
+  });
+
+  it("redacts AUTH/PASSWD env-style keys and passwd= assignment forms", () => {
+    const out = redactAuditDetail({
+      AUTH: "auth-header-secret-xx",
+      PASSWD: "passwd-value-xx",
+      FOO_AUTH: "foo-auth-secret-xx",
+      command: "export passwd=inline-passwd-xx token=abc123",
+      path: "/ok",
+    });
+    expect(out.AUTH).toBe("[REDACTED]");
+    expect(out.PASSWD).toBe("[REDACTED]");
+    expect(out.FOO_AUTH).toBe("[REDACTED]");
+    expect(String(out.command)).toContain("passwd=[REDACTED]");
+    expect(out.path).toBe("/ok");
+    expect(JSON.stringify(out)).not.toMatch(
+      /auth-header-secret|passwd-value-xx|foo-auth-secret|inline-passwd|abc123/,
+    );
+  });
+
+  it("stripSpoofedProvenance removes writer-controlled markers", () => {
+    expect(
+      stripSpoofedProvenance({
+        ok: true,
+        _unknownDecision: "spoofed",
+        _corruptDetail: true,
+      }),
+    ).toEqual({ ok: true });
   });
 });
 
@@ -318,6 +357,20 @@ describe("listAuditEntries", () => {
       decision: "deny",
       createdAt: "2026-08-01T11:00:00.000Z",
     });
+    audit.append({
+      taskId,
+      action: "tool.approve",
+      detail: {},
+      decision: "approve",
+      createdAt: "2026-08-01T12:00:00.000Z",
+    });
+    audit.append({
+      taskId,
+      action: "tool.reject",
+      detail: {},
+      decision: "reject",
+      createdAt: "2026-08-01T13:00:00.000Z",
+    });
 
     const denied = listAuditEntries(db, { taskId, decision: "deny" });
     expect(denied.entries).toHaveLength(1);
@@ -325,6 +378,72 @@ describe("listAuditEntries", () => {
     expect(denied.entries[0]?.action).toBe("tool.deny");
     expect(denied.total).toBe(1);
     expect(denied.hasMore).toBe(false);
+
+    for (const decision of ["allow", "approve", "reject"] as const) {
+      const page = listAuditEntries(db, { taskId, decision });
+      expect(page.entries).toHaveLength(1);
+      expect(page.entries[0]?.decision).toBe(decision);
+      expect(page.total).toBe(1);
+    }
+
+    // Exact filters must not include remapped unknown decisions.
+    const bog = audit.append({
+      taskId,
+      action: "tool.bogus",
+      detail: {},
+      decision: "info",
+      createdAt: "2026-08-01T14:00:00.000Z",
+    });
+    db.prepare(`UPDATE audit_entries SET decision = ? WHERE id = ?`).run(
+      "bogus-decision",
+      bog.id,
+    );
+    expect(
+      listAuditEntries(db, { taskId, decision: "allow" }).entries.map(
+        (e) => e.action,
+      ),
+    ).not.toContain("tool.bogus");
+    expect(
+      listAuditEntries(db, { taskId, decision: "info" }).entries.map(
+        (e) => e.action,
+      ),
+    ).toContain("tool.bogus");
+  });
+
+  it("returns honest empty page metadata for unknown taskId", () => {
+    audit.append({
+      taskId: "exists",
+      action: "a",
+      detail: {},
+      decision: "info",
+      createdAt: "2026-08-01T10:00:00.000Z",
+    });
+    const page = listAuditEntries(db, { taskId: "no-such-task", limit: 10 });
+    expect(page.entries).toEqual([]);
+    expect(page.total).toBe(0);
+    expect(page.hasMore).toBe(false);
+    expect(page.limit).toBe(10);
+    expect(page.offset).toBe(0);
+  });
+
+  it("offset beyond total yields empty entries with honest total/offset echo", () => {
+    audit.append({
+      taskId: "t-end",
+      action: "only",
+      detail: {},
+      decision: "info",
+      createdAt: "2026-08-01T10:00:00.000Z",
+    });
+    const page = listAuditEntries(db, {
+      taskId: "t-end",
+      limit: 10,
+      offset: 50,
+    });
+    expect(page.entries).toEqual([]);
+    expect(page.total).toBe(1);
+    expect(page.hasMore).toBe(false);
+    expect(page.offset).toBe(50);
+    expect(page.limit).toBe(10);
   });
 
   it("filters by decision alone (no taskId) across tasks", () => {
@@ -701,13 +820,65 @@ describe("listAuditEntries", () => {
       decision: "info",
       createdAt: "2026-08-01T10:00:00.000Z",
     });
+    audit.append({
+      taskId: "svc",
+      action: "b",
+      detail: {},
+      decision: "deny",
+      createdAt: "2026-08-01T11:00:00.000Z",
+    });
     const viaService = audit.list({ taskId: "svc", limit: 5 });
     const viaHelper = listAuditEntries(db, { taskId: "svc", limit: 5 });
     expect(viaService).toEqual(viaHelper);
-    expect(viaService.entries).toHaveLength(1);
-    expect(viaService.entries[0]?.detail).toEqual({ ok: true });
+    expect(viaService.entries).toHaveLength(2);
+    expect(viaService.entries[1]?.detail).toEqual({ ok: true });
     expect(viaService.hasMore).toBe(false);
-    expect(viaService.total).toBe(1);
+    expect(viaService.total).toBe(2);
+
+    // Offset + decision must not be dropped by the service wrapper.
+    const filtered = audit.list({
+      taskId: "svc",
+      decision: "deny",
+      limit: 10,
+      offset: 0,
+    });
+    expect(filtered).toEqual(
+      listAuditEntries(db, {
+        taskId: "svc",
+        decision: "deny",
+        limit: 10,
+        offset: 0,
+      }),
+    );
+    expect(filtered.entries).toHaveLength(1);
+    expect(filtered.entries[0]?.action).toBe("b");
+
+    const paged = audit.list({ taskId: "svc", limit: 1, offset: 1 });
+    expect(paged.entries).toHaveLength(1);
+    expect(paged.entries[0]?.action).toBe("a");
+    expect(paged.offset).toBe(1);
+    expect(paged.total).toBe(2);
+    expect(paged.hasMore).toBe(false);
+  });
+
+  it("does not honor spoofed provenance keys in stored detail", () => {
+    const row = audit.append({
+      taskId: "t-spoof",
+      action: "allow.with.spoof",
+      detail: {
+        ok: true,
+        _unknownDecision: "spoofed-from-writer",
+        _corruptDetail: true,
+      },
+      decision: "allow",
+      createdAt: "2026-08-01T10:00:00.000Z",
+    });
+    const page = listAuditEntries(db, { taskId: "t-spoof" });
+    expect(page.entries[0]?.id).toBe(row.id);
+    expect(page.entries[0]?.decision).toBe("allow");
+    expect(page.entries[0]?.detail._unknownDecision).toBeUndefined();
+    expect(page.entries[0]?.detail._corruptDetail).toBeUndefined();
+    expect(page.entries[0]?.detail.ok).toBe(true);
   });
 
   it("defaults limit to 100 and clamps below 1 to 1", () => {

@@ -14,6 +14,7 @@
 
 import {
   COMMERCE_SECRET_FIELD_NAMES,
+  looksLikeSecretEnvKey,
   redactSecretString,
   type AuditEntry,
 } from "@grokdesk/shared";
@@ -32,12 +33,21 @@ const AUDIT_DECISION_SET = new Set<string>(AUDIT_DECISIONS);
 /** Known mediation outcomes stored as-is (not remapped to info). */
 const KNOWN_DECISION_SQL = "('allow','deny','approve','reject','info')";
 
-/** Generic secret-like key fragments (case-insensitive). */
+/**
+ * Reserved provenance keys — stripped from stored detail so writers cannot
+ * spoof integrity markers. Only the list path may re-attach them.
+ */
+export const AUDIT_PROVENANCE_KEYS = [
+  "_unknownDecision",
+  "_corruptDetail",
+] as const;
+
+/** Generic secret-like key fragments (case-insensitive substring). */
 const SECRET_KEY_RE =
-  /secret|token|password|api[_-]?key|authorization|credential|private[_-]?key|product[_-]?key|grant|lease|nonce/i;
+  /secret|token|password|passwd|api[_-]?key|authorization|credential|private[_-]?key|product[_-]?key|grant|lease|nonce/i;
 
 const ASSIGNMENT_SECRET_RE =
-  /(password|token|api[_-]?key|secret|authorization|private[_-]?key|product[_-]?key|grant|lease|nonce|sig)\s*[:=]\s*\S+/gi;
+  /(password|passwd|token|api[_-]?key|secret|authorization|private[_-]?key|product[_-]?key|grant|lease|nonce|sig|auth)\s*[:=]\s*\S+/gi;
 
 /** Lowercased commerce field names for exact key redaction. */
 const COMMERCE_FIELD_LOWER = new Set(
@@ -46,6 +56,12 @@ const COMMERCE_FIELD_LOWER = new Set(
 
 /** Max depth when walking nested audit detail (tool_request trees, etc.). */
 const REDACT_MAX_DEPTH = 24;
+
+/**
+ * Distinct from secret `[REDACTED]` so operators can tell truncated structure
+ * from scrubbed secrets.
+ */
+export const AUDIT_DEPTH_TRUNCATED = "[…depth-truncated]";
 
 /** Max string length returned in listed detail (IPC size bound). */
 export const AUDIT_DETAIL_STRING_MAX = 2_000;
@@ -163,11 +179,12 @@ function appendDecisionFilter(
 function mapAuditRow(r: Record<string, unknown>): AuditEntry {
   const rawDecision = r.decision;
   const decision = parseAuditDecision(rawDecision);
+  // parseAuditDetail returns either clean object (stripped of spoofed
+  // provenance) or a fresh {_corruptDetail:true} from parse failure only.
   let detail = parseAuditDetail(r.detail_json);
   const unknownMarker = unknownDecisionMarker(rawDecision);
   if (unknownMarker !== null) {
-    // Provenance for remapped rows (including empty/null/non-string), so UI
-    // never confuses deliberate "info" with corrupt missing mediation outcomes.
+    // Authoritative provenance — never trust stored detail for this key.
     detail = { ...detail, _unknownDecision: unknownMarker };
   }
   return {
@@ -178,6 +195,17 @@ function mapAuditRow(r: Record<string, unknown>): AuditEntry {
     decision,
     createdAt: r.created_at as string,
   };
+}
+
+/** Drop spoofable provenance keys from writer-controlled JSON. */
+export function stripSpoofedProvenance(
+  detail: Record<string, unknown>,
+): Record<string, unknown> {
+  const out: Record<string, unknown> = { ...detail };
+  for (const k of AUDIT_PROVENANCE_KEYS) {
+    delete out[k];
+  }
+  return out;
 }
 
 /**
@@ -212,12 +240,13 @@ export function parseAuditDecision(raw: unknown): AuditEntry["decision"] {
 /**
  * Fail-soft detail parse: one corrupt row must not hide the rest of the audit trail.
  * Mirrors operation-receipts `_corruptDetail` handling.
+ * Spoofed provenance keys in stored JSON are stripped; only we set them.
  */
 function parseAuditDetail(raw: unknown): Record<string, unknown> {
   try {
     const parsed = JSON.parse(String(raw ?? "{}")) as unknown;
     if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-      return parsed as Record<string, unknown>;
+      return stripSpoofedProvenance(parsed as Record<string, unknown>);
     }
     return { _corruptDetail: true };
   } catch {
@@ -227,9 +256,7 @@ function parseAuditDetail(raw: unknown): Record<string, unknown> {
 
 /**
  * Deep-redact secret-like keys and values for Settings / task inspection.
- * Walks nested objects/arrays (e.g. approval detail.tool.command/meta), applies
- * shared secret-value patterns (sk-, Bearer, commerce/JWT canaries), commerce
- * field names (privateKey, productKey, …), assignment scrub, and truncation.
+ * Aligns with shared looksLikeSecretEnvKey + commerce field names + value patterns.
  */
 export function redactAuditDetail(
   detail: Record<string, unknown>,
@@ -239,6 +266,7 @@ export function redactAuditDetail(
 
 /** True when a detail key must be fully redacted (never wire the value). */
 export function isAuditSecretKey(key: string): boolean {
+  if (looksLikeSecretEnvKey(key)) return true;
   if (SECRET_KEY_RE.test(key)) return true;
   const lower = key.toLowerCase();
   // JWK private parameter `d` (same rule as shared isCommerceSecretFieldName).
@@ -248,7 +276,7 @@ export function isAuditSecretKey(key: string): boolean {
 
 function redactAuditValue(value: unknown, depth: number): unknown {
   if (value == null) return value;
-  if (depth > REDACT_MAX_DEPTH) return "[REDACTED]";
+  if (depth > REDACT_MAX_DEPTH) return AUDIT_DEPTH_TRUNCATED;
   if (typeof value === "string") {
     return redactAuditString(value);
   }
