@@ -507,8 +507,12 @@ describe("AgentProviderEngine", () => {
       onEvent: collect,
     });
     expect(createCount).toBe(1);
-    expect(texts[0]).toContain("s-1:first");
-    expect(texts[1]).toContain("s-1:second");
+    expect(texts[0]).toContain("s-1:");
+    expect(texts[0]).toContain("first");
+    expect(texts[1]).toContain("s-1:");
+    expect(texts[1]).toContain("second");
+    expect(texts[0]).toContain("Primary workspace:");
+    expect(texts[1]).toContain("Primary workspace:");
   });
 
   it("emits error when provider turn fails without done event", async () => {
@@ -730,6 +734,147 @@ describe("AgentProviderEngine T3 protection honesty", () => {
     expect(meta.protection.spawnArgs).toContain("--sandbox");
     // Static caps would always claim sandbox — prove we used the probe flag
     // by also checking omit path is distinct when false (covered above).
+  });
+
+  it("shapes the ACP prompt like headless and forwards Desk MCP", async () => {
+    let capturedInput: SessionInput | undefined;
+    let capturedGoal = "";
+    const engine = createAgentProviderEngine(
+      {
+        ...stubProvider({ caps: acpCaps }),
+        createSession: async (input: SessionInput) => {
+          capturedInput = input;
+          return {
+            binding: {
+              providerId: "stub",
+              providerSessionId: "stub-1",
+              modelId: input.ref.modelId,
+              createdAt: new Date().toISOString(),
+            },
+            isolatedProfileDir: "/tmp/grokdesk-isolated-home",
+            async runTurn(turn, sink) {
+              capturedGoal = turn.goal;
+              await sink({ type: "done", summary: "ok" });
+              return { status: "done", summary: "ok" };
+            },
+            async cancel() {},
+          };
+        },
+      } as never,
+      {
+        supportsSandbox: false,
+        executesOwnTools: true,
+        mcpServers: [
+          {
+            id: "desk-browser",
+            command: "node",
+            args: ["b.mjs"],
+            enabled: true,
+          },
+        ],
+      },
+    );
+    const events: NormalizedEngineEvent[] = [];
+    await engine.run({
+      task: task("Generate an image of a rocket", ["/ws"]),
+      systemPreamble: "You are Grok.",
+      onEvent: async (e) => {
+        events.push(e);
+        return "continue";
+      },
+    });
+    expect(capturedInput?.mcpServers?.some((s) => s.id === "desk-browser")).toBe(
+      true,
+    );
+    expect(capturedGoal).toContain("Primary workspace: /ws");
+    expect(capturedGoal).toContain("Generate an image of a rocket");
+    expect(capturedGoal).toContain("image_gen");
+    const meta = events.find((e) => e.type === "session_meta");
+    if (meta?.type !== "session_meta" || !meta.protection) {
+      throw new Error("expected session_meta.protection");
+    }
+    expect(meta.protection.isolateGrokHome).toBe(true);
+  });
+
+  it("does not claim isolated profile when spawn env has no GROK_HOME", async () => {
+    const engine = createAgentProviderEngine(
+      stubProvider({ caps: acpCaps }),
+      { supportsSandbox: false, executesOwnTools: true },
+    );
+    const events: NormalizedEngineEvent[] = [];
+    await engine.run({
+      task: task("hello", ["/ws"]),
+      systemPreamble: "",
+      isolateGrokHome: true,
+      onEvent: async (e) => {
+        events.push(e);
+        return "continue";
+      },
+    });
+    const meta = events.find((e) => e.type === "session_meta");
+    if (meta?.type !== "session_meta" || !meta.protection) {
+      throw new Error("expected protection");
+    }
+    expect(meta.protection.isolateGrokHome).toBe(false);
+  });
+
+  it("promotes session media from the isolated GROK_HOME into the workspace", async () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "gd-acp-media-"));
+    try {
+      const grokHome = path.join(root, "home");
+      const workspace = path.join(root, "ws");
+      fs.mkdirSync(workspace);
+      const imgDir = path.join(
+        grokHome,
+        "sessions",
+        "%2Fws",
+        "sess-1",
+        "images",
+      );
+      fs.mkdirSync(imgDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(imgDir, "rocket.jpg"),
+        Buffer.from([0xff, 0xd8, 0xff, 0xd9]),
+      );
+      const engine = createAgentProviderEngine(
+        {
+          ...stubProvider({ caps: acpCaps }),
+          createSession: async (input: SessionInput) => ({
+            binding: {
+              providerId: "stub",
+              providerSessionId: "stub-1",
+              modelId: input.ref.modelId,
+              createdAt: new Date().toISOString(),
+            },
+            isolatedProfileDir: grokHome,
+            async runTurn(_turn, sink) {
+              await sink({ type: "done", summary: "ok" });
+              return { status: "done", summary: "ok" };
+            },
+            async cancel() {},
+          }),
+        } as never,
+        { supportsSandbox: false, executesOwnTools: true },
+      );
+      const artifacts: Array<{ path: string; title: string }> = [];
+      await engine.run({
+        task: task("Generate an image of a rocket", [workspace]),
+        systemPreamble: "",
+        onEvent: async (e) => {
+          if (e.type === "artifact") {
+            artifacts.push({ path: e.path, title: e.title });
+          }
+          return "continue";
+        },
+      });
+      expect(artifacts).toHaveLength(1);
+      expect(artifacts[0]!.title).toBe("rocket.jpg");
+      expect(fs.existsSync(path.join(workspace, "images", "rocket.jpg"))).toBe(
+        true,
+      );
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
   });
 
   it("defaults supportsSandbox to false (fail closed) when option omitted", async () => {

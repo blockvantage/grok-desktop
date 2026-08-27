@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   claimsSafeWorkspace,
+  isolateGrokHomeFromSpawnEnv,
   projectEffectiveProtection,
 } from "./effective-protection.js";
 import { policyToGrokArgs } from "./policy-to-grok-flags.js";
@@ -76,6 +77,43 @@ describe("projectEffectiveProtection", () => {
     });
     expect(snap.chipSegments).toContain("inherited_profile");
     expect(snap.isolateGrokHome).toBe(false);
+  });
+
+  it("derives isolateGrokHome from spawn env, not a claimed flag", () => {
+    const claimed = projectEffectiveProtection({
+      policy,
+      isolateGrokHome: true,
+      spawnEnv: { HOME: "/Users/ada", PATH: "/usr/bin" },
+    });
+    expect(claimed.isolateGrokHome).toBe(false);
+    expect(claimed.chipSegments).toContain("inherited_profile");
+
+    const isolated = projectEffectiveProtection({
+      policy,
+      isolateGrokHome: false,
+      spawnEnv: {
+        HOME: "/Users/ada",
+        GROK_HOME: "/tmp/grokdesk-grok-home-xyz",
+      },
+    });
+    expect(isolated.isolateGrokHome).toBe(true);
+    expect(isolated.chipSegments).toContain("isolated_profile");
+  });
+
+  it("isolateGrokHomeFromSpawnEnv treats ~/.grok as inherited", () => {
+    expect(
+      isolateGrokHomeFromSpawnEnv({
+        HOME: "/Users/ada",
+        GROK_HOME: "/Users/ada/.grok",
+      }),
+    ).toBe(false);
+    expect(
+      isolateGrokHomeFromSpawnEnv({
+        HOME: "/Users/ada",
+        GROK_HOME: "/tmp/isolated",
+      }),
+    ).toBe(true);
+    expect(isolateGrokHomeFromSpawnEnv({ HOME: "/Users/ada" })).toBe(false);
   });
 
   it("Careful mode summary uses careful key when sandboxed", () => {

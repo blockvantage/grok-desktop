@@ -23,7 +23,13 @@ export {
   /** Diagnostics alias only — not for production engine selection. */
   findGrokBinary,
   probeGrokCli,
+  cliVersionAtLeast,
+  MIN_MANAGED_CLI_VERSION,
   envWithGrokPath,
+  envWithManagedBinary,
+  seedIsolatedGrokHome,
+  buildRunPrompt,
+  promoteSessionMediaToWorkspace,
 } from "@grokdesk/engine-grok";
 
 export type { EngineAdapter } from "./engine-types.js";

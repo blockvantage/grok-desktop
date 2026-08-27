@@ -316,6 +316,14 @@ export class TaskService {
     return row ? this.applyPassThrough(rowToTask(row)) : null;
   }
 
+  /** ACP/headless session id persisted on the task row for follow-up resume. */
+  getProviderSessionId(taskId: string): string | null {
+    const row = this.db
+      .prepare(`SELECT provider_session_id FROM tasks WHERE id = ?`)
+      .get(taskId) as { provider_session_id: string | null } | undefined;
+    return row?.provider_session_id ?? null;
+  }
+
   /** Set the short display title for a chat (does not bump recency). */
   setTitle(taskId: string, title: string): Task {
     this.db

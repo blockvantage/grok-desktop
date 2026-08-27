@@ -1,14 +1,11 @@
 /**
  * Bridge AgentProvider (neutral runtime) → EngineAdapter (legacy TaskRunner).
  *
- * Dual-path product contract (Phase 3/6):
- * - **Default production path:** `createDefaultEngine` / engine-grok headless
- *   (`Gateway.start` when `GROKDESK_PROVIDER_ENGINE` is unset).
- * - **Opt-in bridge:** set `GROKDESK_PROVIDER_ENGINE=1` (optional
- *   `GROKDESK_PROVIDER_ID`, default `grok`) so TaskRunner drives a registered
- *   AgentProvider via this adapter. Tests may inject the adapter directly.
- * - No silent cutover: shipping product must not flip this env by default until
- *   ACP/policy conformance gates pass.
+ * Dual-path product contract:
+ * - **Default production path:** AgentProvider + ACP when the CLI probe reports
+ *   agent stdio (Gateway.start). Rollback: GROKDESK_FORCE_HEADLESS=1.
+ * - **Headless fallback:** engine-grok when ACP is unavailable.
+ * - Tests may inject the adapter directly.
  */
 import type {
   AgentProvider,
@@ -16,7 +13,15 @@ import type {
   EffectivePolicy,
   RuntimeEvent,
 } from "@grokdesk/agent-runtime";
-import { projectAcpProtection } from "@grokdesk/shared";
+import {
+  isolateGrokHomeFromSpawnEnv,
+  projectAcpProtection,
+  type DeskMcpServerLike,
+} from "@grokdesk/shared";
+import {
+  buildRunPrompt,
+  promoteSessionMediaToWorkspace,
+} from "../engine-composition.js";
 import type {
   EngineAdapter,
   EngineRunOptions,
@@ -156,6 +161,11 @@ export interface AgentProviderEngineOptions {
    * Must match the probe used to build ACP spawn argv.
    */
   supportsSandbox?: boolean;
+  /** Desk MCP forwarded on ACP session/new and isolated GROK_HOME. */
+  mcpServers?: readonly DeskMcpServerLike[];
+  skillsPaths?: readonly string[];
+  mcpServersProvider?: () => readonly DeskMcpServerLike[];
+  skillsPathsProvider?: () => readonly string[];
 }
 
 /**
@@ -226,6 +236,20 @@ export class AgentProviderEngine implements EngineAdapter {
     const cwd =
       task.policySnapshot.workspaceRoots[0] ?? process.cwd();
 
+    const mcpServers = (
+      this.opts.mcpServersProvider?.() ??
+      this.opts.mcpServers ??
+      []
+    ).map((s) => ({
+      id: s.id,
+      command: s.command,
+      args: s.args ?? [],
+      env: s.env,
+      enabled: s.enabled !== false,
+    }));
+    const skillsPaths = [
+      ...(this.opts.skillsPathsProvider?.() ?? this.opts.skillsPaths ?? []),
+    ];
     const sessionInput = {
       ref: {
         providerId: this.opts.provider.id,
@@ -237,6 +261,10 @@ export class AgentProviderEngine implements EngineAdapter {
       systemPreamble,
       inheritUserConfig: options.isolateGrokHome === false,
       planFirst: options.planFirst === true || task.planFirst === true,
+      mcpServers,
+      skillsPaths,
+      browserSessionId: options.browserSessionId ?? task.id,
+      trustedFolders: options.trustedFolders,
     };
 
     let session = this.sessions.get(task.id);
@@ -263,6 +291,10 @@ export class AgentProviderEngine implements EngineAdapter {
           sessionInput,
         );
         this.cacheSession(task.id, session);
+        const resumeMsg = session.resumeProgressMessage?.();
+        if (resumeMsg) {
+          await onEvent({ type: "run_progress", message: resumeMsg });
+        }
       } catch {
         session = undefined; // fall through to fresh create
       }
@@ -298,26 +330,43 @@ export class AgentProviderEngine implements EngineAdapter {
       allowShell: task.policySnapshot.allowShell,
       allowNetworkTools: task.policySnapshot.allowNetworkTools,
     };
+    const spawnEnv: Record<string, string | undefined> = {
+      HOME: process.env.HOME,
+      USERPROFILE: process.env.USERPROFILE,
+      ...(session.isolatedProfileDir
+        ? { GROK_HOME: session.isolatedProfileDir }
+        : {}),
+    };
+    const isolateGrokHome = isolateGrokHomeFromSpawnEnv(spawnEnv);
     const protection = projectAcpProtection({
       cwd,
       policy: deskPolicy,
       supportsSandbox,
-      isolateGrokHome: options.isolateGrokHome !== false,
+      isolateGrokHome,
       executesOwnTools: this.executesOwnToolsFlag !== false,
+      spawnEnv,
     });
     await onEvent({
       type: "session_meta",
       protection: {
         spawnArgs: protection.spawnArgs,
         supportsSandbox,
-        isolateGrokHome: options.isolateGrokHome !== false,
+        isolateGrokHome,
         executesOwnTools: this.executesOwnToolsFlag !== false,
       },
     });
 
+    const extras = acpRunExtrasPreamble(mcpServers);
+    const prompt = buildRunPrompt({
+      task,
+      systemPreamble,
+      extras,
+      primaryCwd: cwd,
+    });
+
     let sawDone = false;
     const result = await session.runTurn(
-      { goal: task.goal },
+      { goal: prompt },
       async (ev) => {
         if (ev.type === "done") sawDone = true;
         const norm = runtimeEventToNormalized(ev);
@@ -325,6 +374,12 @@ export class AgentProviderEngine implements EngineAdapter {
         return onEvent(norm);
       },
     );
+
+    await promoteAcpSessionMedia({
+      grokHome: session.isolatedProfileDir,
+      destRoot: mediaDestRoot(task.policySnapshot.workspaceRoots, cwd),
+      onEvent,
+    });
 
     if (result.status === "cancelled") {
       if (!sawDone) {
@@ -404,6 +459,56 @@ export class AgentProviderEngine implements EngineAdapter {
     const session = this.sessions.get(taskId);
     if (!session?.rewindTo) return false;
     return session.rewindTo(pointId);
+  }
+}
+
+function acpRunExtrasPreamble(
+  mcpServers: readonly DeskMcpServerLike[],
+): string {
+  const enabled = mcpServers.filter((m) => m.enabled !== false);
+  if (enabled.length === 0) return "";
+  return [
+    "MCP connectors are enabled for this workspace.",
+    "Enabled connectors: " + enabled.map((m) => m.id).join(", ") + ".",
+  ].join("\n");
+}
+
+function mediaDestRoot(workspaceRoots: string[] | undefined, cwd: string): string {
+  const roots = workspaceRoots ?? [];
+  const managed = roots.find((r) =>
+    /GrokDesk[/\\]workspaces[/\\]grok-chat/i.test(r),
+  );
+  return managed ?? cwd;
+}
+
+async function promoteAcpSessionMedia(opts: {
+  grokHome?: string | null;
+  destRoot: string;
+  onEvent: EngineRunOptions["onEvent"];
+}): Promise<void> {
+  if (!opts.grokHome) return;
+  let promoted: ReturnType<typeof promoteSessionMediaToWorkspace> = [];
+  try {
+    promoted = promoteSessionMediaToWorkspace({
+      grokHome: opts.grokHome,
+      destRoot: opts.destRoot,
+      sinceMs: Date.now() - 30_000,
+    });
+  } catch {
+    return;
+  }
+  if (promoted.length === 0) return;
+  await opts.onEvent({
+    type: "run_progress",
+    message: `Saved ${promoted.length} image/video file(s) under ${opts.destRoot}`,
+  });
+  for (const file of promoted) {
+    await opts.onEvent({
+      type: "artifact",
+      title: file.name,
+      path: file.destPath,
+      kind: "media",
+    });
   }
 }
 

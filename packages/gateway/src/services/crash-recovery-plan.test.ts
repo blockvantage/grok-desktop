@@ -25,6 +25,17 @@ describe("crash-recovery-plan", () => {
     expect(plan.attemptReason).toBe("gateway_restart");
   });
 
+  it("requeues running tasks that have a provider session instead of failing", () => {
+    const plan = planTaskInterruptOnRestart("running", {
+      providerSessionId: "sess-1",
+    });
+    expect(plan).toEqual({ kind: "resume", requeueStatus: "queued" });
+    const noSession = planTaskInterruptOnRestart("running", {
+      providerSessionId: null,
+    });
+    expect(noSession.kind).toBe("interrupt");
+  });
+
   it("skips terminal and queued statuses", () => {
     expect(planTaskInterruptOnRestart("queued")).toEqual({ kind: "skip" });
     expect(planTaskInterruptOnRestart("done")).toEqual({ kind: "skip" });

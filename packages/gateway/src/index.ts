@@ -363,7 +363,14 @@ export class Gateway {
             params: input,
           },
         ) as Task;
-        return { task, kind: "fresh" };
+        const prior =
+          (input.parentTaskId
+            ? this.tasks.getProviderSessionId(input.parentTaskId)
+            : null) ?? null;
+        return {
+          task,
+          kind: prior ? "continue" : "fresh",
+        };
       },
       countActiveRuns: () =>
         this.tasks
@@ -423,9 +430,19 @@ export class Gateway {
     // Composition root: register providers before creating the execution engine.
     // Live ACP factory when CLI probe supports agent stdio; otherwise headless default.
     // Authorization receipts from ACP land in OperationReceiptService.
+    const mcpServersProvider = () =>
+      resolveDeskPlaneMcpServers({
+        mcpServers: this.settings.getMcpServersResolved(),
+        env: process.env,
+        existsSync: (candidate) => fs.existsSync(candidate),
+      });
+    const skillsPathsProvider = () => this.settings.getEffectiveSkillsPaths();
     const acpLive = this.engineOverride
       ? null
-      : await createLiveAcpTransportFactory();
+      : await createLiveAcpTransportFactory({
+          mcpServersProvider,
+          skillsPathsProvider,
+        });
     const engineSelection = resolveEngineSelection({
       env: process.env,
       preferProviderEngine: this.settings.getAll().preferProviderEngine,
@@ -493,6 +510,8 @@ export class Gateway {
         fallbackEngine,
         // T3: same probe flag as ACP spawn factory (fail closed if null).
         supportsSandbox: acpLive?.supportsSandbox === true,
+        mcpServersProvider,
+        skillsPathsProvider,
       });
     } else {
       this.engine = await createDefaultEngine({
@@ -1319,7 +1338,18 @@ export class Gateway {
       setMaxConcurrent: (n) => this.runner?.setMaxConcurrent(n),
       settingsChanged: engineSettingsChanged,
       createEngine: async (s) => {
-        const acpLive = await createLiveAcpTransportFactory();
+        const mcpServersProvider = () =>
+          resolveDeskPlaneMcpServers({
+            mcpServers: this.settings.getMcpServersResolved(),
+            env: process.env,
+            existsSync: (candidate) => fs.existsSync(candidate),
+          });
+        const skillsPathsProvider = () =>
+          this.settings.getEffectiveSkillsPaths();
+        const acpLive = await createLiveAcpTransportFactory({
+          mcpServersProvider,
+          skillsPathsProvider,
+        });
         const selection = resolveEngineSelection({
           env: process.env,
           preferProviderEngine: s.preferProviderEngine,
@@ -1385,6 +1415,8 @@ export class Gateway {
           return createAgentProviderEngine(provider, {
             fallbackEngine,
             supportsSandbox: acpLive?.supportsSandbox === true,
+            mcpServersProvider,
+            skillsPathsProvider,
           });
         }
         return createDefaultEngine({

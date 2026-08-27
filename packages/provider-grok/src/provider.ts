@@ -141,6 +141,9 @@ export class GrokAgentProvider implements AgentProvider {
         binding,
         onReceipt: this.opts?.onAuthorizationReceipt,
         planFirst: input.planFirst === true,
+        mcpServers: input.mcpServers,
+        isolatedProfileDir:
+          transport.spawnMeta?.grokHome ?? input.isolatedProfileDir ?? null,
       });
       await session.start(input.cwd, { planFirst: input.planFirst === true });
       return session;
@@ -186,11 +189,13 @@ export class GrokAgentProvider implements AgentProvider {
         policy: sessionInput.policy,
         binding: { ...binding },
         onReceipt: this.opts?.onAuthorizationReceipt,
+        mcpServers: sessionInput.mcpServers,
+        isolatedProfileDir:
+          transport.spawnMeta?.grokHome ??
+          sessionInput.isolatedProfileDir ??
+          null,
       });
-      await session.start(sessionInput.cwd);
-      // Restore original provider session id for correlation (conformance + TASK-02).
-      (session.binding as { providerSessionId: string }).providerSessionId =
-        binding.providerSessionId;
+      await session.resumeFrom(binding.providerSessionId, sessionInput.cwd);
       return session;
     }
     return new GrokHeadlessSession(

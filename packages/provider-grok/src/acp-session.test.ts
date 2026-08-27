@@ -65,6 +65,63 @@ describe("ACP mediated session (SEC-01 policy authorizer)", () => {
     expect(events.some((e) => e.type === "tool_call")).toBe(false);
   });
 
+  it("resumes via session/resume and records the path", async () => {
+    const duplex = new MemoryLineDuplex();
+    const fake = attachFakeAcpAgent(duplex.b);
+    cleanups.push(fake.dispose);
+    const session = new AcpMediatedSession({
+      transport: duplex.a,
+      policy: balancedPolicy,
+      binding: createAcpBinding("grok-4.5", "prior-sess"),
+    });
+    cleanups.push(() => session.cancel("test"));
+    const path = await session.resumeFrom("prior-sess", "/w");
+    expect(path).toBe("resume");
+    expect(session.lastResumePath).toBe("resume");
+    expect(session.binding.providerSessionId).toBe("prior-sess");
+    expect(fake.state.requests.some((r) => r.method === "session/resume")).toBe(
+      true,
+    );
+  });
+
+  it("passes Desk MCP servers on session/new", async () => {
+    const duplex = new MemoryLineDuplex();
+    const fake = attachFakeAcpAgent(duplex.b);
+    cleanups.push(fake.dispose);
+
+    const session = new AcpMediatedSession({
+      transport: duplex.a,
+      policy: balancedPolicy,
+      binding: createAcpBinding("grok-4.5"),
+      mcpServers: [
+        {
+          id: "desk-browser",
+          command: "node",
+          args: ["browser.mjs"],
+          env: { GROKDESK_BROWSER_TOKEN: "t" },
+          enabled: true,
+        },
+      ],
+    });
+    cleanups.push(() => session.cancel("test"));
+    await session.start("/w");
+
+    const newSession = fake.state.requests.find((r) => r.method === "session/new");
+    expect(newSession?.params).toEqual(
+      expect.objectContaining({
+        cwd: "/w",
+        mcpServers: [
+          {
+            name: "desk-browser",
+            command: "node",
+            args: ["browser.mjs"],
+            env: [{ name: "GROKDESK_BROWSER_TOKEN", value: "t" }],
+          },
+        ],
+      }),
+    );
+  });
+
   it("allows shell tool when policy allows — tool executes", async () => {
     const duplex = new MemoryLineDuplex();
     const fake = attachFakeAcpAgent(duplex.b, {

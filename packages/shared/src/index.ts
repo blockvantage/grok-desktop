@@ -18,6 +18,7 @@ export * from "./ipc.js";
 export * from "./policy-to-grok-flags.js";
 export * from "./effective-protection.js";
 export * from "./acp-spawn-args.js";
+export * from "./acp-mcp.js";
 export * from "./folder-trust.js";
 export * from "./readiness-checklist.js";
 export * from "./approval-card.js";

@@ -19,6 +19,20 @@ export interface SessionInput {
   inheritUserConfig?: boolean;
   /** Start in plan mode when the provider supports session/set_mode. */
   planFirst?: boolean;
+  /** Desk MCP servers to pass on ACP `session/new`. */
+  mcpServers?: Array<{
+    id: string;
+    command: string;
+    args: string[];
+    env?: Record<string, string>;
+    enabled: boolean;
+  }>;
+  /** Skill pack roots to install into isolated GROK_HOME. */
+  skillsPaths?: string[];
+  /** Task/session id for desk-browser MCP env. */
+  browserSessionId?: string;
+  /** Folders trusted for project-scoped MCP/skills. */
+  trustedFolders?: string[];
 }
 
 export interface TurnInput {
@@ -34,6 +48,11 @@ export interface TurnResult {
 
 export interface AgentSession {
   readonly binding: ProviderSessionBinding;
+  /** Isolated GROK_HOME actually used for this session, when provisioned. */
+  isolatedProfileDir?: string | null;
+  /** Resume path taken when this session was reattached. */
+  lastResumePath?: "resume" | "load" | "fresh_with_context" | null;
+  resumeProgressMessage?(): string | null;
   runTurn(input: TurnInput, sink: RuntimeEventSink): Promise<TurnResult>;
   cancel(reason: string): Promise<void>;
   /**

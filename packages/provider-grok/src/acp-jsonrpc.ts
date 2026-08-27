@@ -6,6 +6,7 @@
  * fake peer in tests. Does not spend model credits by itself.
  */
 import { EventEmitter } from "node:events";
+import { grokAcpClientInfo } from "./client-info.js";
 
 export type JsonRpcId = string | number;
 
@@ -43,9 +44,16 @@ export type JsonRpcMessage =
 export interface AcpInitializeResult {
   protocolVersion: number;
   serverInfo?: { name?: string; version?: string };
+  agentVersion?: string;
   capabilities?: {
     loadSession?: boolean;
     promptCapabilities?: Record<string, boolean>;
+  };
+  sessionCapabilities?: {
+    close?: boolean;
+    list?: boolean;
+    resume?: boolean;
+    load?: boolean;
   };
 }
 
@@ -60,10 +68,18 @@ export interface AcpPermissionRequest {
 
 export type AcpPermissionDecision = "allow" | "deny" | "allow_once";
 
+export interface AcpSpawnMeta {
+  grokHome: string | null;
+  isolateGrokHome: boolean;
+  env: NodeJS.ProcessEnv;
+}
+
 export interface AcpLineTransport {
   writeLine(line: string): void;
   onLine(handler: (line: string) => void): () => void;
   close(): void | Promise<void>;
+  /** Set by the live ACP factory from the env that was actually spawned. */
+  spawnMeta?: AcpSpawnMeta;
 }
 
 /**
@@ -305,7 +321,7 @@ export class AcpJsonRpcClient extends EventEmitter {
   }): Promise<AcpInitializeResult> {
     const result = (await this.request("initialize", {
       protocolVersion: 1,
-      clientInfo: clientInfo ?? { name: "grok-desk", version: "0.1.2" },
+      clientInfo: clientInfo ?? grokAcpClientInfo(),
     })) as AcpInitializeResult;
     if (
       !result ||
@@ -342,6 +358,26 @@ export class AcpJsonRpcClient extends EventEmitter {
 
   async cancel(sessionId: string): Promise<void> {
     await this.request("session/cancel", { sessionId });
+  }
+
+  async resumeSession(sessionId: string): Promise<{ sessionId: string }> {
+    const result = (await this.request("session/resume", { sessionId })) as {
+      sessionId?: string;
+    };
+    return { sessionId: result?.sessionId ?? sessionId };
+  }
+
+  async loadSession(
+    sessionId: string,
+  ): Promise<{ sessionId: string; raw: unknown }> {
+    const result = (await this.request("session/load", { sessionId })) as {
+      sessionId?: string;
+    };
+    return { sessionId: result?.sessionId ?? sessionId, raw: result };
+  }
+
+  async closeSession(sessionId: string): Promise<void> {
+    await this.request("session/close", { sessionId });
   }
 
   async close(): Promise<void> {
@@ -522,6 +558,11 @@ export function attachFakeAcpAgent(
             loadSession: true,
             promptCapabilities: { image: false },
           },
+          sessionCapabilities: {
+            resume: true,
+            load: true,
+            close: true,
+          },
         });
         break;
       case "session/new": {
@@ -530,6 +571,17 @@ export function attachFakeAcpAgent(
         break;
       }
       case "session/set_mode":
+        reply({ ok: true });
+        break;
+      case "session/resume":
+      case "session/load": {
+        const params = req.params as { sessionId?: string };
+        reply({
+          sessionId: params?.sessionId ?? `fake-sess-${sessions}`,
+        });
+        break;
+      }
+      case "session/close":
         reply({ ok: true });
         break;
       case "session/prompt": {

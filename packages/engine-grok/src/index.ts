@@ -12,6 +12,8 @@ export {
   envWithManagedBinary,
   grokInstallDirs,
   probeGrokCli,
+  cliVersionAtLeast,
+  MIN_MANAGED_CLI_VERSION,
   cliCommand,
   execGrokCli,
   isJsCliBinary,
@@ -43,7 +45,9 @@ export {
   terminateChild,
   withDeskBrowserTaskId,
   seedIsolatedGrokHome,
+  buildRunPrompt,
   type CreateDefaultEngineOptions,
+  type McpServerConfig,
 } from "./session.js";
 export {
   findSessionMediaFiles,

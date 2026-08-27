@@ -31,6 +31,8 @@ export type BuildAcpSpawnArgsInput = {
   executesOwnTools?: boolean;
   noAutoUpdate?: boolean;
   model?: string;
+  /** Actual spawn env — isolation chip is derived from GROK_HOME when set. */
+  spawnEnv?: Record<string, string | undefined>;
 };
 
 /**
@@ -83,6 +85,7 @@ export function projectAcpProtection(
     isolateGrokHome: input.isolateGrokHome,
     executesOwnTools: input.executesOwnTools ?? true,
     spawnArgs,
+    spawnEnv: input.spawnEnv,
   });
 }
 

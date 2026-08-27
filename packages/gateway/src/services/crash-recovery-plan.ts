@@ -11,6 +11,10 @@ export function shouldInterruptTaskStatus(status: string): boolean {
 export type InterruptPlan =
   | { kind: "skip" }
   | {
+      kind: "resume";
+      requeueStatus: "queued";
+    }
+  | {
       kind: "interrupt";
       terminalStatus: "failed";
       eventCode: "interrupted_on_restart";
@@ -21,10 +25,17 @@ export type InterruptPlan =
 
 /**
  * Plan recovery action for a single persisted task row after unclean restart.
+ * Prefer resume when a provider session id exists; otherwise interrupt.
  */
-export function planTaskInterruptOnRestart(status: string): InterruptPlan {
+export function planTaskInterruptOnRestart(
+  status: string,
+  opts?: { providerSessionId?: string | null },
+): InterruptPlan {
   if (!shouldInterruptTaskStatus(status)) {
     return { kind: "skip" };
+  }
+  if (status === "running" && opts?.providerSessionId) {
+    return { kind: "resume", requeueStatus: "queued" };
   }
   return {
     kind: "interrupt",

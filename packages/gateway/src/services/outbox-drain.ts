@@ -6,6 +6,10 @@ import fs from "node:fs";
 import type { ConversationOutboxItem, CreateTaskInput, Task } from "@grokdesk/shared";
 import type { ConversationOutboxRepository } from "./conversation-outbox.js";
 import type { Db } from "../db.js";
+import {
+  buildDrainedCreateInput,
+  loadFollowUpSettings,
+} from "./follow-up-settings.js";
 
 const ACTIVE_TASK_STATUSES = [
   "queued",
@@ -16,7 +20,7 @@ const ACTIVE_TASK_STATUSES = [
 
 export type OutboxDrainCreateResult = {
   task: Task;
-  kind: "fresh" | "duplicate";
+  kind: "fresh" | "duplicate" | "continue";
 };
 
 export type OutboxDrainDeps = {
@@ -222,22 +226,12 @@ export class OutboxDrainCoordinator {
 
       const started = (this.deps.now ?? Date.now)();
       try {
-        const createInput: CreateTaskInput & { clientMutationId: string } = {
-          goal: claimed.text,
+        const settings = loadFollowUpSettings(db, {
           parentTaskId: claimed.parentTaskId,
-          attachments: claimed.attachments,
-          clientMutationId: claimed.id,
-          mode: "interactive",
-          model: "grok-4.5",
-          effort: "normal",
-          workspaceRoots: [],
-          approvalMode: "balanced",
-          skills: [],
-          mcpServerIds: [],
-          ...(claimed.revisionOfTaskId
-            ? { revisionOfTaskId: claimed.revisionOfTaskId }
-            : {}),
-        };
+          conversationId,
+        });
+        const createInput: CreateTaskInput & { clientMutationId: string } =
+          buildDrainedCreateInput(claimed, settings);
         const result = await this.deps.createFollowUp(createInput);
         const accepted = outbox.markAccepted(claimed.id, result.task.id);
         this.deps.notifyOutboxChanged?.({

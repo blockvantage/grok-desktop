@@ -26,6 +26,15 @@ import {
   type PermissionBrokerResult,
 } from "./acp-policy-broker.js";
 import { randomUUID } from "node:crypto";
+import { toAcpMcpServers, type DeskMcpServerLike } from "@grokdesk/shared";
+import { grokAcpClientInfo } from "./client-info.js";
+import { decodeSessionUpdate, decodeToolKind } from "./acp-decode.js";
+import {
+  acpResumeProgressMessage,
+  chooseAcpResumePath,
+  runningPromptIdFromLoadResult,
+  type AcpResumePath,
+} from "./acp-resume.js";
 
 export interface AcpSessionOptions {
   transport: AcpLineTransport;
@@ -51,6 +60,10 @@ export interface AcpSessionOptions {
   requestTimeoutMs?: number;
   /** When true, request plan mode after session/new. */
   planFirst?: boolean;
+  /** Desk MCP servers forwarded on `session/new`. */
+  mcpServers?: unknown[];
+  /** Isolated GROK_HOME used for this spawn (media promotion / protection). */
+  isolatedProfileDir?: string | null;
 }
 
 export function isMethodNotFound(e: unknown): boolean {
@@ -119,17 +132,30 @@ export class AcpMediatedSession implements AgentSession {
   private sessionId: string | null = null;
   private cancelled = false;
   private started = false;
+  private initialized = false;
+  private initResult: import("./acp-jsonrpc.js").AcpInitializeResult | null =
+    null;
   private lastPlanContent = "";
   private planFirst: boolean;
   /** Active turn sink — used to park permissions in the gateway approval UI. */
   private turnSink: RuntimeEventSink | null = null;
   readonly binding: ProviderSessionBinding;
+  /** Isolated GROK_HOME actually used for this session, when provisioned. */
+  isolatedProfileDir: string | null;
+  /** Which resume path was taken, when this session was resumed. */
+  lastResumePath: AcpResumePath | null = null;
+  /** In-flight prompt id from session/load, if the CLI is still turning. */
+  runningPromptId: string | null = null;
   /** Last permission decisions (for tests / diagnostics). */
   readonly authorizationLog: PermissionBrokerResult[] = [];
 
   constructor(private opts: AcpSessionOptions) {
     this.binding = opts.binding;
     this.planFirst = opts.planFirst === true;
+    this.isolatedProfileDir =
+      opts.isolatedProfileDir ??
+      opts.transport.spawnMeta?.grokHome ??
+      null;
     this.client = new AcpJsonRpcClient(opts.transport, {
       requestTimeoutMs: opts.requestTimeoutMs ?? 10_000,
       onServerRequest: (method, params, respond, reject) => {
@@ -316,12 +342,25 @@ export class AcpMediatedSession implements AgentSession {
     });
   }
 
+  private async ensureInitialized(): Promise<
+    import("./acp-jsonrpc.js").AcpInitializeResult
+  > {
+    if (this.initResult) return this.initResult;
+    this.initResult = await this.client.initialize(grokAcpClientInfo());
+    this.initialized = true;
+    return this.initResult;
+  }
+
   async start(cwd?: string, opts?: { planFirst?: boolean }): Promise<void> {
     if (this.started) return;
     if (opts?.planFirst != null) this.planFirst = opts.planFirst;
-    await this.client.initialize({ name: "grok-desk", version: "0.1.2" });
+    await this.ensureInitialized();
+    const mcpServers = toAcpMcpServers(
+      this.opts.mcpServers as DeskMcpServerLike[] | undefined,
+    );
     const session = await this.client.newSession({
       cwd: cwd ?? process.cwd(),
+      ...(mcpServers.length > 0 ? { mcpServers } : {}),
     });
     this.sessionId = session.sessionId;
     (this.binding as { providerSessionId: string }).providerSessionId =
@@ -378,10 +417,21 @@ export class AcpMediatedSession implements AgentSession {
             citations?: unknown;
           };
         };
-        const u = p.update;
-        if (!u) return;
+        const decoded = decodeSessionUpdate(p.update);
+        const u = decoded.raw as {
+          sessionUpdate?: string;
+          toolCallId?: string;
+          title?: string;
+          kind?: string;
+          status?: string;
+          content?: unknown;
+          output?: unknown;
+          rawInput?: unknown;
+          citations?: unknown;
+        };
+        if (decoded.kind === "unknown") return;
 
-        if (u.sessionUpdate === "plan") {
+        if (decoded.kind === "plan") {
           const content = String(
             (u as { content?: unknown }).content ??
               (u as { entries?: unknown }).entries ??
@@ -401,7 +451,9 @@ export class AcpMediatedSession implements AgentSession {
             u.sessionUpdate === "tool_call_update") &&
           u.status === "completed"
         ) {
-          const toolName = String(u.kind ?? u.title ?? "unknown");
+          const toolName = decodeToolKind(u.kind) === "other"
+            ? String(u.title ?? u.kind ?? "other")
+            : decodeToolKind(u.kind);
           void sink({
             type: "tool_call",
             id: u.toolCallId ?? "tool",
@@ -409,7 +461,7 @@ export class AcpMediatedSession implements AgentSession {
             command: u.title,
           });
 
-          const toolLower = toolName.toLowerCase();
+          const toolLower = `${toolName} ${String(u.kind ?? "")}`.toLowerCase();
           if (
             MEDIA_TOOLS.has(toolLower) ||
             toolLower.includes("imagine") ||
@@ -620,13 +672,70 @@ export class AcpMediatedSession implements AgentSession {
     }
   }
 
+  /**
+   * Feature-detected reattach: session/resume → session/load → fresh session.
+   */
+  async resumeFrom(priorSessionId: string, cwd?: string): Promise<AcpResumePath> {
+    if (this.started) return this.lastResumePath ?? "resume";
+    const init = await this.ensureInitialized();
+    const path = chooseAcpResumePath(init);
+    if (path === "resume") {
+      try {
+        const resumed = await this.client.resumeSession(priorSessionId);
+        this.sessionId = resumed.sessionId;
+        (this.binding as { providerSessionId: string }).providerSessionId =
+          resumed.sessionId;
+        this.started = true;
+        this.lastResumePath = "resume";
+        return "resume";
+      } catch (e) {
+        if (!isMethodNotFound(e)) {
+          /* fall through to load */
+        }
+      }
+    }
+    if (path === "resume" || path === "load") {
+      try {
+        const loaded = await this.client.loadSession(priorSessionId);
+        this.sessionId = loaded.sessionId;
+        this.runningPromptId = runningPromptIdFromLoadResult(loaded.raw);
+        (this.binding as { providerSessionId: string }).providerSessionId =
+          loaded.sessionId;
+        this.started = true;
+        this.lastResumePath = "load";
+        return "load";
+      } catch (e) {
+        if (!isMethodNotFound(e)) {
+          /* fall through to fresh */
+        }
+      }
+    }
+    await this.start(cwd);
+    this.lastResumePath = "fresh_with_context";
+    return "fresh_with_context";
+  }
+
+  resumeProgressMessage(): string | null {
+    return this.lastResumePath
+      ? acpResumeProgressMessage(this.lastResumePath)
+      : null;
+  }
+
   async cancel(_reason: string): Promise<void> {
     this.cancelled = true;
     try {
       if (this.sessionId && this.started) {
         await Promise.race([
+          this.client.closeSession(this.sessionId).catch((e) => {
+            if (!isMethodNotFound(e)) {
+              /* ignore close errors on shutdown */
+            }
+          }),
+          new Promise<void>((r) => setTimeout(r, 400)),
+        ]);
+        await Promise.race([
           this.client.cancel(this.sessionId).catch(() => {}),
-          new Promise<void>((r) => setTimeout(r, 500)),
+          new Promise<void>((r) => setTimeout(r, 400)),
         ]);
       }
     } finally {

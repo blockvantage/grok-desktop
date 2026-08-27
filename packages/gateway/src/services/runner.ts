@@ -1114,7 +1114,13 @@ export class TaskRunner {
       let sawError = false;
       try {
         const priorProviderSessionId =
-          this.runAttempts?.latestProviderSessionId(taskId) ?? undefined;
+          this.runAttempts?.latestProviderSessionId(taskId) ??
+          (task.parentTaskId
+            ? this.runAttempts?.latestProviderSessionId(task.parentTaskId) ??
+              this.tasks.getProviderSessionId(task.parentTaskId)
+            : null) ??
+          this.tasks.getProviderSessionId(taskId) ??
+          undefined;
         // T4: Settings inheritUserGrok (default false) → isolate unless true.
         // Env GROKDESK_INHERIT_USER_GROK=1 remains a debug override in the engine
         // when isolateGrokHome is left undefined; we always pass an explicit value.

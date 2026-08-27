@@ -78,6 +78,25 @@ describe("crash recovery (TASK-01)", () => {
     expect(pumped).toBe(1);
   });
 
+  it("requeues a running task with a provider session instead of interrupted_on_restart", () => {
+    const running = tasks.create({
+      goal: "resume me",
+      workspaceRoots: [dir],
+    });
+    tasks.setStatus(running.id, "running");
+    db.prepare(`UPDATE tasks SET provider_session_id = ? WHERE id = ?`).run(
+      "sess-live",
+      running.id,
+    );
+    const result = recoverInterruptedTasks({
+      tasks,
+      runAttempts: runs,
+      pumpQueue: async () => {},
+    });
+    expect(result.interruptedTaskIds).toEqual([]);
+    expect(tasks.get(running.id)?.status).toBe("queued");
+  });
+
   it("does not interrupt a task held by an unexpired foreign lease", () => {
     const running = tasks.create({
       goal: "live in another gateway",

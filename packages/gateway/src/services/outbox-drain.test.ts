@@ -70,6 +70,59 @@ describe("outbox-drain", () => {
     ).toBe(true);
   });
 
+  it("carries parent model/strict/skills onto the drained follow-up", async () => {
+    const now = new Date().toISOString();
+    db.prepare(
+      `INSERT INTO tasks (
+        id, goal, mode, status, model, effort, policy_json,
+        skills_json, mcp_json, created_at, updated_at, conversation_id
+      ) VALUES (?, 'root', 'interactive', 'done', ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(
+      "parent-strict",
+      "grok-4",
+      "heavy",
+      JSON.stringify({
+        approvalMode: "strict",
+        workspaceRoots: ["/abs/ws"],
+        allowShell: false,
+        allowNetworkTools: true,
+      }),
+      JSON.stringify(["desk-image"]),
+      JSON.stringify(["desk-browser"]),
+      now,
+      now,
+      "conv-strict",
+    );
+    outbox.enqueue({
+      id: "follow-strict",
+      conversationId: "conv-strict",
+      parentTaskId: "parent-strict",
+      text: "next please",
+      attachments: [],
+    });
+    let captured: Record<string, unknown> | undefined;
+    await drainOnce({
+      outbox,
+      db,
+      createFollowUp: async (input) => {
+        captured = input as unknown as Record<string, unknown>;
+        return { task: fakeTask("task-follow"), kind: "continue" };
+      },
+      countActiveRuns: () => 0,
+    });
+    expect(captured).toMatchObject({
+      goal: "next please",
+      model: "grok-4",
+      effort: "heavy",
+      approvalMode: "strict",
+      skills: ["desk-image"],
+      mcpServerIds: ["desk-browser"],
+      workspaceRoots: ["/abs/ws"],
+    });
+    expect(captured?.model).not.toBe("grok-4.5");
+    expect(captured?.approvalMode).not.toBe("balanced");
+  });
+
   it("drains multiple conversations independently of selected chat", async () => {
     outbox.enqueue({
       id: "c1-m1",

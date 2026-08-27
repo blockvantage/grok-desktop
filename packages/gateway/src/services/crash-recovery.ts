@@ -37,7 +37,13 @@ export function recoverInterruptedTasks(deps: CrashRecoveryDeps): {
 
   try {
     for (const t of deps.tasks.list()) {
-      const plan = planTaskInterruptOnRestart(t.status);
+      const plan = planTaskInterruptOnRestart(t.status, {
+        providerSessionId: deps.tasks.getProviderSessionId(t.id),
+      });
+      if (plan.kind === "resume") {
+        deps.tasks.setStatus(t.id, plan.requeueStatus);
+        continue;
+      }
       if (plan.kind !== "interrupt") continue;
       const latest = deps.runAttempts.latestForTask(t.id);
       if (latest && !deps.runAttempts.isTerminal(latest.status)) {

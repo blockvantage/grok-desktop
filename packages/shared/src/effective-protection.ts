@@ -77,7 +77,28 @@ export type ProjectProtectionInput = {
    * post-spawn honesty). When omitted, argv is compiled via policyToGrokArgs.
    */
   spawnArgs?: readonly string[];
+  /**
+   * When provided, `isolateGrokHome` is derived from the actual spawn env
+   * (`GROK_HOME` set and not the user's `~/.grok`), not from a claimed flag.
+   */
+  spawnEnv?: Record<string, string | undefined>;
 };
+
+/**
+ * Isolation bit from the env that was actually passed to the CLI.
+ * A claimed default is not enough — missing GROK_HOME means inherited profile.
+ */
+export function isolateGrokHomeFromSpawnEnv(
+  env: Record<string, string | undefined>,
+): boolean {
+  const grokHome = env.GROK_HOME?.trim();
+  if (!grokHome) return false;
+  const home = env.HOME?.trim() || env.USERPROFILE?.trim();
+  if (!home) return true;
+  const normalizedHome = grokHome.replace(/\\/g, "/").replace(/\/+$/, "");
+  const defaultGrok = `${home.replace(/\\/g, "/").replace(/\/+$/, "")}/.grok`;
+  return normalizedHome !== defaultGrok;
+}
 
 /**
  * Project effective protection from the same inputs used to spawn (or from
@@ -86,7 +107,9 @@ export type ProjectProtectionInput = {
 export function projectEffectiveProtection(
   input: ProjectProtectionInput,
 ): EffectiveProtectionSnapshot {
-  const isolateGrokHome = input.isolateGrokHome !== false;
+  const isolateGrokHome = input.spawnEnv
+    ? isolateGrokHomeFromSpawnEnv(input.spawnEnv)
+    : input.isolateGrokHome !== false;
   const executesOwnTools = input.executesOwnTools !== false;
   const supportsSandbox = Boolean(input.supportsSandbox);
 
