@@ -46,6 +46,11 @@ describe("ACP mediated session (SEC-01 policy authorizer)", () => {
     });
     cleanups.push(() => session.cancel("test"));
     await session.start("/w");
+    expect(session.capabilityTable?.sessionCapabilities).toMatchObject({
+      resume: true,
+      load: true,
+      close: true,
+    });
 
     const events: RuntimeEvent[] = [];
     const result = await session.runTurn({ goal: "run ls" }, async (ev) => {

@@ -109,6 +109,8 @@ export type NormalizedEngineEvent =
         isolateGrokHome: boolean;
         executesOwnTools: boolean;
       };
+      /** ACP `initialize` capability table (Phase 1.1). */
+      capabilities?: Record<string, unknown>;
     };
 
 export interface EngineRunOptions {

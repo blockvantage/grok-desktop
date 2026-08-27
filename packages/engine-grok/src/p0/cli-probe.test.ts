@@ -41,6 +41,25 @@ process.exit(1);
     expect(probe.supportsAgentStdio).toBe(true);
   });
 
+  it("does not treat the word sandbox in prose as a sandbox flag", async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "gd-probe-"));
+    temps.push(dir);
+    const bin = path.join(dir, "fake-grok.mjs");
+    fs.writeFileSync(
+      bin,
+      `const a = process.argv.slice(2);
+if (a[0] === "--version") { console.log("1.0.5"); process.exit(0); }
+if (a[0] === "--help") { console.log("This CLI mentions sandboxing in docs only"); process.exit(0); }
+if (a[0] === "agent") { console.log("agent stdio"); process.exit(0); }
+process.exit(1);
+`,
+      { mode: 0o755 },
+    );
+    const probe = await probeGrokCli(bin, { HOME: dir, PATH: dir });
+    expect(probe.supportsSandbox).toBe(false);
+    expect(probe.supportsAgentStdio).toBe(true);
+  });
+
   it("policyToGrokArgs includes --no-auto-update when requested", () => {
     const args = policyToGrokArgs({
       policy: {

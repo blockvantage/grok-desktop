@@ -30,6 +30,10 @@ import { toAcpMcpServers, type DeskMcpServerLike } from "@grokdesk/shared";
 import { grokAcpClientInfo } from "./client-info.js";
 import { decodeSessionUpdate, decodeToolKind } from "./acp-decode.js";
 import {
+  parseAcpInitializeCapabilities,
+  type AcpCapabilityTable,
+} from "./acp-capabilities.js";
+import {
   acpResumeProgressMessage,
   chooseAcpResumePath,
   runningPromptIdFromLoadResult,
@@ -135,6 +139,8 @@ export class AcpMediatedSession implements AgentSession {
   private initialized = false;
   private initResult: import("./acp-jsonrpc.js").AcpInitializeResult | null =
     null;
+  /** Live capability table from `initialize` (not `--help` text). */
+  capabilityTable: AcpCapabilityTable | null = null;
   private lastPlanContent = "";
   private planFirst: boolean;
   /** Active turn sink — used to park permissions in the gateway approval UI. */
@@ -347,6 +353,7 @@ export class AcpMediatedSession implements AgentSession {
   > {
     if (this.initResult) return this.initResult;
     this.initResult = await this.client.initialize(grokAcpClientInfo());
+    this.capabilityTable = parseAcpInitializeCapabilities(this.initResult);
     this.initialized = true;
     return this.initResult;
   }

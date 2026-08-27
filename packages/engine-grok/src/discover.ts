@@ -347,10 +347,12 @@ export async function probeGrokCli(
     binary,
     version,
     rawVersionOutput,
+    // Pre-spawn sanity only: documented flags, not the word "sandbox" anywhere.
+    // Live capability table comes from ACP `initialize` (Phase 1.1).
     supportsNoAutoUpdate:
-      combined.includes("no-auto-update") ||
-      combined.includes("no_auto_update"),
-    supportsSandbox: combined.includes("sandbox"),
+      combined.includes("--no-auto-update") ||
+      combined.includes("--no_auto_update"),
+    supportsSandbox: combined.includes("--sandbox"),
     supportsAgentStdio:
       agentHelp.includes("stdio") || combined.includes("agent stdio"),
   };

@@ -346,14 +346,21 @@ export class AgentProviderEngine implements EngineAdapter {
       executesOwnTools: this.executesOwnToolsFlag !== false,
       spawnEnv,
     });
+    const initializeCaps = (
+      session as { capabilityTable?: Record<string, unknown> | null }
+    ).capabilityTable;
     await onEvent({
       type: "session_meta",
+      providerSessionId: session.binding?.providerSessionId,
       protection: {
         spawnArgs: protection.spawnArgs,
         supportsSandbox,
         isolateGrokHome,
         executesOwnTools: this.executesOwnToolsFlag !== false,
       },
+      ...(initializeCaps
+        ? { capabilities: initializeCaps }
+        : {}),
     });
 
     const extras = acpRunExtrasPreamble(mcpServers);

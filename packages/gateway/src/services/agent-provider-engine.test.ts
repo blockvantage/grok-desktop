@@ -667,6 +667,50 @@ describe("AgentProviderEngine T3 protection honesty", () => {
     policyEnforceable: true,
   };
 
+  it("session_meta.capabilities comes from the initialize table, not --help", async () => {
+    const provider = stubProvider({ caps: acpCaps });
+    const orig = provider.createSession.bind(provider);
+    provider.createSession = async (input) => {
+      const session = await orig(input);
+      (session as { capabilityTable?: unknown }).capabilityTable = {
+        agentVersion: "1.0.5",
+        sessionCapabilities: {
+          close: true,
+          list: true,
+          resume: true,
+          load: true,
+        },
+        hooks: null,
+        toolOverrides: false,
+        statusLine: true,
+        availableCommands: ["compact"],
+      };
+      return session;
+    };
+    const engine = createAgentProviderEngine(provider, {
+      supportsSandbox: true,
+      executesOwnTools: true,
+    });
+    const events: NormalizedEngineEvent[] = [];
+    await engine.run({
+      task: task("hello", ["/ws"]),
+      systemPreamble: "",
+      onEvent: async (e) => {
+        events.push(e);
+        return "continue";
+      },
+    });
+    const meta = events.find((e) => e.type === "session_meta");
+    expect(meta?.type).toBe("session_meta");
+    if (meta?.type !== "session_meta") throw new Error("expected session_meta");
+    expect(meta.capabilities).toMatchObject({
+      agentVersion: "1.0.5",
+      statusLine: true,
+      availableCommands: ["compact"],
+    });
+    expect(meta.providerSessionId).toMatch(/^stub-/);
+  });
+
   it("session_meta.protection omits sandbox when supportsSandbox is false (probe)", async () => {
     const engine = createAgentProviderEngine(
       stubProvider({ caps: acpCaps }),

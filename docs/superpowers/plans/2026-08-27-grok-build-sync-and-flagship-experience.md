@@ -70,7 +70,7 @@ The ACP factory must provide the same controlled environment as headless.
 
 ## Phase 1 — Upstream protocol adoption (Tier 1, ~1–2 weeks)
 
-### 1.1 Capability negotiation instead of substring probing
+### 1.1 Capability negotiation instead of substring probing ✅ (2026-08-27)
 - Replace `packages/engine-grok/src/discover.ts:255-329` (three `String.includes` checks over `--help`; `supportsSandbox` true if the word "sandbox" appears anywhere) with an `initialize`-based capability read: `sessionCapabilities {close,list,resume}`, `_meta["x.ai/hooks"]` (blockingEvents/decisions/stopSignals), `_meta["x.ai/capabilities"]` (toolOverrides), `availableCommands`, `x.ai/statusLine` support, plus version from `agentVersion`. Keep the help-text probe only as a pre-spawn sanity check.
 - Adopt the upstream forward-compat rule everywhere we decode: unknown `session/update` variants and unknown `ToolKind`s must decode to an `unknown`/`other` sink, never throw (mirror `#[serde(other)]`).
 - **Accept:** capability table in the audit/protection snapshot comes from `initialize`, and a newer CLI with new event types cannot break an older Desk.

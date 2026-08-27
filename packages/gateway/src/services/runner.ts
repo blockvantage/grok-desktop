@@ -1592,6 +1592,13 @@ export class TaskRunner {
             protection: event.protection,
           });
         }
+        if (event.capabilities) {
+          this.tasks.appendEvent(taskId, "step", {
+            title: "capabilities",
+            status: "start",
+            capabilities: event.capabilities,
+          });
+        }
         return "continue";
 
       case "usage":

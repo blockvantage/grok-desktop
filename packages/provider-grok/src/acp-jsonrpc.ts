@@ -55,6 +55,9 @@ export interface AcpInitializeResult {
     resume?: boolean;
     load?: boolean;
   };
+  availableCommands?: string[];
+  /** Forward-compat bag (hooks, x.ai/capabilities, statusLine, …). */
+  _meta?: Record<string, unknown>;
 }
 
 export interface AcpPermissionRequest {
