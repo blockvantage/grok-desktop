@@ -3,6 +3,7 @@
  */
 
 import { isManagedWorkspacePath, userFacingWorkspaceRoot } from "./managed-workspace";
+import { filePathsFromDropFiles } from "./follow-up-submit";
 
 export type WorkspaceListFileRow = {
   name: string;
@@ -32,14 +33,13 @@ export function projectMentionCandidatesFromList(
 }
 
 /**
- * Paths from a drag-drop FileList / File[] (Electron file.path when present).
+ * Paths from a drag-drop FileList / File[] (Electron file.path or preload).
  */
 export function pathsFromDropFiles(
   files: ReadonlyArray<{ path?: string }>,
+  getPathForFile?: (file: { path?: string }) => string | undefined,
 ): string[] {
-  return files
-    .map((f) => f.path)
-    .filter((p): p is string => Boolean(p && p.trim()));
+  return filePathsFromDropFiles([...files], getPathForFile);
 }
 
 /**

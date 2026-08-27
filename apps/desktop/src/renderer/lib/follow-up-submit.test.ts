@@ -81,6 +81,14 @@ describe("filePathsFromDropFiles", () => {
       filePathsFromDropFiles([{ path: "/a" }, {}, { path: "" }]),
     ).toEqual(["/a"]);
   });
+
+  it("uses getPathForFile when File.path is missing (Electron 43)", () => {
+    expect(
+      filePathsFromDropFiles([{ name: "shot.png" } as { path?: string }], (f) =>
+        (f as { name?: string }).name === "shot.png" ? "/tmp/shot.png" : "",
+      ),
+    ).toEqual(["/tmp/shot.png"]);
+  });
 });
 
 describe("isFollowUpSendDisabled", () => {

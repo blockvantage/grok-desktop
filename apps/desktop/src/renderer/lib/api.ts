@@ -34,6 +34,7 @@ declare global {
       request: (payload: unknown) => Promise<RpcOk<unknown> | RpcErr>;
       pickDirectory: () => Promise<string | null>;
       pickFiles?: () => Promise<string[]>;
+      getPathForFile?: (file: File | { path?: string }) => string;
       writeTempAttachment?: (payload: {
         name: string;
         base64: string;

@@ -185,7 +185,7 @@ describe("renderer visual structure (design system)", () => {
   it("ships agent browser globe and pane", () => {
     expect(exists("components/browser-globe.tsx")).toBe(true);
     expect(exists("components/browser-pane-slot.tsx")).toBe(true);
-    expect(exists("components/subagent-hud.tsx")).toBe(true);
+    expect(exists("components/conversation/worker-strip.tsx")).toBe(true);
     expect(exists("lib/browser-ui.ts")).toBe(true);
     expect(exists("lib/subagent-hud.ts")).toBe(true);
     const ws = read("components/views/task-workspace-view.tsx");
@@ -713,7 +713,7 @@ describe("Wave I/T parity structure", () => {
     expect(ws).toMatch(/projectGoalProgress|goal-progress-line/);
     expect(ws).toMatch(/projectReviewChanges|ReviewChangesStrip/);
     expect(ws).toMatch(/onKeepFile|applyReviewFileAction/);
-    expect(ws).toMatch(/onUndoFile/);
+    expect(ws).toMatch(/onOpenFile|reviewChanges.reveal/);
     expect(ws).toMatch(/review-changes-near-result|workspace-sticky-composer/);
     expect(ws).toMatch(/projectHelpersHud|helpers-hud/);
     expect(exists("components/conversation/worker-strip.tsx")).toBe(true);

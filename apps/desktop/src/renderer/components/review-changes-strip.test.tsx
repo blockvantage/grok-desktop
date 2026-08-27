@@ -54,7 +54,7 @@ describe("ReviewChangesStrip (Task 14)", () => {
     expect(html).not.toMatch(/approval-arrive(?![^"]*needs)/);
   });
 
-  it("renames actions to Accept change, Revert file, Reveal in folder", () => {
+  it("shows Accept and Reveal; omits Revert when undo is not wired", () => {
     const html = renderToStaticMarkup(
       <ReviewChangesStrip
         view={{
@@ -62,15 +62,14 @@ describe("ReviewChangesStrip (Task 14)", () => {
           files: [{ path: "/ws/a.ts", action: "edit" }],
         }}
         onKeepFile={vi.fn()}
-        onUndoFile={vi.fn()}
         onOpenFile={vi.fn()}
       />,
     );
     expect(html).toContain("Accept change");
-    expect(html).toContain("Revert file");
+    expect(html).not.toContain("Revert file");
     expect(html).toContain("Reveal in folder");
     expect(html).toContain('data-testid="review-changes-keep"');
-    expect(html).toContain('data-testid="review-changes-undo"');
+    expect(html).not.toContain('data-testid="review-changes-undo"');
     expect(html).toContain('data-testid="review-changes-open"');
   });
 

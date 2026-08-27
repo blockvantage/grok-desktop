@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useOwnedConfirm } from "@/hooks/use-owned-confirm";
 import {
   ArrowDown,
   FolderOpen,
@@ -400,6 +401,7 @@ export function TaskWorkspaceView(props: {
   onEffort?: (v: EffortLevel) => void;
 }) {
   const t = useT();
+  const ownedConfirm = useOwnedConfirm();
   const { toast } = useToast();
   const { task } = props;
   const [takeawaysDismissed, setTakeawaysDismissed] = useState(false);
@@ -1840,20 +1842,24 @@ export function TaskWorkspaceView(props: {
                     browserCapability.status === "unavailable" &&
                     !mayUseExternalBrowser(browserCapability)
                   ) {
-                    const allow = window.confirm(
-                      t("workspace.allowExternalBrowser"),
-                    );
-                    if (allow) {
-                      setBrowserCapability((c) =>
-                        reduceBrowserCapability(c, {
-                          type: "allow_external",
-                          allowed: true,
-                        }),
-                      );
-                      void rpc("browser.allowExternal", { allowed: true }).catch(
-                        () => {},
-                      );
-                    }
+                    void ownedConfirm
+                      .ask({
+                        title: t("runtimeInstall.continue"),
+                        description: t("workspace.allowExternalBrowser"),
+                      })
+                      .then((allow) => {
+                        if (allow) {
+                          setBrowserCapability((c) =>
+                            reduceBrowserCapability(c, {
+                              type: "allow_external",
+                              allowed: true,
+                            }),
+                          );
+                          void rpc("browser.allowExternal", {
+                            allowed: true,
+                          }).catch(() => {});
+                        }
+                      });
                     return;
                   }
                   setBrowserUi((s) =>
@@ -2096,12 +2102,12 @@ export function TaskWorkspaceView(props: {
                     });
                     return;
                   }
-                  const files = point.files?.length
-                    ? point.files.join("\n")
-                    : "";
-                  const ok = window.confirm(
-                    `${t("conversation.undoTurn")}\n\n${files}`,
-                  );
+                  const files = point.files ?? [];
+                  const ok = await ownedConfirm.ask({
+                    title: t("conversation.undoTurn"),
+                    description: t("conversation.rewindConversationHint"),
+                    items: files,
+                  });
                   if (!ok) return;
                   const result = await taskRewind(
                     turn.taskId,
@@ -2162,18 +2168,6 @@ export function TaskWorkspaceView(props: {
                     setReviewOverride(next);
                     toast({
                       description: t("reviewChanges.kept", { path }),
-                    });
-                  }}
-                  onUndoFile={(path) => {
-                    const next = applyReviewFileAction(
-                      reviewChanges,
-                      path,
-                      "undo",
-                    );
-                    setReviewOverride(next);
-                    void openInFileManager(path).catch(() => {});
-                    toast({
-                      description: t("reviewChanges.undoHint", { path }),
                     });
                   }}
                   onOpenFile={(path) => {
@@ -3264,6 +3258,7 @@ export function TaskWorkspaceView(props: {
         taskId={task.id}
         taskLabel={props.chatTitle || task.goal}
       />
+      {ownedConfirm.dialog}
     </div>
   );
 }

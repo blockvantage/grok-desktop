@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from "electron";
+import { contextBridge, ipcRenderer, webUtils } from "electron";
 // Import the pure channel-name constants from the sandbox-safe leaf entry, NOT
 // the barrel: the barrel transitively `require("node:fs")`, which throws in the
 // sandboxed preload and prevents the IPC bridge from being exposed.
@@ -14,6 +14,8 @@ contextBridge.exposeInMainWorld("grokdesk", {
   },
   pickDirectory: () => ipcRenderer.invoke("grokdesk:pickDirectory"),
   pickFiles: () => ipcRenderer.invoke("grokdesk:pickFiles") as Promise<string[]>,
+  /** Electron 32+ replacement for File.path on dropped files. */
+  getPathForFile: (file: File) => webUtils.getPathForFile(file),
   writeTempAttachment: (payload: { name: string; base64: string }) =>
     ipcRenderer.invoke("grokdesk:writeTempAttachment", payload) as Promise<{
       ok: boolean;

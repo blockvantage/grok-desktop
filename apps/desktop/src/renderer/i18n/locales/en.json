@@ -601,6 +601,7 @@
     "rawDetails": "Raw details",
     "noWorkerWork": "No work recorded for this worker.",
     "undoTurn": "Undo this turn",
+    "rewindConversationHint": "This rewinds the conversation. It does not restore files on disk.",
     "listTitle": "Conversations",
     "empty": "No conversations yet.",
     "deleteConfirm": "Delete this conversation?",

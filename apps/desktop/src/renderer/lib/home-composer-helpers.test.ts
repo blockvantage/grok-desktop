@@ -27,6 +27,9 @@ describe("home-composer-helpers", () => {
         { path: "  /y  " },
       ]),
     ).toEqual(["/tmp/x.png", "  /y  "]);
+    expect(
+      pathsFromDropFiles([{ name: "a.png" } as { path?: string }], () => "/tmp/a.png"),
+    ).toEqual(["/tmp/a.png"]);
   });
 
   it("resolves active root prefer explicit then first user task root", () => {

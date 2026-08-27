@@ -32,14 +32,40 @@ export function resolveFollowUpSubmit(input: {
   return { action: "send", goal: g };
 }
 
+export type DropPathResolver = (file: { path?: string }) => string | undefined;
+
+/**
+ * Native path for a dropped File. Electron 32+ removed File.path;
+ * Desk exposes webUtils.getPathForFile on the preload bridge.
+ */
+export function nativePathForDropFile(
+  file: { path?: string },
+  getPathForFile?: DropPathResolver,
+): string | undefined {
+  if (typeof file.path === "string" && file.path.trim()) return file.path;
+  const resolve =
+    getPathForFile ??
+    (typeof window !== "undefined"
+      ? window.grokdesk?.getPathForFile
+      : undefined);
+  if (typeof resolve !== "function") return undefined;
+  try {
+    const p = resolve(file);
+    return typeof p === "string" && p.trim() ? p : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 /**
  * Extract native file paths from a drag-and-drop FileList-like array.
  */
 export function filePathsFromDropFiles(
   files: Array<{ path?: string }>,
+  getPathForFile?: DropPathResolver,
 ): string[] {
   return files
-    .map((f) => f.path)
+    .map((f) => nativePathForDropFile(f, getPathForFile))
     .filter((p): p is string => typeof p === "string" && Boolean(p));
 }
 

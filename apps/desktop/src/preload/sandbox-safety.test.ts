@@ -30,6 +30,11 @@ describe("preload sandbox safety", () => {
     expect(src).toMatch(/from\s+["']@grokdesk\/shared\/ipc-channels["']/);
   });
 
+  it("exposes webUtils.getPathForFile for drag-and-drop", () => {
+    expect(src).toMatch(/webUtils/);
+    expect(src).toMatch(/getPathForFile/);
+  });
+
   it("only requires electron built-ins (no Node core modules)", () => {
     // The preload source itself must not import Node built-ins directly.
     const nodeBuiltinImport =

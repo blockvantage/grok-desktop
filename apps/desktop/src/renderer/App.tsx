@@ -60,6 +60,7 @@ import {
 } from "@/lib/folder-trust-ui";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/toast";
+import { useOwnedConfirm } from "@/hooks/use-owned-confirm";
 import { withViewTransition } from "@/lib/view-transition";
 import { MOTION_SURFACE_CLASSES } from "@/lib/motion-system";
 import { buildGreeting } from "@/lib/greeting";
@@ -343,6 +344,7 @@ type TaskSurface = "list" | "workspace";
 export function App() {
   const { toast } = useToast();
   const t = useT();
+  const ownedConfirm = useOwnedConfirm();
   const { locale } = useI18n();
   const updateStatus = useUpdateStatus();
   const [nav, setNav] = useState<NavId>("home");
@@ -1411,10 +1413,17 @@ export function App() {
     if (!ctrl) return;
     const activeCount = tasks.filter((t) => isActiveTaskStatus(t.status)).length;
     if (activeCount > 0) {
-      const ok = window.confirm(t("account.signOutConfirmActiveTasks"));
+      const ok = await ownedConfirm.ask({
+        title: t("nav.signOut"),
+        description: t("account.signOutConfirmActiveTasks"),
+        destructive: true,
+      });
       if (!ok) return;
     } else {
-      const ok = window.confirm(t("account.signOutConfirmSharedCli"));
+      const ok = await ownedConfirm.ask({
+        title: t("nav.signOut"),
+        description: t("account.signOutConfirmSharedCli"),
+      });
       if (!ok) return;
     }
 
@@ -2472,20 +2481,21 @@ export function App() {
               onDefaultModel={setModel}
               approvalMode={approvalMode}
               onApprovalMode={(mode) => {
-                if (
-                  mode === "autopilot" &&
-                  approvalMode !== "autopilot" &&
-                  typeof window !== "undefined" &&
-                  !window.confirm(t("onboarding.policyAutopilotDesc"))
-                ) {
-                  return;
-                }
-                setApprovalMode(mode);
-                void rpc("settings.set", { defaultApprovalMode: mode }).catch(
-                  () => {
-                    /* non-blocking: local state still updates for this session */
-                  },
-                );
+                void (async () => {
+                  if (mode === "autopilot" && approvalMode !== "autopilot") {
+                    const ok = await ownedConfirm.ask({
+                      title: t("onboarding.policyAutopilot"),
+                      description: t("onboarding.policyAutopilotDesc"),
+                    });
+                    if (!ok) return;
+                  }
+                  setApprovalMode(mode);
+                  void rpc("settings.set", { defaultApprovalMode: mode }).catch(
+                    () => {
+                      /* non-blocking: local state still updates for this session */
+                    },
+                  );
+                })();
               }}
               mcpServers={appSettings.mcpServers}
               skillsPaths={appSettings.skillsPaths}
@@ -2628,6 +2638,7 @@ export function App() {
       />
       </Suspense>
 
+      {ownedConfirm.dialog}
       <UpdateRestartDialog
         open={shouldShowUpdateRestartDialog(updateStatus.status)}
         status={updateStatus.status}
