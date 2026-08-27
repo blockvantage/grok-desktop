@@ -47,6 +47,7 @@ export function ContextMeter(props: {
           size="sm"
           variant="secondary"
           className="h-7 text-2xs"
+          data-testid="context-meter-summarize"
           onClick={onCompact}
         >
           {t("meter.summarizePrompt")}

@@ -17,11 +17,14 @@ export function ComposerAttachments(props: {
         props.className,
       )}
       aria-label={t("composer.attachmentsAria")}
+      data-testid="attachment-chips"
     >
       {props.items.map((a) => (
         <li
           key={a.id}
           className="group flex max-w-[12rem] items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.04] py-0.5 pl-2 pr-1 text-2xs text-foreground/90"
+          data-testid="attachment-chip"
+          data-attachment-name={a.name}
         >
           {a.kind === "image" ? (
             <ImageIcon className="h-3 w-3 shrink-0 text-primary" />

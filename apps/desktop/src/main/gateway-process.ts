@@ -736,15 +736,14 @@ export class GatewayProcess {
       this.setStatus("idle");
       return;
     }
+    // Unexpected death: leave `ready` and `child` to the exit handler so
+    // `wasReady` stays true and auto-restart can run.
     this.intentionalStop = false;
-    this.ready = false;
     try {
       child.kill("SIGKILL");
     } catch {
       /* */
     }
-    this.child = null;
-    this.setStatus("dead");
   }
 
   /**

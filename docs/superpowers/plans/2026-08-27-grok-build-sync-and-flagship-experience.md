@@ -130,8 +130,8 @@ Upstream `ToolKind` is now rich enough to drive renderers without name matching:
 - Slash surface expansion in `packages/shared/src/command-registry.ts` (today: brief/research/image/video/schedule only). Add product-language commands mapped to real RPCs: "Summarize so far" (`compact`), "Undo last turn" (rewind), "Remember this" (memory), "Watch this until…" (monitor, Phase 3), "Deep research" (workflows, Phase 3). Non-coders get these as palette/menu actions, not just slash.
 
 ### 2.7 Test engineering for the chat surface (enables everything above)
-- Switch component tests to jsdom + Testing Library (today `vitest.config.ts` is `environment: "node"`; 16 files assert on `renderToStaticMarkup` strings — zero interaction coverage on approve/send-now/edit-turn/slash menu).
-- Convert the three grep-only "e2e" specs (`chat-delivery`, `chat-recovery`, `chat-approvals`) into real Playwright journeys on the fake provider: queue+interject, retry-on-failed, missing-attachment repick, drag-drop, undo turn, compact.
+- Switch component tests to jsdom + Testing Library (today `vitest.config.ts` is `environment: "node"`; 16 files assert on `renderToStaticMarkup` strings — zero interaction coverage on approve/send-now/edit-turn/slash menu). **Started 2026-08-27:** jsdom is limited to `*.interaction.test.tsx`.
+- Convert the three grep-only "e2e" specs (`chat-delivery`, `chat-recovery`, `chat-approvals`) into real Playwright journeys on the fake provider: queue+interject, retry-on-failed, missing-attachment repick, drag-drop, undo turn, compact. ✅ (2026-08-27; `pnpm --filter @grokdesk/desktop e2e:chat` 11 passed ×2)
 - Un-soft-skip `visual-qa` (it currently exits 0 with "1 skipped"); run full `pnpm test` in the release gate.
 
 ---

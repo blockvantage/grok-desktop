@@ -1148,6 +1148,7 @@ export function HomeView(props: {
                 "vt-compose glow-ring relative mt-9 rounded-2xl p-px",
                 dragOver && "ring-2 ring-primary/40",
               )}
+              data-testid="home-composer-drop"
               onDragOver={(e) => {
                 e.preventDefault();
                 setDragOver(true);

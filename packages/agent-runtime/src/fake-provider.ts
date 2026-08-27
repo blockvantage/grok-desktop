@@ -114,6 +114,17 @@ class FakeAgentSession implements AgentSession {
     if (signal === "abort" || this.cancelled.has(key)) {
       return { status: "cancelled", summary: "aborted" };
     }
+    // Publish usage before parking on permission so the live context meter
+    // (and summarize chip) can render during waiting_approval.
+    await sink({
+      type: "usage",
+      usage: {
+        inputTokens: 36,
+        outputTokens: 4,
+        totalTokens: 40,
+        contextWindow: 40,
+      },
+    });
     // Emit a mediated tool call inside the session workspace so the gateway
     // can exercise its real policy, approval, write, and artifact paths.
     const outputPath = path.join(this.cwd, "grokdesk-demo-report.md");
@@ -176,7 +187,12 @@ class FakeAgentSession implements AgentSession {
     });
     await sink({
       type: "usage",
-      usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
+      usage: {
+        inputTokens: 10,
+        outputTokens: 20,
+        totalTokens: 30,
+        contextWindow: 40,
+      },
     });
     const summary = "Launch brief ready — saved to your workspace.";
     await sink({ type: "done", summary });
@@ -185,6 +201,36 @@ class FakeAgentSession implements AgentSession {
       summary,
       providerSessionId: this.binding.providerSessionId,
     };
+  }
+
+  async interject(text: string): Promise<boolean> {
+    return text.trim().length > 0;
+  }
+
+  async compact(): Promise<boolean> {
+    return true;
+  }
+
+  async rewindPoints(): Promise<
+    Array<{
+      id: string;
+      label?: string;
+      files?: string[];
+      hasFileChanges?: boolean;
+    }>
+  > {
+    return [
+      {
+        id: "fake-point-1",
+        label: "Start of conversation",
+        files: [],
+        hasFileChanges: false,
+      },
+    ];
+  }
+
+  async rewindTo(pointId: string): Promise<boolean> {
+    return pointId.trim().length > 0;
   }
 
   async cancel(reason: string): Promise<void> {

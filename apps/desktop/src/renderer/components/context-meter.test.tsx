@@ -28,6 +28,7 @@ describe("ContextMeter", () => {
       />,
     );
     expect(html).toContain("summarize so far");
+    expect(html).toContain('data-testid="context-meter-summarize"');
     expect(html).toContain('role="meter"');
   });
 });

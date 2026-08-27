@@ -52,6 +52,29 @@ describe("agent-runtime conformance (fake provider)", () => {
     expect(JSON.stringify(events)).not.toMatch(/fake (?:turn|done|wrote)/i);
   });
 
+  it("fake provider supports interject, compact, and rewind", async () => {
+    const provider = new FakeAgentProvider();
+    const session = await provider.createSession({
+      ref: { providerId: "fake", modelId: "fake-fast" },
+      cwd: "/demo/workspace",
+      workspaceRoots: ["/demo/workspace"],
+      policy: {
+        version: "1",
+        approvalMode: "strict",
+        workspaceRoots: ["/demo/workspace"],
+        capabilities: [{ id: "shell", decision: "ask" }],
+      },
+    });
+    expect(await session.interject?.("aside from the host")).toBe(true);
+    expect(await session.interject?.("   ")).toBe(false);
+    expect(await session.compact?.()).toBe(true);
+    const points = await session.rewindPoints?.();
+    expect(points).toEqual([
+      expect.objectContaining({ id: "fake-point-1" }),
+    ]);
+    expect(await session.rewindTo?.(points![0]!.id)).toBe(true);
+  });
+
   it("registry registers and lists providers", async () => {
     const reg = new ProviderRegistry();
     reg.register(new FakeAgentProvider());

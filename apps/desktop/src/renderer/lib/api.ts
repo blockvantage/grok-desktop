@@ -48,6 +48,15 @@ declare global {
         status?: string;
         error?: string;
       }>;
+      /** Present only when GROKDESK_E2E=1. */
+      e2e?: {
+        ping: () => Promise<{ ok: boolean; e2e?: boolean }>;
+        crashGateway: () => Promise<{ ok: boolean; error?: string }>;
+        injectFault: (
+          kind: string,
+        ) => Promise<{ ok: boolean; fault?: string; error?: string }>;
+        clearFault: () => Promise<{ ok: boolean; fault?: string }>;
+      };
       openLogs?: () => Promise<{ ok: boolean; path?: string }>;
       copyDiagnostics?: () => Promise<{ ok: boolean; text?: string }>;
       onGatewayStatus?: (cb: (status: string) => void) => () => void;

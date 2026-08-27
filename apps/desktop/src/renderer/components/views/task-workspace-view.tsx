@@ -2387,6 +2387,7 @@ export function TaskWorkspaceView(props: {
               enqueueError={composerEnqueueError}
             />
             <form
+              data-testid="follow-up-composer-drop"
               className={cn(
                 "vt-compose glow-ring relative mx-auto rounded-2xl bg-white/[0.03] px-2 py-1.5",
                 browserUi.open ? "max-w-none" : "max-w-[46rem]",
