@@ -300,6 +300,13 @@ Available models:
     expect(r.defaultModel).toBe("grok-4.5");
   });
 
+  it("treats 1.0.x 'not signed in' as signed out", () => {
+    const r = parseModelsCliProbe(
+      "Not signed in.\nDefault model: grok-4.5\n  * grok-4.5\n",
+    );
+    expect(r.signedIn).toBe(false);
+  });
+
   it("does not treat model list alone as a session", () => {
     const r = parseModelsCliProbe(
       "Default model: grok-4.5\nAvailable models:\n  * grok-4.5\n",

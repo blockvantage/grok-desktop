@@ -250,6 +250,34 @@ export async function findGlobalGrokBinary(
  */
 export const findGrokBinary = findGlobalGrokBinary;
 
+/** Minimum managed CLI version Desk will spawn as ACP. */
+export const MIN_MANAGED_CLI_VERSION = "1.0.0";
+
+/** Compare dotted versions (major.minor.patch). Pre-release suffixes ignored. */
+export function cliVersionAtLeast(
+  version: string | null | undefined,
+  minimum: string = MIN_MANAGED_CLI_VERSION,
+): boolean {
+  if (!version) return false;
+  const parse = (v: string): number[] =>
+    v
+      .split(/[.+-]/)
+      .slice(0, 3)
+      .map((n) => {
+        const x = Number.parseInt(n, 10);
+        return Number.isFinite(x) ? x : 0;
+      });
+  const a = parse(version);
+  const b = parse(minimum);
+  for (let i = 0; i < 3; i++) {
+    const av = a[i] ?? 0;
+    const bv = b[i] ?? 0;
+    if (av > bv) return true;
+    if (av < bv) return false;
+  }
+  return true;
+}
+
 export interface GrokCliProbe {
   binary: string;
   /** Parsed semver-ish version string when available. */

@@ -9,6 +9,7 @@
  * Streaming WebSocket exists at the same path (requires Upgrade: websocket)
  * but multipart WAV is the stable Desk path for dictation stop → text.
  */
+import { GROKDESK_VERSION } from "@grokdesk/shared";
 
 export type SttServerEvent =
   | { type: "created" }
@@ -154,6 +155,7 @@ export async function transcribeAudioFile(opts: {
    * replaces a caller signal; both can abort the request.
    */
   signal?: AbortSignal;
+  clientVersion?: string;
 }): Promise<TranscribeResult> {
   if (!opts.accessToken) {
     return {
@@ -237,7 +239,7 @@ export async function transcribeAudioFile(opts: {
         Authorization: `Bearer ${opts.accessToken}`,
         Accept: "application/json",
         "Content-Type": `multipart/form-data; boundary=${boundary}`,
-        "x-grok-client-version": "0.2.93",
+        "x-grok-client-version": opts.clientVersion ?? GROKDESK_VERSION,
       },
       body,
       signal: controller.signal,

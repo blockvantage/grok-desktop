@@ -118,23 +118,6 @@ export function evaluateDefaultCutoverReadiness(
   return { ready: blockers.length === 0, blockers };
 }
 
-/**
- * Headless-degraded Grok (no ACP) must not be claimed as policy-authoritative default.
- */
-export function assertSafeAgentProviderDefault(
-  selection: EngineSelection,
-  caps: CutoverCapabilities,
-): { ok: true } | { ok: false; reason: string } {
-  if (selection.mode !== "agent-provider") {
-    return { ok: true };
-  }
-  // Opt-in dual-path is allowed even when not ready for *default* cutover —
-  // preflight/fail-closed still apply at run time. This asserts only when
-  // claiming "product default" (caller passes claimDefault=true).
-  void caps;
-  return { ok: true };
-}
-
 export function canClaimProductDefaultAgentProvider(
   selection: EngineSelection,
   caps: CutoverCapabilities,

@@ -1,0 +1,54 @@
+/**
+ * Forward-compatible ACP decode: unknown session/update variants and ToolKinds
+ * fall into an `unknown`/`other` sink and never throw.
+ */
+export type SessionUpdateKind =
+  | "agent_message_chunk"
+  | "tool_call"
+  | "tool_call_update"
+  | "plan"
+  | "unknown";
+
+const KNOWN_UPDATES = new Set<SessionUpdateKind>([
+  "agent_message_chunk",
+  "tool_call",
+  "tool_call_update",
+  "plan",
+]);
+
+const KNOWN_TOOL_KINDS = new Set([
+  "read",
+  "edit",
+  "write",
+  "delete",
+  "move",
+  "search",
+  "execute",
+  "think",
+  "fetch",
+  "switch_mode",
+  "other",
+]);
+
+export function decodeSessionUpdate(update: unknown): {
+  kind: SessionUpdateKind;
+  raw: Record<string, unknown>;
+} {
+  if (!update || typeof update !== "object") {
+    return { kind: "unknown", raw: {} };
+  }
+  const raw = update as Record<string, unknown>;
+  const token =
+    typeof raw.sessionUpdate === "string" ? raw.sessionUpdate : "";
+  const kind = KNOWN_UPDATES.has(token as SessionUpdateKind)
+    ? (token as SessionUpdateKind)
+    : "unknown";
+  return { kind, raw };
+}
+
+export function decodeToolKind(kind: unknown): string {
+  if (typeof kind !== "string" || !kind.trim()) return "other";
+  const token = kind.trim();
+  if (KNOWN_TOOL_KINDS.has(token)) return token;
+  return "other";
+}

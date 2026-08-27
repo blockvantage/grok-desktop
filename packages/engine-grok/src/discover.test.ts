@@ -3,9 +3,11 @@ import os from "node:os";
 import path from "node:path";
 import { describe, it, expect, afterEach } from "vitest";
 import {
+  cliVersionAtLeast,
   envWithGrokPath,
   envWithManagedBinary,
   findGlobalGrokBinary,
+  MIN_MANAGED_CLI_VERSION,
   resolveManagedGrokBinary,
 } from "./discover.js";
 
@@ -274,6 +276,17 @@ describe("findGlobalGrokBinary (diagnostics only)", () => {
       "darwin",
     );
     expect(found).toBeNull();
+  });
+});
+
+describe("cliVersionAtLeast", () => {
+  it("requires 1.0.x and rejects pinned 0.2.93", () => {
+    expect(MIN_MANAGED_CLI_VERSION).toBe("1.0.0");
+    expect(cliVersionAtLeast("1.0.0")).toBe(true);
+    expect(cliVersionAtLeast("1.0.5")).toBe(true);
+    expect(cliVersionAtLeast("1.0.10")).toBe(true);
+    expect(cliVersionAtLeast("0.2.93")).toBe(false);
+    expect(cliVersionAtLeast(null)).toBe(false);
   });
 });
 

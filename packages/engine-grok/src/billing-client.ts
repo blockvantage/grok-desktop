@@ -10,7 +10,7 @@
  *
  * Override base with GROKDESK_BILLING_BASE_URL (no trailing slash).
  */
-import type { UsageSnapshot } from "@grokdesk/shared";
+import { GROKDESK_VERSION, type UsageSnapshot } from "@grokdesk/shared";
 
 export const BILLING_MANAGE_URL = "https://grok.com/?_s=usage";
 
@@ -180,6 +180,7 @@ export async function fetchUsageSnapshot(
     fetchImpl?: BillingFetch;
     baseUrl?: string;
     now?: () => string;
+    clientVersion?: string;
   },
 ): Promise<UsageSnapshot> {
   const fetchedAt = (opts?.now ?? (() => new Date().toISOString()))();
@@ -194,7 +195,7 @@ export async function fetchUsageSnapshot(
       headers: {
         Authorization: `Bearer ${accessToken}`,
         Accept: "application/json",
-        "x-grok-client-version": "0.2.93",
+        "x-grok-client-version": opts?.clientVersion ?? GROKDESK_VERSION,
       },
     });
     if (!res.ok) {

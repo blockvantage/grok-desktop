@@ -145,7 +145,7 @@ export async function readAuthFileMetadata(
 
 /** Explicit unauthenticated markers from Grok Build CLI output. */
 const CLI_NOT_AUTHED =
-  /you are not authenticated|not authenticated|not logged\s+in|please\s+log\s*in|login required|unauthorized|invalid.?token/i;
+  /you are not authenticated|not authenticated|not logged\s+in|not signed in|please\s+log\s*in|login required|unauthorized|invalid.?token/i;
 
 const CLI_LOGGED_IN = /you are logged in/i;
 

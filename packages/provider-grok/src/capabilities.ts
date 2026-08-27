@@ -16,8 +16,8 @@ export const GROK_HEADLESS_CAPABILITIES: ProviderCapabilities = {
 };
 
 /**
- * Target ACP adapter capabilities (not yet implemented).
- * Documented for version negotiation and future wiring.
+ * Target ACP adapter capabilities (live on `grok agent stdio`).
+ * Negotiated from initialize; extra unknown fields are ignored.
  */
 export const GROK_ACP_TARGET_CAPABILITIES: ProviderCapabilities = {
   sessions: "resume",

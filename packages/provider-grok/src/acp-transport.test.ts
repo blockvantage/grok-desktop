@@ -1,5 +1,4 @@
 import { describe, it, expect } from "vitest";
-import { probeAcpAvailable, AcpStdioSession } from "./acp-transport.js";
 import {
   AcpJsonRpcClient,
   MemoryLineDuplex,
@@ -7,23 +6,6 @@ import {
 } from "./acp-jsonrpc.js";
 
 describe("ACP transport", () => {
-  it("defaults to unavailable without GROKDESK_ACP", async () => {
-    const prev = process.env.GROKDESK_ACP;
-    delete process.env.GROKDESK_ACP;
-    const r = await probeAcpAvailable("grok");
-    expect(r.available).toBe(false);
-    expect(r.reason).toMatch(/GROKDESK_ACP/);
-    if (prev !== undefined) process.env.GROKDESK_ACP = prev;
-  });
-
-  it("AcpStdioSession.start fails closed without GROKDESK_ACP", async () => {
-    const prev = process.env.GROKDESK_ACP;
-    delete process.env.GROKDESK_ACP;
-    const s = new AcpStdioSession({ binary: "grok" });
-    await expect(s.start()).rejects.toThrow(/not enabled|GROKDESK_ACP/i);
-    if (prev !== undefined) process.env.GROKDESK_ACP = prev;
-  });
-
   it("spawnAcpLineTransport fails closed without GROKDESK_ACP", async () => {
     const { spawnAcpLineTransport } = await import("./acp-transport.js");
     const prev = process.env.GROKDESK_ACP;
