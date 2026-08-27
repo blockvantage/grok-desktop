@@ -17,4 +17,16 @@ describe("buildModelsListResponse", () => {
       defaultModel: "grok-4.5",
     });
   });
+
+  it("prefers a live catalog over the grok-4.5-only fallback", () => {
+    expect(
+      buildModelsListResponse({ models: [] }, "grok-4.5", [
+        "grok-4",
+        "fake-fast",
+      ]),
+    ).toEqual({
+      models: ["grok-4", "fake-fast"],
+      defaultModel: "grok-4",
+    });
+  });
 });

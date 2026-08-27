@@ -248,7 +248,8 @@ describe("ConversationTurn", () => {
     ]) {
       expect(html).toContain(`data-work-kind="${kind}"`);
     }
-    expect(html).toContain("Raw details");
+    expect(html).toContain("Show details");
+    expect(html).not.toContain("{");
   });
 
   it("exposes one polite live region and an expanded-state disclosure", () => {

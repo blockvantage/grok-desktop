@@ -9,6 +9,8 @@ import { buildModelsListResponse } from "./models-list.js";
 export type LicenseMetaDeps = {
   computeTrayStatus: () => unknown;
   getGrokAuthStatus: () => Promise<unknown>;
+  /** Live provider catalog (ACP / fake); merged ahead of auth fallback. */
+  listLiveModels?: () => Promise<string[]>;
 };
 
 export const LICENSE_META_METHODS = new Set([
@@ -31,7 +33,13 @@ export async function dispatchLicenseMetaMethod(
       return ROLE_PACKS;
     case "models.list": {
       const st = await deps.getGrokAuthStatus();
-      return buildModelsListResponse(st as never);
+      let live: string[] = [];
+      try {
+        live = (await deps.listLiveModels?.()) ?? [];
+      } catch {
+        live = [];
+      }
+      return buildModelsListResponse(st as never, "grok-4.5", live);
     }
     case "tray.status":
       return deps.computeTrayStatus();

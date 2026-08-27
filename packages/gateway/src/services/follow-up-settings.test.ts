@@ -6,6 +6,7 @@ import { openDatabase, type Db } from "../db.js";
 import {
   buildDrainedCreateInput,
   loadFollowUpSettings,
+  mergeFollowUpSettings,
   resolvePriorProviderSessionId,
 } from "./follow-up-settings.js";
 
@@ -123,5 +124,32 @@ describe("follow-up-settings", () => {
         conversationId: "conv-1",
       }),
     ).toBe("sess-from-task");
+  });
+
+  it("composer override wins for the next turn's model/effort/approval", () => {
+    const merged = mergeFollowUpSettings(
+      {
+        model: "grok-4.5",
+        effort: "normal",
+        approvalMode: "balanced",
+        workspaceRoots: ["/ws"],
+        skills: ["desk-image"],
+        mcpServerIds: [],
+        planFirst: false,
+        rolePack: null,
+        allowShell: true,
+        allowNetworkTools: true,
+        providerSessionId: null,
+      },
+      { model: "grok-4", effort: "heavy", approvalMode: "strict", planFirst: true },
+    );
+    expect(merged).toMatchObject({
+      model: "grok-4",
+      effort: "heavy",
+      approvalMode: "strict",
+      planFirst: true,
+      skills: ["desk-image"],
+      workspaceRoots: ["/ws"],
+    });
   });
 });

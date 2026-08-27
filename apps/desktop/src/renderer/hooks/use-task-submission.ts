@@ -4,7 +4,7 @@
  * delivery state.
  */
 import { useCallback } from "react";
-import type { Task, TaskAttachment } from "@grokdesk/shared";
+import type { OutboxRunSettings, Task, TaskAttachment } from "@grokdesk/shared";
 import type { OutboxEnqueueResult } from "@grokdesk/shared";
 import {
   beginMutation,
@@ -48,6 +48,7 @@ export function useTaskSubmission(opts: UseTaskSubmissionOpts) {
       attachments?: TaskAttachment[];
       clientMutationId?: string;
       revisionOfTaskId?: string;
+      runSettings?: OutboxRunSettings;
     }): Promise<boolean> => {
       if (opts.starting) return false;
       if (!canFollowUpOnTask(input.base)) return false;
@@ -64,6 +65,7 @@ export function useTaskSubmission(opts: UseTaskSubmissionOpts) {
           attachments: input.attachments,
           revisionOfTaskId: input.revisionOfTaskId,
           entryPoint: input.revisionOfTaskId ? "revision" : "composer",
+          runSettings: input.runSettings,
         });
         const { entryPoint: _ep, ...enqueueBody } = params;
         const result = await opts.rpc<OutboxEnqueueResult>(

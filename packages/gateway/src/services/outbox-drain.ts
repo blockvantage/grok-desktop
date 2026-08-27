@@ -9,6 +9,7 @@ import type { Db } from "../db.js";
 import {
   buildDrainedCreateInput,
   loadFollowUpSettings,
+  mergeFollowUpSettings,
 } from "./follow-up-settings.js";
 
 const ACTIVE_TASK_STATUSES = [
@@ -226,10 +227,14 @@ export class OutboxDrainCoordinator {
 
       const started = (this.deps.now ?? Date.now)();
       try {
-        const settings = loadFollowUpSettings(db, {
+        const parentSettings = loadFollowUpSettings(db, {
           parentTaskId: claimed.parentTaskId,
           conversationId,
         });
+        const settings = mergeFollowUpSettings(
+          parentSettings,
+          claimed.runSettings ?? null,
+        );
         const createInput: CreateTaskInput & { clientMutationId: string } =
           buildDrainedCreateInput(claimed, settings);
         const result = await this.deps.createFollowUp(createInput);

@@ -10,12 +10,14 @@ import type {
   ConversationOutboxItem,
   OutboxEnqueueParams,
   OutboxEnqueueResult,
+  OutboxRunSettings,
   OutboxStatus,
   OutboxSummary,
   TaskAttachment,
 } from "@grokdesk/shared";
 import {
   OutboxEnqueueParamsSchema,
+  OutboxRunSettingsSchema,
   TaskAttachmentSchema,
 } from "@grokdesk/shared";
 import type { Db } from "../db.js";
@@ -53,6 +55,7 @@ type OutboxRow = {
   claim_lease_until: string | null;
   request_hash: string;
   revision_of_task_id: string | null;
+  settings_json: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -72,6 +75,7 @@ function stableRequestHash(input: {
   text: string;
   attachments: TaskAttachment[];
   revisionOfTaskId?: string | null;
+  runSettings?: OutboxRunSettings | null;
 }): string {
   const payload = JSON.stringify({
     conversationId: input.conversationId,
@@ -79,8 +83,19 @@ function stableRequestHash(input: {
     text: input.text,
     attachments: input.attachments,
     revisionOfTaskId: input.revisionOfTaskId ?? null,
+    runSettings: input.runSettings ?? null,
   });
   return createHash("sha256").update(payload).digest("hex");
+}
+
+function parseRunSettings(raw: string | null): OutboxRunSettings | null {
+  if (!raw) return null;
+  try {
+    const parsed = OutboxRunSettingsSchema.safeParse(JSON.parse(raw));
+    return parsed.success ? parsed.data : null;
+  } catch {
+    return null;
+  }
 }
 
 function parseAttachments(raw: string): TaskAttachment[] {
@@ -114,6 +129,7 @@ function rowToItem(
     attemptCount: row.attempt_count,
     failReason: row.fail_reason,
     revisionOfTaskId: row.revision_of_task_id ?? null,
+    runSettings: parseRunSettings(row.settings_json ?? null),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -143,6 +159,7 @@ export class ConversationOutboxRepository {
       text: params.text,
       attachments: params.attachments,
       revisionOfTaskId: params.revisionOfTaskId ?? null,
+      runSettings: params.runSettings ?? null,
     });
 
     try {
@@ -183,8 +200,8 @@ export class ConversationOutboxRepository {
               id, conversation_id, parent_task_id, text, attachments_json,
               status, accepted_task_id, attempt_count, fail_reason,
               claim_lease_until, request_hash, revision_of_task_id,
-              created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, 'pending', NULL, 0, NULL, NULL, ?, ?, ?, ?)`,
+              settings_json, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, 'pending', NULL, 0, NULL, NULL, ?, ?, ?, ?, ?)`,
           )
           .run(
             params.id,
@@ -194,6 +211,7 @@ export class ConversationOutboxRepository {
             JSON.stringify(params.attachments),
             requestHash,
             params.revisionOfTaskId ?? null,
+            params.runSettings ? JSON.stringify(params.runSettings) : null,
             now,
             now,
           );

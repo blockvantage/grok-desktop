@@ -314,6 +314,9 @@ describe("renderer visual structure (design system)", () => {
     );
     expect(ws).toMatch(/engineReady/);
     expect(ws).toMatch(/ConversationOutbox|ConversationComposer|ConversationStatus/);
+    expect(ws).toMatch(/ComposerRunOptions/);
+    expect(ws).toMatch(/next-reply-will-use/);
+    expect(read("components/views/home-view.tsx")).toMatch(/ComposerRunOptions/);
   });
 
   it("only uses real Tailwind opacity steps (multiples of 5) in slash modifiers", () => {

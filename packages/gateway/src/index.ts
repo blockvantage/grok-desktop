@@ -1026,6 +1026,14 @@ export class Gateway {
       authSignOut: () => this.authSignOut(),
       computeTrayStatus: () => this.computeTrayStatus(),
       getGrokAuthStatus: () => getGrokAuthStatus(),
+      listLiveModels: async () => {
+        try {
+          const models = await this.providers.listAllModels();
+          return models.map((m) => m.id);
+        } catch {
+          return [];
+        }
+      },
       ensureTempWorkspace: (label) => this.ensureTempWorkspace(label),
       listWorkspaceFiles: (root, max) => this.listWorkspaceFiles(root, max),
       readWorkspaceFile: (path, maxChars) =>

@@ -8,6 +8,7 @@ import type {
 import type { DurableQueuedMessage } from "./message-queue-store";
 import { coalesceBrowserToolActivity } from "./browser-activity-from-events";
 import { foldRecoveredWorkEntries } from "./work-graph";
+import { projectToolKindCard } from "./tool-kind-card";
 
 export type RunState = TaskStatus;
 
@@ -393,6 +394,9 @@ function runStateFrom(value: unknown): RunState | null {
 
 function eventSummary(event: TaskEvent): string {
   const payload = event.payload;
+  if (event.kind === "tool_request" || event.kind === "tool_result") {
+    return projectToolKindCard(payload).summary;
+  }
   return (
     nonBlank(payload.text) ??
     nonBlank(payload.title) ??

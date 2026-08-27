@@ -2,7 +2,11 @@
  * Pure builders for routing every follow-up entry point through outbox.enqueue.
  * The gateway drain is the only path that calls tasks.create for follow-ups.
  */
-import type { OutboxEnqueueParams, TaskAttachment } from "@grokdesk/shared";
+import type {
+  OutboxEnqueueParams,
+  OutboxRunSettings,
+  TaskAttachment,
+} from "@grokdesk/shared";
 
 export type FollowUpEntryPoint =
   | "composer"
@@ -21,6 +25,7 @@ export type BuildOutboxFollowUpInput = {
   attachments?: TaskAttachment[];
   revisionOfTaskId?: string;
   entryPoint: FollowUpEntryPoint;
+  runSettings?: OutboxRunSettings;
 };
 
 /**
@@ -48,6 +53,7 @@ export function buildOutboxFollowUpParams(
     ...(input.revisionOfTaskId?.trim()
       ? { revisionOfTaskId: input.revisionOfTaskId.trim() }
       : {}),
+    ...(input.runSettings ? { runSettings: input.runSettings } : {}),
     entryPoint: input.entryPoint,
   };
 }

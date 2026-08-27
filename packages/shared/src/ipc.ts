@@ -52,6 +52,15 @@ export const OutboxStatusSchema = z.enum([
 ]);
 export type OutboxStatus = z.infer<typeof OutboxStatusSchema>;
 
+export const OutboxRunSettingsSchema = z.object({
+  model: z.string().min(1).max(128).optional(),
+  effort: z.enum(["fast", "normal", "heavy", "max"]).optional(),
+  approvalMode: z.enum(["strict", "balanced", "autopilot"]).optional(),
+  planFirst: z.boolean().optional(),
+  rolePack: z.string().min(1).max(128).nullable().optional(),
+});
+export type OutboxRunSettings = z.infer<typeof OutboxRunSettingsSchema>;
+
 export const ConversationOutboxItemSchema = z.object({
   id: z.string().min(1).max(128),
   conversationId: z.string().min(1).max(128),
@@ -66,6 +75,7 @@ export const ConversationOutboxItemSchema = z.object({
   failReason: z.string().max(2_000).nullable(),
   /** Optional edit-and-resubmit lineage (revision of a prior task). */
   revisionOfTaskId: z.string().min(1).max(128).nullable().optional(),
+  runSettings: OutboxRunSettingsSchema.optional().nullable(),
   createdAt: z.string().min(1).max(64),
   updatedAt: z.string().min(1).max(64),
 });
@@ -94,6 +104,7 @@ export const OutboxEnqueueParamsSchema = z.object({
   text: z.string().min(1).max(100_000),
   attachments: z.array(TaskAttachmentSchema).max(10).default([]),
   revisionOfTaskId: z.string().min(1).max(128).optional(),
+  runSettings: OutboxRunSettingsSchema.optional(),
 });
 export type OutboxEnqueueParams = z.infer<typeof OutboxEnqueueParamsSchema>;
 

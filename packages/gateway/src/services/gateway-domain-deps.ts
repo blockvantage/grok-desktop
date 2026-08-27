@@ -161,6 +161,7 @@ export type GatewayDomainServiceBag = {
   authSignOut: () => unknown | Promise<unknown>;
   computeTrayStatus: () => unknown;
   getGrokAuthStatus: () => Promise<unknown>;
+  listLiveModels?: () => Promise<string[]>;
   ensureTempWorkspace: (label: string) => unknown;
   listWorkspaceFiles: (root: string, max: number) => unknown;
   readWorkspaceFile: (path: string, maxChars: number) => unknown;
@@ -307,6 +308,9 @@ export function buildDomainDispatchDeps(
     licenseMeta: {
       computeTrayStatus: () => g.computeTrayStatus(),
       getGrokAuthStatus: () => g.getGrokAuthStatus(),
+      listLiveModels: g.listLiveModels
+        ? () => g.listLiveModels!()
+        : undefined,
     },
     connectors: {
       listPresets: () => g.settings.listConnectorPresets(),

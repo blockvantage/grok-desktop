@@ -436,10 +436,29 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_turns_one_assistant_per_task
   WHERE role = 'assistant' AND task_id IS NOT NULL;
 `,
   },
+  {
+    // Follow-up composer settings for the next turn (Phase 2.1).
+    version: 15,
+    sql: ``,
+    afterSql: (db: Db) => {
+      const table = db
+        .prepare(
+          `SELECT name FROM sqlite_master WHERE type='table' AND name='conversation_outbox'`,
+        )
+        .get() as { name: string } | undefined;
+      if (!table) return;
+      const cols = db
+        .prepare(`PRAGMA table_info(conversation_outbox)`)
+        .all() as Array<{ name: string }>;
+      if (!cols.some((c) => c.name === "settings_json")) {
+        db.exec(`ALTER TABLE conversation_outbox ADD COLUMN settings_json TEXT`);
+      }
+    },
+  },
 ];
 
 /** Latest applied schema version (must match last MIGRATIONS entry). */
-export const CURRENT_SCHEMA_VERSION = 14;
+export const CURRENT_SCHEMA_VERSION = 15;
 
 function getSchemaVersion(db: Db): number {
   const table = db

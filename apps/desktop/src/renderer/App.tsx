@@ -574,6 +574,18 @@ export function App() {
       setModels(s.models);
       setModel((prev) => resolveModelAfterAuth(prev, s.models));
     }
+    try {
+      const catalog = await rpc<{ models?: string[]; defaultModel?: string }>(
+        "models.list",
+        {},
+      );
+      if (catalog.models?.length) {
+        setModels(catalog.models);
+        setModel((prev) => resolveModelAfterAuth(prev, catalog.models));
+      }
+    } catch {
+      /* auth models remain */
+    }
     if (snap.phase === "signed_out" || snap.phase === "reauth_required") {
       setUsageSnap(null);
     } else {
@@ -1615,6 +1627,13 @@ export function App() {
       attachments,
       clientMutationId,
       revisionOfTaskId,
+      runSettings: {
+        model,
+        effort,
+        approvalMode,
+        planFirst,
+        rolePack: rolePackId,
+      },
     });
   }
 
@@ -2295,6 +2314,16 @@ export function App() {
               onOpenMemory={() => setNav("memory")}
               effort={effort}
               onEffort={setEffort}
+              model={model}
+              models={models}
+              onModel={setModel}
+              approvalMode={approvalMode}
+              onApprovalMode={setApprovalMode}
+              planFirst={planFirst}
+              onPlanFirst={setPlanFirst}
+              rolePacks={rolePacks}
+              rolePackId={rolePackId}
+              onRolePack={setRolePackId}
               onRememberTakeaways={(taskId) => {
                 const tsk = tasks.find((x) => x.id === taskId);
                 if (!tsk) return;

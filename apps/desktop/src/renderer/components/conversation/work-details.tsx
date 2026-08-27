@@ -3,6 +3,7 @@ import { ChevronRight } from "lucide-react";
 import type { WorkEntry } from "@/lib/conversation-projector";
 import { useT } from "@/i18n";
 import { cn } from "@/lib/utils";
+import { projectToolKindCard, toolKindDetail } from "@/lib/tool-kind-card";
 import {
   Collapsible,
   CollapsibleContent,
@@ -126,16 +127,26 @@ export function WorkDetails({
                       {t(workKindLabel(kind))}
                     </span>
                   </div>
-                  {entry.detail || Object.keys(entry.payload).length > 0 ? (
-                    <details className="mt-1 text-muted-foreground">
-                      <summary className="cursor-pointer select-none">
-                        {t("conversation.rawDetails")}
-                      </summary>
-                      <pre className="mt-1 overflow-x-auto whitespace-pre-wrap break-words font-mono text-2xs leading-relaxed">
-                        {entry.detail ?? JSON.stringify(entry.payload, null, 2)}
-                      </pre>
-                    </details>
-                  ) : null}
+                  {(() => {
+                    const card =
+                      entry.kind === "tool_request" ||
+                      entry.kind === "tool_result"
+                        ? projectToolKindCard(entry.payload)
+                        : null;
+                    const friendly = card ? toolKindDetail(card) : null;
+                    const body = friendly ?? null;
+                    if (!body) return null;
+                    return (
+                      <details className="mt-1 text-muted-foreground">
+                        <summary className="cursor-pointer select-none">
+                          {t("conversation.showDetails")}
+                        </summary>
+                        <pre className="mt-1 overflow-x-auto whitespace-pre-wrap break-words font-mono text-2xs leading-relaxed">
+                          {body}
+                        </pre>
+                      </details>
+                    );
+                  })()}
                 </li>
               );
             })}

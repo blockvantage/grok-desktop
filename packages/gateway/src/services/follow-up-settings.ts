@@ -173,6 +173,35 @@ export function resolvePriorProviderSessionId(
   return null;
 }
 
+export function mergeFollowUpSettings(
+  parent: FollowUpRunSettings | null,
+  override?: Partial<FollowUpRunSettings> | null,
+): FollowUpRunSettings | null {
+  if (!parent && !override) return null;
+  const base: FollowUpRunSettings = parent ?? {
+    model: "grok-4.5",
+    effort: "normal",
+    approvalMode: "balanced",
+    workspaceRoots: [],
+    skills: [],
+    mcpServerIds: [],
+    planFirst: false,
+    rolePack: null,
+    allowShell: true,
+    allowNetworkTools: true,
+    providerSessionId: null,
+  };
+  if (!override) return base;
+  return {
+    ...base,
+    ...(override.model?.trim() ? { model: override.model.trim() } : {}),
+    ...(override.effort ? { effort: override.effort } : {}),
+    ...(override.approvalMode ? { approvalMode: override.approvalMode } : {}),
+    ...(override.planFirst !== undefined ? { planFirst: override.planFirst } : {}),
+    ...(override.rolePack !== undefined ? { rolePack: override.rolePack } : {}),
+  };
+}
+
 export function buildDrainedCreateInput(
   claimed: Pick<
     ConversationOutboxItem,

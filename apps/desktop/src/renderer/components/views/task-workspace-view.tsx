@@ -32,13 +32,6 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -287,6 +280,12 @@ import { useToast } from "@/components/ui/toast";
 import { humanizeError } from "@/lib/errors";
 import { relativeTime, shortPath, formatDateTime } from "@/lib/format";
 import { approvalLabel, effortLabel } from "@/lib/labels";
+import { ComposerRunOptions } from "@/components/composer-run-options";
+import { RolePackPicker } from "@/components/role-pack-picker";
+import {
+  nextReplyWillUseParams,
+  projectNextReplyPreview,
+} from "@/lib/next-reply-preview";
 import { ContextMeter } from "@/components/context-meter";
 import { SessionStatusHeader } from "@/components/session-status-header";
 import { ProtectionChip } from "@/components/protection-chip";
@@ -404,6 +403,16 @@ export function TaskWorkspaceView(props: {
   /** Current form effort (for recognition-driven escalation restore). */
   effort?: EffortLevel;
   onEffort?: (v: EffortLevel) => void;
+  model?: string;
+  models?: string[];
+  onModel?: (v: string) => void;
+  approvalMode?: import("@grokdesk/shared").ApprovalMode;
+  onApprovalMode?: (v: import("@grokdesk/shared").ApprovalMode) => void;
+  planFirst?: boolean;
+  onPlanFirst?: (v: boolean) => void;
+  rolePacks?: import("@grokdesk/shared").RolePack[];
+  rolePackId?: string | null;
+  onRolePack?: (id: string | null) => void;
 }) {
   const t = useT();
   const ownedConfirm = useOwnedConfirm();
@@ -2410,6 +2419,27 @@ export function TaskWorkspaceView(props: {
               hasSavedLocalQueue={messageQueue.length > 0}
               enqueueError={composerEnqueueError}
             />
+            {props.onEffort ? (
+              <p
+                className="mx-auto mb-1 max-w-[46rem] px-1 text-2xs text-muted-foreground"
+                data-testid="next-reply-will-use"
+              >
+                {t(
+                  "workspace.nextReplyWillUse",
+                  nextReplyWillUseParams(
+                    projectNextReplyPreview({
+                      model: props.model ?? task.model,
+                      effort: effortLabel(props.effort ?? task.effort),
+                      approvalMode: props.approvalMode,
+                      planFirst: props.planFirst,
+                      rolePackName: props.rolePacks?.find(
+                        (p) => p.id === props.rolePackId,
+                      )?.name,
+                    }),
+                  ),
+                )}
+              </p>
+            ) : null}
             <form
               data-testid="follow-up-composer-drop"
               className={cn(
@@ -2680,34 +2710,33 @@ export function TaskWorkspaceView(props: {
                   <Paperclip className="h-3.5 w-3.5" />
                 </Button>
                 {props.onEffort ? (
-                  <Select
-                    value={
-                      (props.effort === "max" ? "heavy" : props.effort) ??
-                      "normal"
+                  <ComposerRunOptions
+                    compact
+                    model={props.model ?? task.model}
+                    models={
+                      props.models?.length
+                        ? props.models
+                        : [props.model ?? task.model]
                     }
-                    onValueChange={(v) =>
-                      props.onEffort?.(v as EffortLevel)
+                    onModel={props.onModel ?? (() => {})}
+                    effort={props.effort ?? task.effort}
+                    onEffort={props.onEffort}
+                    approvalMode={
+                      props.approvalMode ??
+                      task.policySnapshot.approvalMode
                     }
-                  >
-                    <SelectTrigger
-                      className="h-8 w-[5.75rem] shrink-0 rounded-full border-white/[0.08] bg-white/[0.03] px-2.5 text-2xs shadow-none"
-                      aria-label={t("home.effort")}
-                      title={t("home.effort")}
-                    >
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="fast">
-                        {effortLabel("fast")}
-                      </SelectItem>
-                      <SelectItem value="normal">
-                        {effortLabel("normal")}
-                      </SelectItem>
-                      <SelectItem value="heavy">
-                        {effortLabel("heavy")}
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
+                    onApprovalMode={props.onApprovalMode ?? (() => {})}
+                    planFirst={props.planFirst}
+                    onPlanFirst={props.onPlanFirst}
+                  />
+                ) : null}
+                {props.rolePacks && props.rolePacks.length > 0 && props.onRolePack ? (
+                  <RolePackPicker
+                    packs={props.rolePacks}
+                    value={props.rolePackId ?? null}
+                    onChange={props.onRolePack}
+                    variant="toolbar"
+                  />
                 ) : null}
                 <Textarea
                   ref={followInputRef}
