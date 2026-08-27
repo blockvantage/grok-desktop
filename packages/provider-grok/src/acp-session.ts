@@ -542,6 +542,25 @@ export class AcpMediatedSession implements AgentSession {
       }
       return;
     }
+    if (
+      decoded.kind === "auto_compact_started" ||
+      decoded.kind === "auto_compact_completed" ||
+      decoded.kind === "auto_compact_failed"
+    ) {
+      if (!sink) return;
+      const phase = decoded.kind.replace("auto_compact_", "");
+      const summary = String(
+        (decoded.raw.summary as string) ??
+          (decoded.raw.message as string) ??
+          "",
+      ).trim();
+      void sink({
+        type: "step",
+        title: summary ? `compact_${phase}: ${summary}` : `compact_${phase}`,
+        status: phase === "started" ? "start" : "end",
+      });
+      return;
+    }
     if (decoded.kind === "unknown" || !sink) return;
 
     if (decoded.kind === "plan") {

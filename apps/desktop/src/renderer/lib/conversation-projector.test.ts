@@ -1458,4 +1458,25 @@ describe("Phase 4 recovered timeline + approval parking", () => {
     expect(failedTurn.error?.message).toMatch(/crashed/i);
     expect(snapshot.needsUserAction).toBe(true);
   });
+
+  it("projects compact steps as a turn marker, not work-log JSON", () => {
+    const t1 = task("compact-task", "done", "2026-01-01T00:00:00.000Z");
+    const snapshot = projectConversation({
+      conversationId: "conversation",
+      title: null,
+      tasks: [t1],
+      eventsByTask: {
+        [t1.id]: [
+          event("c1", t1.id, 1, "step", {
+            title: "compact_completed: Older turns were summarized.",
+          }),
+        ],
+      },
+    });
+    expect(snapshot.turns[0]?.compaction).toEqual({
+      phase: "completed",
+      summary: "Older turns were summarized.",
+    });
+    expect(snapshot.turns[0]?.work.map((w) => w.id)).not.toContain("c1");
+  });
 });

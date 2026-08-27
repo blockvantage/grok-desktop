@@ -162,6 +162,22 @@ describe("ConversationTurn", () => {
     expect(html).not.toContain('data-testid="back-to-answer-start"');
   });
 
+  it("renders a friendly compaction marker without JSON", () => {
+    const compacted = turn("done");
+    compacted.compaction = {
+      phase: "completed",
+      summary: "Older turns were summarized.",
+    };
+    const html = renderToStaticMarkup(
+      <ConversationTurn turn={compacted} />,
+    );
+    expect(html).toContain('data-testid="compaction-marker"');
+    expect(html).toContain("Tidied up earlier conversation");
+    expect(html).toContain("View what was summarized");
+    expect(html).toContain("Older turns were summarized.");
+    expect(html).not.toContain("auto_compact");
+  });
+
   it("offers back-to-start on a long answer", () => {
     const long = turn("done");
     long.answer = {

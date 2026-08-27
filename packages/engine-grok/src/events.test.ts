@@ -252,6 +252,22 @@ describe("parseStreamingJsonLine", () => {
     ).toEqual([{ type: "done", summary: "actual final" }]);
   });
 
+  it("maps auto_compact envelopes to compact progress steps, not assistant text", () => {
+    expect(
+      parseStreamingJsonLine(
+        JSON.stringify({
+          type: "auto_compact_completed",
+          summary: "Older turns were summarized.",
+        }),
+      ),
+    ).toEqual([
+      {
+        type: "run_progress",
+        message: "compact_completed: Older turns were summarized.",
+      },
+    ]);
+  });
+
   it("drops protocol envelopes that exceed the nesting inspection limit", () => {
     let nested = JSON.stringify({
       type: "tool_call_update",

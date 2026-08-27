@@ -556,6 +556,33 @@ export function ConversationTurn({
         </div>
       ) : null}
 
+      {turn.compaction ? (
+        <div
+          className="rounded-lg border border-white/[0.07] bg-white/[0.03] px-3 py-2 text-sm text-muted-foreground"
+          data-testid="compaction-marker"
+          data-compaction-phase={turn.compaction.phase}
+          role="status"
+        >
+          <p>
+            {turn.compaction.phase === "started"
+              ? t("conversation.compactStarted")
+              : turn.compaction.phase === "failed"
+                ? t("conversation.compactFailed")
+                : t("conversation.compactCompleted")}
+          </p>
+          {turn.compaction.summary ? (
+            <details className="mt-1">
+              <summary className="cursor-pointer select-none text-2xs font-medium text-muted-foreground hover:text-foreground">
+                {t("conversation.compactViewSummary")}
+              </summary>
+              <p className="mt-1 text-2xs leading-relaxed">
+                {turn.compaction.summary}
+              </p>
+            </details>
+          ) : null}
+        </div>
+      ) : null}
+
       {turn.plan ? (
         <PlanCard
           plan={turn.plan}

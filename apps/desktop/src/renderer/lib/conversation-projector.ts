@@ -9,6 +9,11 @@ import type { DurableQueuedMessage } from "./message-queue-store";
 import { coalesceBrowserToolActivity } from "./browser-activity-from-events";
 import { foldRecoveredWorkEntries } from "./work-graph";
 import { projectToolKindCard } from "./tool-kind-card";
+import {
+  isCompactionEvent,
+  projectCompactionMarker,
+  type CompactionMarker,
+} from "./compaction-marker";
 
 export type RunState = TaskStatus;
 
@@ -102,6 +107,8 @@ export type ConversationTurn = {
   error: ErrorView | null;
   plan: TurnPlan | null;
   citations: CitationItem[];
+  /** Auto-compact housekeeping, when the engine reported it. */
+  compaction?: CompactionMarker | null;
 };
 
 export type ConversationSnapshot = {
@@ -711,6 +718,7 @@ function projectTurn(
     work: foldRecoveredWorkEntries(
       coalesceBrowserToolActivity(events)
         .filter((event) => {
+          if (isCompactionEvent(event)) return false;
           if (event.kind !== "message") return true;
           if (nonBlank(event.payload.role) === "user") return false;
           const isAssistantText =
@@ -722,6 +730,7 @@ function projectTurn(
         .map(workEntryFrom),
       state,
     ),
+    compaction: projectCompactionMarker(events),
     artifacts,
     approval,
     // A diagnostic error does not erase a recovered/completed result. Only the

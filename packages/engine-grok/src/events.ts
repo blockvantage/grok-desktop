@@ -100,8 +100,29 @@ function normalizeJsonEvent(
     return [];
   }
 
-  // Compact / session housekeeping — ignore
-  if (type.startsWith("auto_compact") || type === "status" || type === "ping") {
+  // Compact housekeeping → step tokens the conversation projector can read.
+  if (type.startsWith("auto_compact")) {
+    const phase = /fail/i.test(type)
+      ? "failed"
+      : /complete|end/i.test(type)
+        ? "completed"
+        : "started";
+    const summary =
+      typeof obj.summary === "string"
+        ? obj.summary
+        : typeof obj.message === "string"
+          ? obj.message
+          : "";
+    return [
+      {
+        type: "run_progress",
+        message: summary
+          ? `compact_${phase}: ${summary}`
+          : `compact_${phase}`,
+      },
+    ];
+  }
+  if (type === "status" || type === "ping") {
     return [];
   }
 

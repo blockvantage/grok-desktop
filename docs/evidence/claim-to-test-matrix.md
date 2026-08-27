@@ -32,6 +32,7 @@ Until the linked tests and phase-exit reports pass, **do not claim** the product
 | **Composer parity** | Follow-up composer has model/approval/plan-first/role; next turn uses those settings; live catalog is not grok-4.5-only | desktop + gateway | `apps/desktop/src/renderer/lib/next-reply-preview.test.ts`, `packages/gateway/src/services/follow-up-settings.test.ts`, `packages/gateway/src/services/models-list.test.ts` | 2026-08-27 Phase 2.1 |
 | **ToolKind cards** | edit/write/execute/media/ask_user render calm one-liners; unknown kinds never dump JSON | desktop | `apps/desktop/src/renderer/lib/tool-kind-card.test.ts`, `apps/desktop/src/renderer/components/conversation/conversation-turn.test.tsx` | 2026-08-27 Phase 2.2 |
 | **Conversation timeline** | Long threads virtualize; a tick rail jumps to turns; long answers have back-to-start | desktop | `apps/desktop/src/renderer/lib/conversation-timeline.test.ts`, `components/conversation/conversation-timeline-rail.test.tsx`, `conversation-turn.test.tsx` (back-to-start), `task-stream.tsx` wires `shouldVirtualizeConversation` | 2026-08-27 Phase 2.3 |
+| **Compaction marker** | auto_compact started/completed/failed is a friendly inline marker, not assistant JSON | desktop + engine-grok + provider-grok | `apps/desktop/src/renderer/lib/compaction-marker.test.ts`, `conversation-projector.test.ts`, `conversation-turn.test.tsx`; `packages/engine-grok/src/events.test.ts`; `packages/provider-grok/src/acp-decode.test.ts` | 2026-08-27 Phase 2.4 |
 
 ## How to use
 
