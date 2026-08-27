@@ -82,10 +82,14 @@ export function runtimeEventToNormalized(
       return { type: "error", message: event.message };
     case "usage": {
       const u = event.usage ?? {};
+      const cacheCreation = Number(u.cacheCreationInputTokens ?? 0);
+      const cacheRead = Number(u.cacheReadInputTokens ?? 0);
+      const inputTokens = Number(u.inputTokens ?? 0);
+      const outputTokens = Number(u.outputTokens ?? 0);
       return {
         type: "usage",
-        inputTokens: Number(u.inputTokens ?? 0),
-        outputTokens: Number(u.outputTokens ?? 0),
+        inputTokens: inputTokens + cacheCreation,
+        outputTokens,
         ...((u as { contextWindow?: number }).contextWindow != null
           ? {
               contextWindow: Number(
@@ -93,6 +97,8 @@ export function runtimeEventToNormalized(
               ),
             }
           : {}),
+        ...(cacheCreation ? { cacheCreationInputTokens: cacheCreation } : {}),
+        ...(cacheRead ? { cacheReadInputTokens: cacheRead } : {}),
       };
     }
     case "plan":

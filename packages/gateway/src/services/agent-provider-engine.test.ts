@@ -156,6 +156,21 @@ describe("runtimeEventToNormalized", () => {
       inputTokens: 10,
       outputTokens: 5,
     });
+    expect(
+      runtimeEventToNormalized({
+        type: "usage",
+        usage: {
+          inputTokens: 10,
+          outputTokens: 5,
+          cacheCreationInputTokens: 40,
+        },
+      }),
+    ).toEqual({
+      type: "usage",
+      inputTokens: 50,
+      outputTokens: 5,
+      cacheCreationInputTokens: 40,
+    });
   });
 
   it("maps permission_request with permissionRequest meta", () => {

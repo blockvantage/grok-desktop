@@ -106,15 +106,20 @@ describe("policyToGrokArgs", () => {
     expect(heavy[heavy.indexOf("--reasoning-effort") + 1]).toBe("high");
   });
 
-  it("maps max effort to high reasoning (CLI has no xhigh)", () => {
-    const args = policyToGrokArgs({
+  it("maps max effort to high unless the CLI advertises max/xhigh", () => {
+    const fallback = policyToGrokArgs({
       policy: basePolicy,
       effort: "max",
       primaryCwd: "/ws",
     });
-    const i = args.indexOf("--reasoning-effort");
-    expect(i).toBeGreaterThan(-1);
-    expect(args[i + 1]).toBe("high");
+    expect(fallback[fallback.indexOf("--reasoning-effort") + 1]).toBe("high");
+    const max = policyToGrokArgs({
+      policy: basePolicy,
+      effort: "max",
+      primaryCwd: "/ws",
+      supportsMaxEffort: true,
+    });
+    expect(max[max.indexOf("--reasoning-effort") + 1]).toBe("max");
   });
 
   it("includes model when provided", () => {

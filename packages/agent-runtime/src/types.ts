@@ -76,6 +76,8 @@ export interface UsageSnapshot {
   totalTokens?: number;
   costUsd?: number;
   contextWindow?: number;
+  cacheCreationInputTokens?: number;
+  cacheReadInputTokens?: number;
 }
 
 export type RuntimeErrorCode =

@@ -26,7 +26,11 @@ import {
   type PermissionBrokerResult,
 } from "./acp-policy-broker.js";
 import { randomUUID } from "node:crypto";
-import { toAcpMcpServers, type DeskMcpServerLike } from "@grokdesk/shared";
+import {
+  decodeTurnCompleted,
+  toAcpMcpServers,
+  type DeskMcpServerLike,
+} from "@grokdesk/shared";
 import { grokAcpClientInfo } from "./client-info.js";
 import { decodeSessionUpdate, decodeToolKind } from "./acp-decode.js";
 import {
@@ -147,6 +151,7 @@ export class AcpMediatedSession implements AgentSession {
   private turnSink: RuntimeEventSink | null = null;
   private updatesUnsub: (() => void) | null = null;
   lastSessionStatusRaw: Record<string, unknown> | null = null;
+  private sawTurnCompleted = false;
   readonly binding: ProviderSessionBinding;
   /** Isolated GROK_HOME actually used for this session, when provisioned. */
   isolatedProfileDir: string | null;
@@ -436,6 +441,28 @@ export class AcpMediatedSession implements AgentSession {
       }
       return;
     }
+    if (decoded.kind === "turn_completed") {
+      this.sawTurnCompleted = true;
+      const rec = decodeTurnCompleted(decoded.raw);
+      if (sink && rec.usage) {
+        void sink({
+          type: "usage",
+          usage: {
+            inputTokens: rec.usage.inputTokens,
+            outputTokens: rec.usage.outputTokens,
+            totalTokens: rec.usage.totalTokens,
+            cacheCreationInputTokens: rec.usage.cacheCreationInputTokens,
+          },
+        });
+      }
+      if (sink) {
+        void sink({
+          type: "done",
+          summary: rec.stopReason,
+        });
+      }
+      return;
+    }
     if (decoded.kind === "unknown" || !sink) return;
 
     if (decoded.kind === "plan") {
@@ -529,6 +556,7 @@ export class AcpMediatedSession implements AgentSession {
     }
 
     this.turnSink = sink;
+    this.sawTurnCompleted = false;
     this.attachSessionUpdates();
     if (this.lastSessionStatusRaw) {
       void sink({
@@ -559,12 +587,14 @@ export class AcpMediatedSession implements AgentSession {
         });
       }
 
-      await sink({
-        type: "done",
-        summary: toolExecuted
-          ? "ACP turn complete (tool allowed)"
-          : "ACP turn complete",
-      });
+      if (!this.sawTurnCompleted) {
+        await sink({
+          type: "done",
+          summary: toolExecuted
+            ? "ACP turn complete (tool allowed)"
+            : "ACP turn complete",
+        });
+      }
       return {
         status: "done",
         summary: "acp mediated turn",

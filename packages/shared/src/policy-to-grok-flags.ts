@@ -1,16 +1,5 @@
 import type { ApprovalMode, EffortLevel, PolicySnapshot } from "./types.js";
-
-/**
- * Map Desk effort levels to Grok CLI `--reasoning-effort` values.
- * Desk: fast | normal | heavy | max → CLI: low | medium | high
- * (CLI accepts only high | medium | low; Max maps to high — no xhigh.)
- */
-const EFFORT_TO_REASONING: Record<EffortLevel, string> = {
-  fast: "low",
-  normal: "medium",
-  heavy: "high",
-  max: "high",
-};
+import { reasoningEffortForDesk } from "./usage-math.js";
 
 /** CLI sandbox profiles Desk may request (T1). */
 export type GrokSandboxProfile =
@@ -52,6 +41,9 @@ export type PolicyToGrokArgsOptions = {
    * Unknown values are ignored (fail closed to Desk mode mapping).
    */
   advancedPermissionMode?: AdvancedPermissionMode | string;
+  /** When true, Desk `max` effort maps to CLI `max` (else `xhigh` / `high`). */
+  supportsMaxEffort?: boolean;
+  supportsXhighEffort?: boolean;
 };
 
 /**
@@ -159,7 +151,11 @@ export function policyToGrokArgs(opts: PolicyToGrokArgsOptions): string[] {
   }
 
   if (effort) {
-    args.push("--reasoning-effort", EFFORT_TO_REASONING[effort]);
+    const mapped = reasoningEffortForDesk(effort, {
+      supportsMax: opts.supportsMaxEffort,
+      supportsXhigh: opts.supportsXhighEffort,
+    });
+    if (mapped) args.push("--reasoning-effort", mapped);
   }
 
   const sandbox = resolveSandboxProfile({

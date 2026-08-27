@@ -56,10 +56,21 @@ function normalizeJsonEvent(
     const sid = typeof obj.sessionId === "string" ? obj.sessionId : null;
     if (sid) out.push({ type: "session_meta", providerSessionId: sid });
     const usage = obj.usage as
-      | { input_tokens?: number; output_tokens?: number; inputTokens?: number; outputTokens?: number }
+      | {
+          input_tokens?: number;
+          output_tokens?: number;
+          inputTokens?: number;
+          outputTokens?: number;
+          cache_creation_input_tokens?: number;
+          cacheCreationInputTokens?: number;
+        }
       | undefined;
     if (usage && typeof usage === "object") {
-      const inputTokens = Number(usage.input_tokens ?? usage.inputTokens ?? 0);
+      const cacheCreation = Number(
+        usage.cache_creation_input_tokens ?? usage.cacheCreationInputTokens ?? 0,
+      );
+      const inputTokens =
+        Number(usage.input_tokens ?? usage.inputTokens ?? 0) + cacheCreation;
       const outputTokens = Number(usage.output_tokens ?? usage.outputTokens ?? 0);
       let contextWindow: number | undefined;
       const modelUsage = obj.modelUsage as Record<string, { context_window?: number }> | undefined;
@@ -76,6 +87,7 @@ function normalizeJsonEvent(
         inputTokens,
         outputTokens,
         ...(contextWindow != null ? { contextWindow } : {}),
+        ...(cacheCreation ? { cacheCreationInputTokens: cacheCreation } : {}),
       });
     }
     return out;

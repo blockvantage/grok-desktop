@@ -49,6 +49,8 @@ export type NormalizedEngineEvent =
       inputTokens: number;
       outputTokens: number;
       contextWindow?: number;
+      cacheCreationInputTokens?: number;
+      cacheReadInputTokens?: number;
     }
   | {
       type: "citations";

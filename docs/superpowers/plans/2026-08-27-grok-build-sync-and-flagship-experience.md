@@ -80,7 +80,7 @@ The ACP factory must provide the same controlled environment as headless.
 - This supersedes the 8s context-meter polling (`task-workspace-view.tsx:566-600`) on ACP; keep polling as headless fallback. Fixes the "meter hides when contextWindow unknown" gap (`components/context-meter.tsx`) with a degraded state.
 - **Accept:** header updates live with zero polling on ACP; degraded-but-visible state on headless.
 
-### 1.3 Turn finalization + cost truth
+### 1.3 Turn finalization + cost truth ✅ (2026-08-27)
 - Consume `TurnCompleted` (durable `{prompt_id, stop_reason, agent_result, usage, elapsed_ms}`) as the authoritative end-of-turn record; treat `stopReason` as snake_case tokens (`end_turn`, `max_tokens`, `max_turn_requests`, `refusal`, `cancelled`); include `cache_creation_input_tokens` in all usage math.
 - Add `x.ai/session/usage` per-conversation cost/token panel (folds subagent spend; fails closed — never under-reports).
 - Effort tiers: `packages/shared/src/policy-to-grok-flags.ts` maps heavy and max both → `high`. CLI now supports `xhigh` and `max`; map `heavy → high`, `max → max` (feature-detected), and expose the tier honestly in UI.

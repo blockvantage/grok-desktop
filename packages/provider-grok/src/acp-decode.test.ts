@@ -7,6 +7,9 @@ describe("ACP forward-compat decode", () => {
       decodeSessionUpdate({ sessionUpdate: "tool_call", kind: "edit" }).kind,
     ).toBe("tool_call");
     expect(
+      decodeSessionUpdate({ sessionUpdate: "turn_completed" }).kind,
+    ).toBe("turn_completed");
+    expect(
       decodeSessionUpdate({ sessionUpdate: "session_status" }).kind,
     ).toBe("session_status");
     expect(
