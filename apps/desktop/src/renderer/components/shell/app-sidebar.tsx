@@ -120,8 +120,10 @@ export function AppSidebar(props: {
   onCancelTask?: (id: string) => void;
   collapsed?: boolean;
   onToggleCollapse?: () => void;
-  /** Unread inbox count; shows badge near Home / mail control. */
+  /** Waiting-on-you count; shows badge near Home / mail control. */
   inboxUnread?: number;
+  /** Task ids currently waiting on the user (projector). */
+  needsInputTaskIds?: readonly string[];
   onOpenInbox?: () => void;
   /** Shared SuperGrok usage snapshot (same source as Home/Settings). */
   usage?: UsageSnapshot | null;
@@ -178,14 +180,18 @@ export function AppSidebar(props: {
   // retry duplicates collapsed. Full history remains via See all → Chats.
   const { primary: primaryChats, needsReview: needsReviewChats } = useMemo(() => {
     const pinned = new Set(props.pinnedChatIds ?? []);
+    const needsInput = new Set(props.needsInputTaskIds ?? []);
     return partitionSidebarChats(
       props.chats.map((c) => ({
         ...c,
         title: c.title,
         pinned: pinned.has(c.id),
+        needsInput:
+          needsInput.has(c.latest.id) ||
+          c.turns.some((turn) => needsInput.has(turn.id)),
       })),
     );
-  }, [props.chats, props.pinnedChatIds]);
+  }, [props.chats, props.pinnedChatIds, props.needsInputTaskIds]);
 
   const folders = useMemo(
     () => orderFolders(groupChats(primaryChats, query), order),
@@ -795,7 +801,7 @@ function ChatRow({
   onTogglePin,
   onCancel,
 }: {
-  chat: Chat;
+  chat: Chat & { needsInput?: boolean };
   active: boolean;
   pinned?: boolean;
   renaming: boolean;
@@ -809,8 +815,9 @@ function ChatRow({
 }) {
   const t = useT();
   const status = chat.latest.status;
+  const needsInput = Boolean(chat.needsInput);
   const busy =
-    isActiveTaskStatus(status);
+    isActiveTaskStatus(status) || needsInput;
 
   if (renaming) {
     return (
@@ -830,6 +837,7 @@ function ChatRow({
           ? "bg-primary/[0.09] shadow-[inset_0_0_0_1px_hsl(var(--primary)/0.14)]"
           : "hover:bg-white/[0.035]",
       )}
+      data-needs-input={needsInput ? "true" : undefined}
     >
       <button
         type="button"
@@ -837,7 +845,12 @@ function ChatRow({
         onDoubleClick={onStartRename}
         className="flex min-w-0 flex-1 items-start gap-2.5 px-2.5 py-2 text-left"
       >
-        <span className={cn("mt-1.5 shrink-0", statusDotClass(status))} />
+        <span
+          className={cn(
+            "mt-1.5 shrink-0",
+            statusDotClass(needsInput ? "waiting_user" : status),
+          )}
+        />
         <span className="min-w-0 flex-1">
           <Tooltip>
             <TooltipTrigger asChild>
@@ -862,7 +875,7 @@ function ChatRow({
             </TooltipContent>
           </Tooltip>
           <span className="mt-0.5 block text-2xs text-muted-foreground">
-            {taskStatusLabel(status)}
+            {taskStatusLabel(needsInput ? "waiting_user" : status)}
             {chat.turns.length > 1
               ? ` · ${t("nav.runsCount", { count: chat.turns.length })}`
               : ""}

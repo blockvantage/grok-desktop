@@ -68,6 +68,8 @@ export function useConversationOutbox(opts: {
   const [interjectingIds, setInterjectingIds] = useState<ReadonlySet<string>>(
     () => new Set(),
   );
+  const [sendNowSupported, setSendNowSupported] = useState(true);
+  const sendNowSupportedRef = useRef(true);
   const interjectingRef = useRef<Set<string>>(new Set());
   const listGen = useRef(0);
   const lastRemovedRef = useRef<ConversationOutboxItem | null>(null);
@@ -97,6 +99,29 @@ export function useConversationOutbox(opts: {
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  useEffect(() => {
+    if (opts.gatewayReady === false) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const summary = await rpc<{ sendNowSupported?: boolean }>(
+          "outbox.summary",
+          {},
+        );
+        if (cancelled) return;
+        if (typeof summary.sendNowSupported === "boolean") {
+          sendNowSupportedRef.current = summary.sendNowSupported;
+          setSendNowSupported(summary.sendNowSupported);
+        }
+      } catch {
+        /* keep last known capability */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [opts.gatewayReady]);
 
   useEffect(() => {
     return subscribeGatewayNotify((msg) => {
@@ -262,6 +287,7 @@ export function useConversationOutbox(opts: {
   const interjectNow = useCallback(
     async (m: OutboxControllerItem): Promise<boolean> => {
       if (opts.isTerminal) return false;
+      if (!sendNowSupportedRef.current) return false;
       if (interjectingRef.current.has(m.id)) return true;
       interjectingRef.current.add(m.id);
       setInterjectingIds(new Set(interjectingRef.current));
@@ -270,6 +296,10 @@ export function useConversationOutbox(opts: {
           delivered: boolean;
           reason?: string;
         }>("outbox.sendNow", { id: m.id });
+        if (result.reason === "unsupported") {
+          sendNowSupportedRef.current = false;
+          setSendNowSupported(false);
+        }
         await refresh();
         return result.delivered === true;
       } catch {
@@ -328,6 +358,7 @@ export function useConversationOutbox(opts: {
     sendNow,
     interjectNow,
     interjectingIds,
+    sendNowSupported,
     editAndSendNow: (
       m: OutboxControllerItem,
       patch: { text?: string; attachmentPaths?: string[] | undefined },

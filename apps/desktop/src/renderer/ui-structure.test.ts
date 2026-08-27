@@ -542,6 +542,13 @@ describe("Wave I/T parity structure", () => {
     const sidebar = read("components/shell/app-sidebar.tsx");
     expect(sidebar).toMatch(/partitionSidebarChats/);
     expect(sidebar).toMatch(/sidebar-needs-review|needsReview/);
+    expect(sidebar).toMatch(/data-needs-input/);
+    expect(app).toMatch(/projectWaitingOnYou/);
+    expect(app).toMatch(/needsYouItemsFromWaiting/);
+    expect(app).toMatch(/waitingOnYou\.inboxBadge/);
+    const queueRow = read("components/conversation/queued-message-row.tsx");
+    expect(queueRow).toMatch(/sendNowSupported/);
+    expect(queueRow).toMatch(/queueSendNowUnavailable/);
 
     const artifacts = read("components/views/artifacts-view.tsx");
     expect(artifacts).toMatch(/hideLocalSearch/);

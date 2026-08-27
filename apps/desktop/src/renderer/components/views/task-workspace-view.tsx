@@ -734,6 +734,7 @@ export function TaskWorkspaceView(props: {
     retry: retryQueued,
     interjectNow,
     interjectingIds,
+    sendNowSupported,
     editAndSendNow: editAndSendQueuedNow,
     edit: editQueued,
   } = props.queueController;
@@ -741,9 +742,10 @@ export function TaskWorkspaceView(props: {
     (item: (typeof messageQueue)[number]) => {
       // Send now is interjection only. If unsupported, keep the item queued —
       // never create a concurrent follow-up as fallback.
+      if (sendNowSupported === false) return;
       void interjectNow(item);
     },
-    [interjectNow],
+    [interjectNow, sendNowSupported],
   );
   const conversation = useMemo(() => {
     const tasks = props.threadTasks?.length ? props.threadTasks : [task];
@@ -2394,6 +2396,7 @@ export function TaskWorkspaceView(props: {
               items={messageQueue}
               busy={Boolean(props.followUpBusy) || isOptimistic}
               interjectingIds={interjectingIds}
+              sendNowSupported={sendNowSupported}
               onEdit={editQueued}
               onEditAndSendNow={editAndSendQueuedNow}
               onRetry={retryQueued}

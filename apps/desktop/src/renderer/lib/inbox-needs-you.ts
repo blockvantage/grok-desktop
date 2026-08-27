@@ -1,7 +1,8 @@
 /**
- * Pure filter for Home "needs you" inbox strip (I10).
- * Dedupe + deep-link fields for exact approval/task navigation.
+ * Home "needs you" strip driven by the waiting-on-you projector (Phase 1.4).
+ * Inbox rows may still exist for history; the live badge/strip is the projector.
  */
+import type { InboxItem, InboxKind, WaitingOnYouView } from "@grokdesk/shared";
 
 export type InboxItemLike = {
   id?: string | null;
@@ -21,6 +22,36 @@ export type NeedsYouItem<T extends InboxItemLike = InboxItemLike> = T & {
     approvalId: string | null;
   };
 };
+
+/** Live Home strip + deep links from the one waiting-on-you stream. */
+export function needsYouItemsFromWaiting(
+  view: WaitingOnYouView,
+): NeedsYouItem<
+  InboxItem & { approvalId: string | null }
+>[] {
+  return view.pending.map((pending) => {
+    const kind: InboxKind =
+      pending.kind === "question" || pending.kind === "mcp_elicitation"
+        ? "clarification"
+        : "approval";
+    const taskId = pending.taskId?.trim() || null;
+    const approvalId =
+      pending.kind === "permission" && !pending.id.startsWith("task:")
+        ? pending.id
+        : null;
+    return {
+      id: pending.id,
+      kind,
+      title: pending.title,
+      body: pending.title,
+      taskId,
+      approvalId,
+      read: false,
+      createdAt: "",
+      deepLink: { taskId, approvalId },
+    };
+  });
+}
 
 /**
  * Unread items for the Home nudge strip.

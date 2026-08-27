@@ -62,6 +62,9 @@ export function runtimeEventToNormalized(
         command: event.command,
         meta: { ...(event.meta ?? {}), permissionRequest: true },
       };
+    case "pending_interaction":
+    case "interaction_resolved":
+      return null;
     case "tool_result":
       return {
         type: "tool_result",

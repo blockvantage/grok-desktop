@@ -10,6 +10,8 @@ export function ConversationOutbox(props: {
   items: DurableQueuedMessage[];
   busy: boolean;
   interjectingIds: ReadonlySet<string>;
+  /** False when the engine cannot interject (headless). */
+  sendNowSupported?: boolean;
   onEdit: (
     id: string,
     patch: { text?: string; attachmentPaths?: string[] | undefined },
@@ -44,6 +46,7 @@ export function ConversationOutbox(props: {
             index={idx}
             busy={props.busy}
             interjecting={props.interjectingIds.has(m.id)}
+            sendNowSupported={props.sendNowSupported}
             onEdit={props.onEdit}
             onEditAndSendNow={props.onEditAndSendNow}
             onRetry={props.onRetry}

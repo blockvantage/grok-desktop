@@ -117,6 +117,8 @@ export const OutboxSummarySchema = z.object({
   total: z.number().int().nonnegative(),
   byStatus: z.record(z.string(), z.number().int().nonnegative()),
   oldestPendingAgeMs: z.number().int().nonnegative().nullable(),
+  /** False on headless / engines without ACP interject. */
+  sendNowSupported: z.boolean().optional(),
 });
 export type OutboxSummary = z.infer<typeof OutboxSummarySchema>;
 

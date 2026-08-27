@@ -5,9 +5,11 @@ import type { MemoryService } from "./memory.js";
 import type { SchedulerService } from "./scheduler.js";
 import {
   isInQuietHours,
+  projectWaitingOnYou,
   suggestAutomationsFromMemory,
   type AutomationSuggestion,
 } from "@grokdesk/shared";
+import { syncInboxFromWaitingOnYou } from "./waiting-on-you-inbox.js";
 
 export class ProactivityService {
   private timer: ReturnType<typeof setInterval> | null = null;
@@ -50,16 +52,12 @@ export class ProactivityService {
     const quiet = this.settings.getQuietHours();
     if (isInQuietHours(now, quiet)) return 0;
     let n = 0;
-    for (const t of this.tasks.list()) {
-      if (t.status === "waiting_approval" || t.status === "waiting_user") {
-        const item = this.inbox.addDeduped({
-          kind: "approval",
-          title: "Task needs you",
-          body: t.goal.slice(0, 200),
-          taskId: t.id,
-        });
-        if (item) n++;
-      }
+    const tasks = this.tasks.list();
+    n += syncInboxFromWaitingOnYou(
+      this.inbox,
+      projectWaitingOnYou({ tasks }),
+    );
+    for (const t of tasks) {
       if (t.status === "failed") {
         const item = this.inbox.addDeduped({
           kind: "unfinished",

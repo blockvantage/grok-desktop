@@ -27,6 +27,8 @@ import {
 } from "./acp-policy-broker.js";
 import { randomUUID } from "node:crypto";
 import {
+  decodeInteractionResolved,
+  decodePendingInteraction,
   decodeTurnCompleted,
   toAcpMcpServers,
   type DeskMcpServerLike,
@@ -503,6 +505,40 @@ export class AcpMediatedSession implements AgentSession {
           workerId,
           summary: progress,
         });
+      }
+      return;
+    }
+    if (decoded.kind === "pending_interaction") {
+      const item = decodePendingInteraction(decoded.raw);
+      if (item && sink) {
+        void sink({
+          type: "pending_interaction",
+          id: item.id,
+          kind: item.kind,
+          title: item.title,
+        });
+        // Permission kind is parked by session/request_permission.
+        // Questions / plan / MCP elicitation still need a gateway park.
+        if (item.kind !== "permission") {
+          void sink({
+            type: "permission_request",
+            id: item.id,
+            tool: item.kind,
+            command: item.title,
+            meta: {
+              acpAsk: true,
+              pendingInteraction: true,
+              kind: item.kind,
+            },
+          });
+        }
+      }
+      return;
+    }
+    if (decoded.kind === "interaction_resolved") {
+      const id = decodeInteractionResolved(decoded.raw);
+      if (id && sink) {
+        void sink({ type: "interaction_resolved", id });
       }
       return;
     }

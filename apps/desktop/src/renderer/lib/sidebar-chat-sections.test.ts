@@ -92,6 +92,15 @@ describe("partitionSidebarChats", () => {
     expect(needsReview.map((c) => c.id)).toEqual(["b", "d"]);
   });
 
+  it("keeps needsInput chats in primary even if latest is failed", () => {
+    const { primary, needsReview } = partitionSidebarChats([
+      { ...chat("n", "failed"), needsInput: true },
+      chat("f", "failed"),
+    ]);
+    expect(primary.map((c) => c.id)).toEqual(["n"]);
+    expect(needsReview.map((c) => c.id)).toEqual(["f"]);
+  });
+
   it("keeps pinned failed chats in primary", () => {
     const { primary, needsReview } = partitionSidebarChats([
       chat("p", "failed", "2026-07-31T12:00:00.000Z", true),

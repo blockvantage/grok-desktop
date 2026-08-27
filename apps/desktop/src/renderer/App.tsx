@@ -32,6 +32,8 @@ import { useTaskSubmission } from "@/hooks/use-task-submission";
 import {
   buildTakeawaysContent,
   isActiveTaskStatus,
+  projectWaitingOnYou,
+  waitingOnYouTaskIds,
   type UsageSnapshot,
 } from "@grokdesk/shared";
 import { buildChats, chatTitle, findChat } from "@/lib/chats";
@@ -241,7 +243,7 @@ import {
 import { scheduleCreateParams } from "@/lib/schedule-create-params";
 import { appSettingsAfterSave } from "@/lib/settings-saved-slice";
 import { threadTasksForWorkspace } from "@/lib/thread-tasks";
-import { needsYouInboxItems } from "@/lib/inbox-needs-you";
+import { needsYouItemsFromWaiting } from "@/lib/inbox-needs-you";
 import {
   chatContainsSelectedTurn,
   cleanChatTitle,
@@ -1191,6 +1193,19 @@ export function App() {
     return newestNonTerminalTaskId(turns);
   }, [selectedChat, selected]);
 
+  const waitingOnYou = useMemo(
+    () => projectWaitingOnYou({ tasks }),
+    [tasks],
+  );
+  const waitingOnYouTaskIdList = useMemo(
+    () => waitingOnYouTaskIds(waitingOnYou),
+    [waitingOnYou],
+  );
+  const needsYouItems = useMemo(
+    () => needsYouItemsFromWaiting(waitingOnYou),
+    [waitingOnYou],
+  );
+
   const pendingApproval = useMemo(
     () => findPendingApproval(events, liveTurnId),
     [events, liveTurnId],
@@ -1789,7 +1804,8 @@ export function App() {
         onToggleCollapse={() =>
           withViewTransition(() => setSidebarCollapsed((v) => !v))
         }
-        inboxUnread={inbox.unread}
+        inboxUnread={waitingOnYou.inboxBadge}
+        needsInputTaskIds={waitingOnYouTaskIdList}
         onOpenInbox={() => setInboxOpen(true)}
         usage={usageSnap}
         showSignInInvite={
@@ -2119,7 +2135,7 @@ export function App() {
                 setNav(next.nav);
               })
             }
-            needsYouItems={needsYouInboxItems(inbox.items)}
+            needsYouItems={needsYouItems}
             onOpenInbox={() => setInboxOpen(true)}
             focusComposerToken={focusComposerToken}
             readinessItems={projectDesktopReadiness(shellReadinessInput).items}
@@ -2602,7 +2618,7 @@ export function App() {
             setPaletteOpen(false);
             setShortcutsOpen(true);
           }}
-          inboxUnread={inbox.unread}
+          inboxUnread={waitingOnYou.inboxBadge}
         />
       </Suspense>
 

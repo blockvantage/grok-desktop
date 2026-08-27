@@ -60,6 +60,8 @@ export type OutboxDispatchDeps = {
     text: string,
     clientMutationId: string,
   ) => Promise<boolean>;
+  /** False when the live engine has no interject method (headless). */
+  supportsInterject?: () => boolean;
 };
 
 function notify(
@@ -205,7 +207,13 @@ export async function dispatchOutboxMethod(
       return kept;
     }
     case "outbox.summary": {
-      const summary: OutboxSummary = deps.outbox.summary();
+      const summary: OutboxSummary = {
+        ...deps.outbox.summary(),
+        sendNowSupported:
+          typeof deps.supportsInterject === "function"
+            ? deps.supportsInterject()
+            : Boolean(deps.interject),
+      };
       return summary;
     }
     default:

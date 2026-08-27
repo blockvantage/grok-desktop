@@ -22,6 +22,13 @@ export type RuntimeEvent =
       meta?: Record<string, unknown>;
     }
   | {
+      type: "pending_interaction";
+      id: string;
+      kind: string;
+      title: string;
+    }
+  | { type: "interaction_resolved"; id: string }
+  | {
       type: "tool_call";
       id: string;
       tool: string;

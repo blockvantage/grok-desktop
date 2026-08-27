@@ -986,9 +986,16 @@ app.whenReady().then(async () => {
       try {
         const s = (await gateway.request("tray.status", {})) as {
           status: string;
+          notificationTitle?: string | null;
+          needsInput?: boolean;
         };
         if (s.status === "needs_you" && lastTrayStatus !== "needs_you") {
-          notifyNeedsYou("Grok Desk", "A task is waiting for your approval");
+          const body =
+            typeof s.notificationTitle === "string" &&
+            s.notificationTitle.trim()
+              ? s.notificationTitle.trim()
+              : "A task is waiting for your approval";
+          notifyNeedsYou("Grok Desk", body);
         }
         lastTrayStatus = s.status;
       } catch {

@@ -111,6 +111,7 @@ import { recoverInterruptedTasks } from "./services/crash-recovery.js";
 import { authSignIn, authSignOut, authStatus } from "./services/auth-grok.js";
 import { autoTitleTask } from "./services/title-generation.js";
 import { computeTrayStatus } from "./services/tray-status.js";
+import { syncInboxFromWaitingOnYou } from "./services/waiting-on-you-inbox.js";
 import { artifactCreateFromEvent } from "./services/artifact-event-persist.js";
 import { dispatchDomainMethod } from "./services/domain-dispatch.js";
 import { buildDomainDispatchDeps } from "./services/gateway-domain-deps.js";
@@ -1050,6 +1051,7 @@ export class Gateway {
         },
         interject: (taskId, text, clientMutationId) =>
           this.runner.interject(taskId, text, clientMutationId),
+        supportsInterject: () => typeof this.engine.interject === "function",
       },
     });
   }
@@ -1270,8 +1272,17 @@ export class Gateway {
   private computeTrayStatus(): {
     status: TrayStatus;
     runningCount: number;
+    inboxBadge: number;
+    needsInput: boolean;
+    notificationTitle: string | null;
   } {
-    return computeTrayStatus(this.tasks.list(), this.tasks.isPaused());
+    const view = computeTrayStatus(this.tasks.list(), this.tasks.isPaused());
+    try {
+      syncInboxFromWaitingOnYou(this.inbox, view);
+    } catch {
+      /* inbox is best-effort; tray status must still return */
+    }
+    return view;
   }
 
   /**

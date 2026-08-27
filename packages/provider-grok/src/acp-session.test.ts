@@ -105,6 +105,50 @@ describe("ACP mediated session (SEC-01 policy authorizer)", () => {
     expect(JSON.stringify(status)).not.toMatch(/"total_cost_usd":0/);
   });
 
+  it("maps PendingInteraction questions onto permission_request for the park path", async () => {
+    const duplex = new MemoryLineDuplex();
+    const fake = attachFakeAcpAgent(duplex.b, {
+      emitPendingInteraction: {
+        id: "q1",
+        kind: "ask_user_question",
+        title: "Which tone?",
+      },
+    });
+    cleanups.push(fake.dispose);
+    const session = new AcpMediatedSession({
+      transport: duplex.a,
+      policy: balancedPolicy,
+      binding: createAcpBinding("grok-4.5"),
+    });
+    cleanups.push(() => session.cancel("test"));
+    await session.start("/w");
+    const events: RuntimeEvent[] = [];
+    await session.runTurn({ goal: "hi" }, async (ev) => {
+      events.push(ev);
+      return "continue";
+    });
+    expect(events).toEqual(
+      expect.arrayContaining([
+        {
+          type: "pending_interaction",
+          id: "q1",
+          kind: "question",
+          title: "Which tone?",
+        },
+        expect.objectContaining({
+          type: "permission_request",
+          id: "q1",
+          command: "Which tone?",
+          meta: expect.objectContaining({
+            acpAsk: true,
+            pendingInteraction: true,
+            kind: "question",
+          }),
+        }),
+      ]),
+    );
+  });
+
   it("resumes via session/resume and records the path", async () => {
     const duplex = new MemoryLineDuplex();
     const fake = attachFakeAcpAgent(duplex.b);

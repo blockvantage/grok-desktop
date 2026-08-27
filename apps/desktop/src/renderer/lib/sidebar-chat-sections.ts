@@ -15,6 +15,8 @@ export type SidebarChatLike = {
   pinned?: boolean;
   /** Display title — used to collapse retry duplicates. */
   title?: string;
+  /** Waiting-on-you projector: this chat needs a human reply/approval. */
+  needsInput?: boolean;
 };
 
 /** Default primary rows shown in the sidebar (full list is Chats view). */
@@ -51,7 +53,7 @@ export function collapseDuplicateTitles<T extends SidebarChatLike>(
   const out: T[] = [];
   for (const chat of chats) {
     const key = normalizeSidebarTitle(chat.title);
-    if (chat.pinned || isActiveTaskStatus(chat.latest.status)) {
+    if (chat.pinned || chat.needsInput || isActiveTaskStatus(chat.latest.status)) {
       out.push(chat);
       if (key) seen.add(key);
       continue;
@@ -73,7 +75,8 @@ export function prioritizePrimaryChats<T extends SidebarChatLike>(
   const priority: T[] = [];
   const rest: T[] = [];
   for (const c of chats) {
-    if (c.pinned || isActiveTaskStatus(c.latest.status)) priority.push(c);
+    if (c.pinned || c.needsInput || isActiveTaskStatus(c.latest.status))
+      priority.push(c);
     else rest.push(c);
   }
   return [...priority, ...rest];
@@ -98,6 +101,7 @@ export function partitionSidebarChats<T extends SidebarChatLike>(
     const status = chat.latest.status;
     if (
       chat.pinned ||
+      chat.needsInput ||
       isActiveTaskStatus(status) ||
       !isNeedsReviewStatus(status)
     ) {
@@ -112,10 +116,11 @@ export function partitionSidebarChats<T extends SidebarChatLike>(
 
   if (primary.length > maxPrimary) {
     const actives = primary.filter(
-      (c) => c.pinned || isActiveTaskStatus(c.latest.status),
+      (c) => c.pinned || c.needsInput || isActiveTaskStatus(c.latest.status),
     );
     const rest = primary.filter(
-      (c) => !c.pinned && !isActiveTaskStatus(c.latest.status),
+      (c) =>
+        !c.pinned && !c.needsInput && !isActiveTaskStatus(c.latest.status),
     );
     primary = [...actives, ...rest].slice(0, maxPrimary);
   }

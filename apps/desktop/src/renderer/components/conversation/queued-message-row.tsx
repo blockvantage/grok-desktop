@@ -16,6 +16,8 @@ export function QueuedMessageRow(props: {
   busy: boolean;
   /** This item's mid-run interjection RPC is in flight (disables Send-now). */
   interjecting?: boolean;
+  /** False when the engine cannot interject (headless). Default true. */
+  sendNowSupported?: boolean;
   onEdit: (
     id: string,
     patch: { text?: string; attachmentPaths?: string[] | undefined },
@@ -35,7 +37,11 @@ export function QueuedMessageRow(props: {
   const [editingText, setEditingText] = useState(item.text);
   const failed = item.status === "failed";
   const locked = isDurableQueueItemLocked(item);
-  const sendDisabled = props.busy || locked || Boolean(props.interjecting);
+  const sendDisabled =
+    props.busy ||
+    locked ||
+    Boolean(props.interjecting) ||
+    props.sendNowSupported === false;
   const missingAttachment = failed && item.failReason === "missing_attachment";
   const lifecycle = planQueueLifecycleStatus({
     status: item.status,

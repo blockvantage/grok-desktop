@@ -75,6 +75,25 @@ describe("QueuedMessageRow", () => {
     expect(html).not.toMatch(/data-queue-edit="queue-1"[^>]*disabled/);
   });
 
+  it("disables Send now with the unavailable tooltip when interject is unsupported", () => {
+    const html = renderToStaticMarkup(
+      <QueuedMessageRow
+        item={queued("pending")}
+        index={0}
+        busy={false}
+        sendNowSupported={false}
+        onEdit={vi.fn()}
+        onEditAndSendNow={vi.fn()}
+        onRetry={vi.fn()}
+        onSendNow={vi.fn()}
+        onRemove={vi.fn()}
+        onPickFiles={vi.fn().mockResolvedValue([])}
+      />,
+    );
+    expect(html).toMatch(/data-queue-send-now="queue-1"[^>]*disabled/);
+    expect(html).toContain("Send now is unavailable — message stays queued");
+  });
+
   it("surfaces missing-attachment failure with re-pick affordance", () => {
     const item: DurableQueuedMessage = {
       ...queued("failed"),

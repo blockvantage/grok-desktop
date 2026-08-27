@@ -258,6 +258,32 @@ describe("useConversationOutbox", () => {
     const delivered = await ctrl.interjectNow(row);
     expect(delivered).toBe(false);
     expect(harness.flush().messageQueue).toHaveLength(1);
+    expect(harness.flush().sendNowSupported).toBe(false);
+    harness.unmount();
+  });
+
+  it("disables send-now from outbox.summary when the engine has no interject", async () => {
+    installRpc({
+      "outbox.list": () => [],
+      "outbox.summary": () => ({
+        total: 0,
+        byStatus: {},
+        oldestPendingAgeMs: null,
+        sendNowSupported: false,
+      }),
+    });
+    const harness = createHookHarness(() =>
+      useConversationOutbox({
+        conversationId: "c1",
+        parentTaskId: "t1",
+        isTerminal: false,
+        gatewayReady: true,
+      }),
+    );
+    harness.flush();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(harness.flush().sendNowSupported).toBe(false);
     harness.unmount();
   });
 

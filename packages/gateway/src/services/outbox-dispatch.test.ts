@@ -130,8 +130,18 @@ describe("outbox-dispatch", () => {
     expect(summary).toMatchObject({
       total: expect.any(Number),
       byStatus: expect.any(Object),
+      sendNowSupported: true,
     });
     expect(JSON.stringify(summary)).not.toContain("two");
+  });
+
+  it("summary sendNowSupported is false without interject", async () => {
+    const summary = await dispatchOutboxMethod(
+      "outbox.summary",
+      {},
+      deps({ interject: undefined, supportsInterject: () => false }),
+    );
+    expect(summary).toMatchObject({ sendNowSupported: false });
   });
 
   it("sendNow delivers via interject and never creates tasks on unsupported", async () => {
