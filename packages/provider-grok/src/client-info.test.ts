@@ -9,4 +9,11 @@ describe("grokAcpClientInfo", () => {
     expect(info.version).toBe(GROKDESK_VERSION);
     expect(info.version).not.toBe("0.1.2");
   });
+
+  it("advertises x.ai/statusLine on initialize", async () => {
+    const { grokAcpInitializeParams } = await import("./client-info.js");
+    const params = grokAcpInitializeParams();
+    expect(params._meta["x.ai/statusLine"]).toBe(true);
+    expect(params.clientInfo.version).toBe(GROKDESK_VERSION);
+  });
 });

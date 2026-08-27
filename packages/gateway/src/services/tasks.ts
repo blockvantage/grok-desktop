@@ -519,6 +519,49 @@ export class TaskService {
     payload: Record<string, unknown>,
     opts?: { emitHooks?: boolean },
   ): TaskEvent {
+    // Coalesce live SessionStatus into one row (updates continuously).
+    if (kind === "step" && payload.title === "session_status") {
+      const last = this.db
+        .prepare(
+          `SELECT id, seq, kind, payload_json, created_at FROM task_events
+           WHERE task_id = ? ORDER BY seq DESC LIMIT 1`,
+        )
+        .get(taskId) as
+        | {
+            id: string;
+            seq: number;
+            kind: string;
+            payload_json: string;
+            created_at: string;
+          }
+        | undefined;
+      if (last?.kind === "step") {
+        try {
+          const prev = JSON.parse(last.payload_json) as Record<string, unknown>;
+          if (prev.title === "session_status") {
+            this.db
+              .prepare(`UPDATE task_events SET payload_json = ? WHERE id = ?`)
+              .run(JSON.stringify(payload), last.id);
+            const coalesced: TaskEvent = {
+              id: last.id,
+              taskId,
+              seq: last.seq,
+              kind: "step",
+              payload,
+              createdAt: last.created_at,
+            };
+            if (opts?.emitHooks !== false) {
+              this.hooks.onTaskEvent?.(taskId, coalesced.seq);
+              this.hooks.onEventAppended?.(coalesced);
+            }
+            return coalesced;
+          }
+        } catch {
+          /* fall through */
+        }
+      }
+    }
+
     // Coalesce streaming text/thought token chunks into one row so the UI
     // does not get one card per word.
     if (kind === "message") {

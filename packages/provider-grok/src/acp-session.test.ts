@@ -70,6 +70,41 @@ describe("ACP mediated session (SEC-01 policy authorizer)", () => {
     expect(events.some((e) => e.type === "tool_call")).toBe(false);
   });
 
+  it("forwards SessionStatus updates and advertises statusLine", async () => {
+    const duplex = new MemoryLineDuplex();
+    const fake = attachFakeAcpAgent(duplex.b, { emitSessionStatus: true });
+    cleanups.push(fake.dispose);
+    const session = new AcpMediatedSession({
+      transport: duplex.a,
+      policy: balancedPolicy,
+      binding: createAcpBinding("grok-4.5"),
+    });
+    cleanups.push(() => session.cancel("test"));
+    await session.start("/w");
+    const init = fake.state.requests.find((r) => r.method === "initialize");
+    expect(init?.params).toMatchObject({
+      _meta: { "x.ai/statusLine": true },
+    });
+    const created = fake.state.requests.find((r) => r.method === "session/new");
+    expect(created?.params).toMatchObject({
+      _meta: { clientStatusLine: true },
+    });
+    const events: RuntimeEvent[] = [];
+    await session.runTurn({ goal: "hi" }, async (ev) => {
+      events.push(ev);
+      return "continue";
+    });
+    const status = events.find((e) => e.type === "session_status");
+    expect(status).toMatchObject({
+      type: "session_status",
+      status: {
+        sessionUpdate: "session_status",
+        model: { display_name: "Grok 4.5" },
+      },
+    });
+    expect(JSON.stringify(status)).not.toMatch(/"total_cost_usd":0/);
+  });
+
   it("resumes via session/resume and records the path", async () => {
     const duplex = new MemoryLineDuplex();
     const fake = attachFakeAcpAgent(duplex.b);

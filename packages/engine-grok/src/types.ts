@@ -111,6 +111,11 @@ export type NormalizedEngineEvent =
       };
       /** ACP `initialize` capability table (Phase 1.1). */
       capabilities?: Record<string, unknown>;
+    }
+  /** Live SessionStatus snapshot (Phase 1.2). Not transcript. */
+  | {
+      type: "session_status";
+      status: Record<string, unknown>;
     };
 
 export interface EngineRunOptions {

@@ -7,6 +7,7 @@ export type SessionUpdateKind =
   | "tool_call"
   | "tool_call_update"
   | "plan"
+  | "session_status"
   | "unknown";
 
 const KNOWN_UPDATES = new Set<SessionUpdateKind>([
@@ -14,6 +15,7 @@ const KNOWN_UPDATES = new Set<SessionUpdateKind>([
   "tool_call",
   "tool_call_update",
   "plan",
+  "session_status",
 ]);
 
 const KNOWN_TOOL_KINDS = new Set([
@@ -38,8 +40,9 @@ export function decodeSessionUpdate(update: unknown): {
     return { kind: "unknown", raw: {} };
   }
   const raw = update as Record<string, unknown>;
-  const token =
+  const rawToken =
     typeof raw.sessionUpdate === "string" ? raw.sessionUpdate : "";
+  const token = rawToken === "SessionStatus" ? "session_status" : rawToken;
   const kind = KNOWN_UPDATES.has(token as SessionUpdateKind)
     ? (token as SessionUpdateKind)
     : "unknown";

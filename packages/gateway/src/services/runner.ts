@@ -1612,6 +1612,29 @@ export class TaskRunner {
         }
         return "continue";
 
+      case "session_status": {
+        this.tasks.appendEvent(taskId, "step", {
+          title: "session_status",
+          status: event.status,
+        });
+        const windowSize = Number(
+          (event.status as { context_window?: { context_window_size?: number } })
+            .context_window?.context_window_size,
+        );
+        const tokens = Number(
+          (event.status as { context_window?: { context_tokens?: number } })
+            .context_window?.context_tokens,
+        );
+        if (attemptId && this.runAttempts && Number.isFinite(windowSize) && windowSize > 0) {
+          this.runAttempts.setLastUsage?.(attemptId, {
+            inputTokens: Number.isFinite(tokens) ? tokens : 0,
+            outputTokens: 0,
+            contextWindow: windowSize,
+          });
+        }
+        return "continue";
+      }
+
       case "plan_update":
         this.tasks.appendEvent(taskId, "plan_update", {
           content: event.content,

@@ -1573,7 +1573,14 @@
   "meter": {
     "contextUsage": "Context usage",
     "contextTitle": "Context {pct}% used",
-    "summarizePrompt": "Long conversation — summarize so far?"
+    "summarizePrompt": "Long conversation — summarize so far?",
+    "unknown": "—",
+    "contextUnknown": "Context unknown",
+    "model": "Model",
+    "cost": "Cost",
+    "timer": "Turn time",
+    "branch": "Branch",
+    "worktree": "Worktree"
   },
   "markdown": {
     "remoteImagesBlocked": "Remote images blocked",

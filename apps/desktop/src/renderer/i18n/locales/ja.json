@@ -1512,7 +1512,14 @@
   "meter": {
     "contextUsage": "コンテキスト使用量",
     "contextTitle": "コンテキスト使用率 {pct}%",
-    "summarizePrompt": "会話が長くなっています。ここまでを要約しますか？"
+    "summarizePrompt": "会話が長くなっています。ここまでを要約しますか？",
+    "unknown": "—",
+    "contextUnknown": "コンテキスト不明",
+    "model": "モデル",
+    "cost": "コスト",
+    "timer": "ターン時間",
+    "branch": "ブランチ",
+    "worktree": "Worktree"
   },
   "markdown": {
     "remoteImagesBlocked": "リモート画像はブロックされています",

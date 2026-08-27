@@ -6,7 +6,7 @@
  * fake peer in tests. Does not spend model credits by itself.
  */
 import { EventEmitter } from "node:events";
-import { grokAcpClientInfo } from "./client-info.js";
+import { grokAcpInitializeParams } from "./client-info.js";
 
 export type JsonRpcId = string | number;
 
@@ -322,10 +322,10 @@ export class AcpJsonRpcClient extends EventEmitter {
     name?: string;
     version?: string;
   }): Promise<AcpInitializeResult> {
-    const result = (await this.request("initialize", {
-      protocolVersion: 1,
-      clientInfo: clientInfo ?? grokAcpClientInfo(),
-    })) as AcpInitializeResult;
+    const result = (await this.request(
+      "initialize",
+      grokAcpInitializeParams(clientInfo),
+    )) as AcpInitializeResult;
     if (
       !result ||
       typeof result.protocolVersion !== "number" ||
@@ -340,8 +340,15 @@ export class AcpJsonRpcClient extends EventEmitter {
   async newSession(params?: {
     cwd?: string;
     mcpServers?: unknown[];
+    _meta?: Record<string, unknown>;
   }): Promise<{ sessionId: string }> {
-    const result = (await this.request("session/new", params ?? {})) as {
+    const result = (await this.request("session/new", {
+      ...(params ?? {}),
+      _meta: {
+        clientStatusLine: true,
+        ...(params?._meta ?? {}),
+      },
+    })) as {
       sessionId?: string;
     };
     if (!result?.sessionId) throw new Error("ACP session/new missing sessionId");
@@ -422,6 +429,8 @@ export function attachFakeAcpAgent(
     requirePermission?: boolean;
     permissionKind?: string;
     permissionTitle?: string;
+    /** Emit a SessionStatus update before completing the prompt. */
+    emitSessionStatus?: boolean;
     /** Per-method responder; throw {code:-32601} to simulate method-not-found. */
     respond?: (method: string, params?: unknown) => unknown;
   },
@@ -619,6 +628,23 @@ export function attachFakeAcpAgent(
           );
           // Do not reply to prompt until permission response arrives.
         } else {
+          if (opts?.emitSessionStatus) {
+            transport.writeLine(
+              encodeJsonRpc({
+                jsonrpc: "2.0",
+                method: "session/update",
+                params: {
+                  sessionId,
+                  update: {
+                    sessionUpdate: "session_status",
+                    schema_version: 1,
+                    model: { display_name: "Grok 4.5" },
+                    workspace: { branch: "main" },
+                  },
+                },
+              }),
+            );
+          }
           reply({ stopReason: "end_turn", toolExecuted: false });
         }
         break;

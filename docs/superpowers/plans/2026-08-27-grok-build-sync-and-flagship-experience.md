@@ -75,7 +75,7 @@ The ACP factory must provide the same controlled environment as headless.
 - Adopt the upstream forward-compat rule everywhere we decode: unknown `session/update` variants and unknown `ToolKind`s must decode to an `unknown`/`other` sink, never throw (mirror `#[serde(other)]`).
 - **Accept:** capability table in the audit/protection snapshot comes from `initialize`, and a newer CLI with new event types cannot break an older Desk.
 
-### 1.2 Live status header from `SessionStatus`
+### 1.2 Live status header from `SessionStatus` ✅ (2026-08-27)
 - Advertise `x.ai/statusLine` in `initialize` client capabilities (and `clientStatusLine` in session `_meta` under leader mode). Render the conversation header from the `SessionStatus` update: model display name, context gauge with `auto_compact_threshold_percent`, running cost (`total_cost_usd`), turn timer, branch/worktree. Payload is snake_case (`schema_version: 1`); absent values are `None`, never zero — render honestly ("—", not 0).
 - This supersedes the 8s context-meter polling (`task-workspace-view.tsx:566-600`) on ACP; keep polling as headless fallback. Fixes the "meter hides when contextWindow unknown" gap (`components/context-meter.tsx`) with a degraded state.
 - **Accept:** header updates live with zero polling on ACP; degraded-but-visible state on headless.

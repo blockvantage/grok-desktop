@@ -24,6 +24,7 @@ Until the linked tests and phase-exit reports pass, **do not claim** the product
 | **Client version / min CLI** | ACP clientInfo and HTTP `x-grok-client-version` are the Desk app version; managed CLI < 1.0.10 is refused | engine-grok + provider-grok + gateway | `packages/engine-grok/src/client-version.test.ts`, `discover.test.ts`, `packages/provider-grok/src/client-info.test.ts`, `packages/gateway/src/services/acp-transport-factory.test.ts` | 2026-08-27 |
 | **Permission waiter TTL** | Unresolved human permission waiters time out and are removed | agent-runtime | `packages/agent-runtime/src/permission-bridge.test.ts` | 2026-08-27 |
 | **ACP initialize capabilities** | Capability table (session/hooks/statusLine/toolOverrides) comes from `initialize`, not `--help` substring probes | provider-grok + engine-grok + gateway | `packages/provider-grok/src/acp-capabilities.test.ts`, `acp-session.test.ts`, `packages/engine-grok/src/p0/cli-probe.test.ts` (prose "sandbox" ≠ flag), `packages/gateway/src/services/agent-provider-engine.test.ts` (session_meta.capabilities) | 2026-08-27 Phase 1.1 |
+| **SessionStatus header** | Live ACP header from snake_case SessionStatus; absent numbers render "—" never 0; headless meter stays visible when window unknown | shared + provider-grok + desktop | `packages/shared/src/session-status.test.ts`, `packages/provider-grok/src/acp-session.test.ts` (statusLine advertise + forward), `apps/desktop/src/renderer/components/session-status-header.test.tsx`, `context-meter.test.tsx` (degraded) | 2026-08-27 Phase 1.2 |
 
 ## How to use
 

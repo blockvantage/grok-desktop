@@ -145,6 +145,8 @@ export class AcpMediatedSession implements AgentSession {
   private planFirst: boolean;
   /** Active turn sink — used to park permissions in the gateway approval UI. */
   private turnSink: RuntimeEventSink | null = null;
+  private updatesUnsub: (() => void) | null = null;
+  lastSessionStatusRaw: Record<string, unknown> | null = null;
   readonly binding: ProviderSessionBinding;
   /** Isolated GROK_HOME actually used for this session, when provisioned. */
   isolatedProfileDir: string | null;
@@ -373,6 +375,7 @@ export class AcpMediatedSession implements AgentSession {
     (this.binding as { providerSessionId: string }).providerSessionId =
       session.sessionId;
     this.started = true;
+    this.attachSessionUpdates();
 
     if (this.planFirst) {
       try {
@@ -396,6 +399,124 @@ export class AcpMediatedSession implements AgentSession {
     }
   }
 
+  private attachSessionUpdates(): void {
+    if (this.updatesUnsub) return;
+    const handler = (method: string, params: unknown) => {
+      this.onSessionUpdate(method, params, this.turnSink);
+    };
+    this.client.on("notification", handler);
+    this.updatesUnsub = () => {
+      this.client.off("notification", handler);
+      this.updatesUnsub = null;
+    };
+  }
+
+  private onSessionUpdate(
+    method: string,
+    params: unknown,
+    sink: RuntimeEventSink | null,
+  ): void {
+    if (method !== "session/update") return;
+    const p = params as { update?: unknown };
+    const decoded = decodeSessionUpdate(p.update);
+    const u = decoded.raw as {
+      sessionUpdate?: string;
+      toolCallId?: string;
+      title?: string;
+      kind?: string;
+      status?: string;
+      content?: unknown;
+      output?: unknown;
+      citations?: unknown;
+    };
+    if (decoded.kind === "session_status") {
+      this.lastSessionStatusRaw = decoded.raw;
+      if (sink) {
+        void sink({ type: "session_status", status: decoded.raw });
+      }
+      return;
+    }
+    if (decoded.kind === "unknown" || !sink) return;
+
+    if (decoded.kind === "plan") {
+      const content = String(
+        (u as { content?: unknown }).content ??
+          (u as { entries?: unknown }).entries ??
+          "",
+      );
+      const status =
+        (u as { status?: string }).status === "awaiting_approval"
+          ? "awaiting_approval"
+          : "drafting";
+      this.lastPlanContent = content;
+      void sink({ type: "plan", content, status });
+      return;
+    }
+
+    if (
+      (u.sessionUpdate === "tool_call" ||
+        u.sessionUpdate === "tool_call_update") &&
+      u.status === "completed"
+    ) {
+      const toolName =
+        decodeToolKind(u.kind) === "other"
+          ? String(u.title ?? u.kind ?? "other")
+          : decodeToolKind(u.kind);
+      void sink({
+        type: "tool_call",
+        id: u.toolCallId ?? "tool",
+        tool: toolName,
+        command: u.title,
+      });
+
+      const toolLower = `${toolName} ${String(u.kind ?? "")}`.toLowerCase();
+      if (
+        MEDIA_TOOLS.has(toolLower) ||
+        toolLower.includes("imagine") ||
+        toolLower.includes("image_gen")
+      ) {
+        const paths = extractMediaPaths(u.output ?? u.content);
+        for (const path of paths) {
+          void sink({
+            type: "artifact",
+            title: path.split("/").pop() ?? path,
+            path,
+            kind: "media",
+          });
+        }
+      }
+
+      if (
+        toolLower.includes("web_search") ||
+        toolLower.includes("web_fetch") ||
+        toolLower.includes("x_search") ||
+        toolLower.includes("x_keyword")
+      ) {
+        const items = extractCitations(u.output ?? u.content ?? u.citations);
+        if (items.length) {
+          void sink({ type: "citations", items });
+        }
+      }
+    }
+
+    if (u.sessionUpdate === "agent_message_chunk" && u.content) {
+      const text =
+        typeof u.content === "string"
+          ? u.content
+          : typeof (u.content as { text?: string }).text === "string"
+            ? (u.content as { text: string }).text
+            : "";
+      if (text) {
+        void sink({
+          type: "message",
+          role: "assistant",
+          text,
+          channel: "text",
+        });
+      }
+    }
+  }
+
   async runTurn(turn: TurnInput, sink: RuntimeEventSink): Promise<TurnResult> {
     if (this.cancelled) {
       return { status: "cancelled", summary: "cancelled" };
@@ -408,118 +529,13 @@ export class AcpMediatedSession implements AgentSession {
     }
 
     this.turnSink = sink;
-    const unsubNotif = (() => {
-      const handler = (method: string, params: unknown) => {
-        if (method !== "session/update") return;
-        const p = params as {
-          update?: {
-            sessionUpdate?: string;
-            toolCallId?: string;
-            title?: string;
-            kind?: string;
-            status?: string;
-            content?: unknown;
-            output?: unknown;
-            rawInput?: unknown;
-            citations?: unknown;
-          };
-        };
-        const decoded = decodeSessionUpdate(p.update);
-        const u = decoded.raw as {
-          sessionUpdate?: string;
-          toolCallId?: string;
-          title?: string;
-          kind?: string;
-          status?: string;
-          content?: unknown;
-          output?: unknown;
-          rawInput?: unknown;
-          citations?: unknown;
-        };
-        if (decoded.kind === "unknown") return;
-
-        if (decoded.kind === "plan") {
-          const content = String(
-            (u as { content?: unknown }).content ??
-              (u as { entries?: unknown }).entries ??
-              "",
-          );
-          const status =
-            (u as { status?: string }).status === "awaiting_approval"
-              ? "awaiting_approval"
-              : "drafting";
-          this.lastPlanContent = content;
-          void sink({ type: "plan", content, status });
-          return;
-        }
-
-        if (
-          (u.sessionUpdate === "tool_call" ||
-            u.sessionUpdate === "tool_call_update") &&
-          u.status === "completed"
-        ) {
-          const toolName = decodeToolKind(u.kind) === "other"
-            ? String(u.title ?? u.kind ?? "other")
-            : decodeToolKind(u.kind);
-          void sink({
-            type: "tool_call",
-            id: u.toolCallId ?? "tool",
-            tool: toolName,
-            command: u.title,
-          });
-
-          const toolLower = `${toolName} ${String(u.kind ?? "")}`.toLowerCase();
-          if (
-            MEDIA_TOOLS.has(toolLower) ||
-            toolLower.includes("imagine") ||
-            toolLower.includes("image_gen")
-          ) {
-            const paths = extractMediaPaths(u.output ?? u.content);
-            for (const path of paths) {
-              void sink({
-                type: "artifact",
-                title: path.split("/").pop() ?? path,
-                path,
-                kind: "media",
-              });
-            }
-          }
-
-          if (
-            toolLower.includes("web_search") ||
-            toolLower.includes("web_fetch") ||
-            toolLower.includes("x_search") ||
-            toolLower.includes("x_keyword")
-          ) {
-            const items = extractCitations(u.output ?? u.content ?? u.citations);
-            if (items.length) {
-              void sink({ type: "citations", items });
-            }
-          }
-        }
-
-        if (u.sessionUpdate === "agent_message_chunk" && u.content) {
-          const text =
-            typeof u.content === "string"
-              ? u.content
-              : typeof (u.content as { text?: string }).text === "string"
-                ? (u.content as { text: string }).text
-                : "";
-          if (text) {
-            void sink({
-              type: "message",
-              role: "assistant",
-              text,
-              channel: "text",
-            });
-          }
-        }
-      };
-      this.client.on("notification", handler);
-      return () => {
-        this.client.off("notification", handler);
-      };
-    })();
+    this.attachSessionUpdates();
+    if (this.lastSessionStatusRaw) {
+      void sink({
+        type: "session_status",
+        status: this.lastSessionStatusRaw,
+      });
+    }
 
     try {
       await sink({
@@ -560,7 +576,6 @@ export class AcpMediatedSession implements AgentSession {
       return { status: "failed", summary: message };
     } finally {
       this.turnSink = null;
-      unsubNotif();
     }
   }
 
@@ -694,6 +709,7 @@ export class AcpMediatedSession implements AgentSession {
           resumed.sessionId;
         this.started = true;
         this.lastResumePath = "resume";
+        this.attachSessionUpdates();
         return "resume";
       } catch (e) {
         if (!isMethodNotFound(e)) {
@@ -710,6 +726,7 @@ export class AcpMediatedSession implements AgentSession {
           loaded.sessionId;
         this.started = true;
         this.lastResumePath = "load";
+        this.attachSessionUpdates();
         return "load";
       } catch (e) {
         if (!isMethodNotFound(e)) {
@@ -730,6 +747,7 @@ export class AcpMediatedSession implements AgentSession {
 
   async cancel(_reason: string): Promise<void> {
     this.cancelled = true;
+    this.updatesUnsub?.();
     try {
       if (this.sessionId && this.started) {
         await Promise.race([

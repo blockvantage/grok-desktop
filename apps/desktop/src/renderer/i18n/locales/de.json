@@ -1512,7 +1512,14 @@
   "meter": {
     "contextUsage": "Kontextnutzung",
     "contextTitle": "Kontext zu {pct} % genutzt",
-    "summarizePrompt": "Lange Unterhaltung — bisher zusammenfassen?"
+    "summarizePrompt": "Lange Unterhaltung — bisher zusammenfassen?",
+    "unknown": "—",
+    "contextUnknown": "Kontext unbekannt",
+    "model": "Modell",
+    "cost": "Kosten",
+    "timer": "Zugzeit",
+    "branch": "Branch",
+    "worktree": "Worktree"
   },
   "markdown": {
     "remoteImagesBlocked": "Externe Bilder blockiert",

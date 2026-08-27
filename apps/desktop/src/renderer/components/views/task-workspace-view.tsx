@@ -288,6 +288,7 @@ import { humanizeError } from "@/lib/errors";
 import { relativeTime, shortPath, formatDateTime } from "@/lib/format";
 import { approvalLabel, effortLabel } from "@/lib/labels";
 import { ContextMeter } from "@/components/context-meter";
+import { SessionStatusHeader } from "@/components/session-status-header";
 import { ProtectionChip } from "@/components/protection-chip";
 import { DegradedModeLabel } from "@/components/degraded-mode-label";
 import { ReviewChangesStrip } from "@/components/review-changes-strip";
@@ -313,7 +314,11 @@ import {
   taskRewindPoints,
   taskRewind,
 } from "@/lib/api";
-import { mapTurnToRewindPoint } from "@grokdesk/shared";
+import {
+  latestSessionStatusFromEvents,
+  mapTurnToRewindPoint,
+  projectSessionStatusHeader,
+} from "@grokdesk/shared";
 import { collapseEventsToBlocks, extractResultSummary } from "@/lib/stream-view";
 import { questionChipsForTerminalTurn } from "@/lib/user-question";
 import { cn } from "@/lib/utils";
@@ -571,10 +576,22 @@ export function TaskWorkspaceView(props: {
     contextWindow?: number;
   } | null>(null);
   const [compactAvailable, setCompactAvailable] = useState(false);
+  const acpSessionStatus = useMemo(
+    () =>
+      latestSessionStatusFromEvents(
+        props.events.map((e) => ({ kind: e.kind, payload: e.payload })),
+      ),
+    [props.events],
+  );
+  const liveAcpStatus = Boolean(acpSessionStatus);
 
-  // Poll context usage for the thin meter (ACP path when available).
+  // ACP SessionStatus is push-based (zero polling). Headless keeps the 8s meter.
   useEffect(() => {
     if (isOptimistic || !task.id) return;
+    if (liveAcpStatus) {
+      setCompactAvailable(true);
+      return;
+    }
     let cancelled = false;
     const tick = async () => {
       try {
@@ -588,12 +605,12 @@ export function TaskWorkspaceView(props: {
       }
     };
     void tick();
-    const t = setInterval(() => void tick(), 8_000);
+    const timer = setInterval(() => void tick(), 8_000);
     return () => {
       cancelled = true;
-      clearInterval(t);
+      clearInterval(timer);
     };
-  }, [task.id, isOptimistic, task.status]);
+  }, [task.id, isOptimistic, task.status, liveAcpStatus]);
   // CH-8: suppress "What next?" while multi-choice question chips are pending.
   const hasPendingQuestion = useMemo(() => {
     const blocks = blocksFromCollapsed(
@@ -1763,6 +1780,10 @@ export function TaskWorkspaceView(props: {
                     </span>
                   )}
                 </div>
+                <SessionStatusHeader
+                  snapshot={acpSessionStatus}
+                  source={liveAcpStatus ? "acp" : "headless"}
+                />
                 {goalProgress ? (
                   <p
                     key={goalProgress.line}
@@ -3128,6 +3149,11 @@ export function TaskWorkspaceView(props: {
                 ) : null}
                 <ContextMeter
                   usage={contextUsage}
+                  liveRatio={
+                    acpSessionStatus
+                      ? projectSessionStatusHeader(acpSessionStatus).contextRatio
+                      : null
+                  }
                   compactAvailable={compactAvailable && isLive}
                   onCompact={() => {
                     void taskCompact(task.id).then((r) => {

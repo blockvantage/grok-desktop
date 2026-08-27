@@ -38,6 +38,10 @@ export type RuntimeEvent =
     }
   | { type: "usage"; usage: UsageSnapshot }
   | {
+      type: "session_status";
+      status: Record<string, unknown>;
+    }
+  | {
       type: "plan";
       content: string;
       status: "drafting" | "awaiting_approval";

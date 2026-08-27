@@ -3,7 +3,7 @@ import { describe, it, expect, vi } from "vitest";
 import { ContextMeter } from "./context-meter";
 
 describe("ContextMeter", () => {
-  it("renders nothing without contextWindow", () => {
+  it("renders a degraded visible state without contextWindow", () => {
     const html = renderToStaticMarkup(
       <ContextMeter
         usage={{ inputTokens: 1, outputTokens: 1 }}
@@ -11,7 +11,10 @@ describe("ContextMeter", () => {
         compactAvailable
       />,
     );
-    expect(html).toBe("");
+    expect(html).toContain('data-testid="context-meter"');
+    expect(html).toContain('data-context-meter-degraded="true"');
+    expect(html).toContain("—");
+    expect(html).not.toContain('data-testid="context-meter-summarize"');
   });
 
   it("shows summarize chip at 75% when compact available", () => {

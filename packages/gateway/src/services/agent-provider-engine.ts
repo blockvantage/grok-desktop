@@ -106,6 +106,11 @@ export function runtimeEventToNormalized(
         type: "citations",
         items: event.items,
       };
+    case "session_status":
+      return {
+        type: "session_status",
+        status: event.status,
+      };
     default:
       return null;
   }

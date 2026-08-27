@@ -1512,7 +1512,14 @@
   "meter": {
     "contextUsage": "Uso del contexto",
     "contextTitle": "Contexto {pct}% usado",
-    "summarizePrompt": "Conversación larga: ¿resumir lo anterior?"
+    "summarizePrompt": "Conversación larga: ¿resumir lo anterior?",
+    "unknown": "—",
+    "contextUnknown": "Contexto desconocido",
+    "model": "Modelo",
+    "cost": "Coste",
+    "timer": "Turno",
+    "branch": "Rama",
+    "worktree": "Worktree"
   },
   "markdown": {
     "remoteImagesBlocked": "Imágenes remotas bloqueadas",
