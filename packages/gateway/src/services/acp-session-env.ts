@@ -23,7 +23,7 @@ import {
   seedIsolatedGrokHome,
   withDeskBrowserTaskId,
   type McpServerConfig,
-} from "@grokdesk/engine-grok";
+} from "../engine-composition.js";
 
 export type AcpDeskMcpServer = McpServerConfig;
 

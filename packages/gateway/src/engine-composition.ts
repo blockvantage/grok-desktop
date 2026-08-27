@@ -28,8 +28,10 @@ export {
   envWithGrokPath,
   envWithManagedBinary,
   seedIsolatedGrokHome,
+  withDeskBrowserTaskId,
   buildRunPrompt,
   promoteSessionMediaToWorkspace,
 } from "@grokdesk/engine-grok";
 
 export type { EngineAdapter } from "./engine-types.js";
+export type { McpServerConfig } from "@grokdesk/engine-grok";
