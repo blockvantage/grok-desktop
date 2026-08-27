@@ -117,6 +117,24 @@ export function runtimeEventToNormalized(
         type: "session_status",
         status: event.status,
       };
+    case "worker_started":
+      return {
+        type: "worker_started",
+        workerId: event.workerId,
+        label: event.label,
+      };
+    case "worker_activity":
+      return {
+        type: "worker_activity",
+        workerId: event.workerId,
+        summary: event.summary,
+      };
+    case "worker_completed":
+      return {
+        type: "worker_completed",
+        workerId: event.workerId,
+        summary: event.summary,
+      };
     default:
       return null;
   }

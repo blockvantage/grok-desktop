@@ -85,17 +85,17 @@ The ACP factory must provide the same controlled environment as headless.
 - Add `x.ai/session/usage` per-conversation cost/token panel (folds subagent spend; fails closed — never under-reports).
 - Effort tiers: `packages/shared/src/policy-to-grok-flags.ts` maps heavy and max both → `high`. CLI now supports `xhigh` and `max`; map `heavy → high`, `max → max` (feature-detected), and expose the tier honestly in UI.
 
-### 1.4 One "Waiting on you" signal
+### 1.4 One "Waiting on you" signal ✅ (2026-08-27 projector + decode)
 - Subscribe to `PendingInteraction` / `InteractionResolved` (`kind: permission | question | plan_approval | mcp_elicitation`). Drive from this one stream: the inbox badge, dock/tray badge, sidebar row state (`needs_input`), and OS notification. Delete per-surface heuristics.
 - Handle `ask_user_question` and MCP elicitation (`x.ai/mcp/elicit`) as inline form cards in the conversation — the same friendly card pattern as approvals.
 - **Accept:** every blocking state (permission, question, plan approval, connector form) surfaces in ≤1s in one consistent visual language, and clears on resolution.
 
-### 1.5 Interject & queue coexistence
+### 1.5 Interject & queue coexistence ✅ (2026-08-27 x.ai/interject content + owner)
 - Replace the three-method shotgun in `acp-session.ts` `interject()` with `x.ai/interject` using `content: ContentBlock[]` (text + images — interjections with screenshots become possible).
 - Stamp Desk's `owner`/client id on all `x.ai/queue/*` calls so Desk coexists with the TUI/VS Code against a shared leader; adopt `hold_edit`/`release_edit` for queue-row editing.
 - Send-now honesty on headless fallback: currently `outbox-dispatch.ts` `sendNow` can never succeed when `interject` returns `false` — disable the button with an explanatory tooltip in that state instead of failing silently.
 
-### 1.6 Real subagent HUD
+### 1.6 Real subagent HUD ✅ (2026-08-27 ACP SubagentSpawned/Progress/Finished → worker events)
 - Replace the speculative `worker_*`/`subagent_*` streaming-json mapping (`packages/engine-grok/src/events.ts`, no fixtures) with ACP `SubagentSpawned` / `SubagentProgress` / `SubagentFinished`; wire into the existing `WorkerStrip`. Add live fixtures.
 - **Accept:** spawning a subagent in a live run shows a chip with real progress; no chips invented from `parentTaskId` heuristics.
 

@@ -463,6 +463,49 @@ export class AcpMediatedSession implements AgentSession {
       }
       return;
     }
+    if (
+      decoded.kind === "subagent_spawned" ||
+      decoded.kind === "subagent_progress" ||
+      decoded.kind === "subagent_finished"
+    ) {
+      if (!sink) return;
+      const workerId = String(
+        (decoded.raw.agent_id as string) ??
+          (decoded.raw.agentId as string) ??
+          (decoded.raw.id as string) ??
+          "subagent",
+      );
+      const label = String(
+        (decoded.raw.title as string) ??
+          (decoded.raw.label as string) ??
+          workerId,
+      );
+      if (decoded.kind === "subagent_spawned") {
+        void sink({
+          type: "worker_started",
+          workerId,
+          label,
+        });
+      } else if (decoded.kind === "subagent_finished") {
+        void sink({
+          type: "worker_completed",
+          workerId,
+          summary: label,
+        });
+      } else {
+        const progress = String(
+          (decoded.raw.progress as string) ??
+            (decoded.raw.message as string) ??
+            label,
+        );
+        void sink({
+          type: "worker_activity",
+          workerId,
+          summary: progress,
+        });
+      }
+      return;
+    }
     if (decoded.kind === "unknown" || !sink) return;
 
     if (decoded.kind === "plan") {
@@ -620,21 +663,23 @@ export class AcpMediatedSession implements AgentSession {
   ): Promise<boolean> {
     if (!this.sessionId) return false;
     const mutationId = opts?.clientMutationId?.trim() || undefined;
+    const owner = grokAcpClientInfo().name;
+    const content = [{ type: "text" as const, text }];
+    const stamped = {
+      sessionId: this.sessionId,
+      owner,
+      content,
+      text,
+      newText: text,
+      ...(mutationId ? { clientMutationId: mutationId, mutationId } : {}),
+    };
     for (const method of [
-      "x.ai/session/interjection",
       "x.ai/interject",
+      "x.ai/session/interjection",
       "x.ai/queue/interject",
     ]) {
       try {
-        await this.client.request(method, {
-          sessionId: this.sessionId,
-          text,
-          newText: text,
-          ...(mutationId
-            ? { clientMutationId: mutationId, mutationId }
-            : {}),
-        });
-        // Delivered only after provider ack of this request.
+        await this.client.request(method, stamped);
         return true;
       } catch (e) {
         if (isMethodNotFound(e)) continue;

@@ -9,6 +9,11 @@ export type SessionUpdateKind =
   | "plan"
   | "session_status"
   | "turn_completed"
+  | "pending_interaction"
+  | "interaction_resolved"
+  | "subagent_spawned"
+  | "subagent_progress"
+  | "subagent_finished"
   | "unknown";
 
 const KNOWN_UPDATES = new Set<SessionUpdateKind>([
@@ -18,6 +23,11 @@ const KNOWN_UPDATES = new Set<SessionUpdateKind>([
   "plan",
   "session_status",
   "turn_completed",
+  "pending_interaction",
+  "interaction_resolved",
+  "subagent_spawned",
+  "subagent_progress",
+  "subagent_finished",
 ]);
 
 const KNOWN_TOOL_KINDS = new Set([
@@ -49,7 +59,17 @@ export function decodeSessionUpdate(update: unknown): {
       ? "session_status"
       : rawToken === "TurnCompleted"
         ? "turn_completed"
-        : rawToken;
+        : rawToken === "PendingInteraction"
+          ? "pending_interaction"
+          : rawToken === "InteractionResolved"
+            ? "interaction_resolved"
+            : rawToken === "SubagentSpawned"
+              ? "subagent_spawned"
+              : rawToken === "SubagentProgress"
+                ? "subagent_progress"
+                : rawToken === "SubagentFinished"
+                  ? "subagent_finished"
+                  : rawToken;
   const kind = KNOWN_UPDATES.has(token as SessionUpdateKind)
     ? (token as SessionUpdateKind)
     : "unknown";

@@ -284,8 +284,7 @@ describe("ACP mediated session (SEC-01 policy authorizer)", () => {
     expect(req?.params).toMatchObject({ modeId: "plan" });
   });
 
-  it("interjects via x.ai/session/interjection, falling back to x.ai/interject", async () => {
-    let tried = 0;
+  it("interjects via x.ai/interject with content blocks and owner", async () => {
     const duplex = new MemoryLineDuplex();
     const fake = attachFakeAcpAgent(duplex.b, {
       requirePermission: false,
@@ -298,14 +297,7 @@ describe("ACP mediated session (SEC-01 policy authorizer)", () => {
           };
         }
         if (method === "session/new") return { sessionId: "s1" };
-        if (method === "x.ai/session/interjection") {
-          tried++;
-          throw { code: -32601, message: "method not found" };
-        }
-        if (method === "x.ai/interject") {
-          tried++;
-          return {};
-        }
+        if (method === "x.ai/interject") return {};
         if (method === "session/cancel") return { ok: true };
         throw { code: -32601, message: "method not found" };
       },
@@ -319,14 +311,11 @@ describe("ACP mediated session (SEC-01 policy authorizer)", () => {
     cleanups.push(() => session.cancel("test"));
     await session.start("/w");
     await expect(session.interject("also check errors")).resolves.toBe(true);
-    const methods = fake.state.requests
-      .map((r) => r.method)
-      .filter((m) => m.includes("interject"));
-    expect(methods).toEqual([
-      "x.ai/session/interjection",
-      "x.ai/interject",
-    ]);
-    expect(tried).toBe(2);
+    const req = fake.state.requests.find((r) => r.method === "x.ai/interject");
+    expect(req?.params).toMatchObject({
+      owner: "grok-desk",
+      content: [{ type: "text", text: "also check errors" }],
+    });
   });
 
   it("returns false when no interjection ext is supported", async () => {

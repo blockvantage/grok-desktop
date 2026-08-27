@@ -144,6 +144,17 @@ describe("runtimeEventToNormalized", () => {
       }),
     ).toMatchObject({ type: "tool_request", tool: "shell" });
     expect(
+      runtimeEventToNormalized({
+        type: "worker_started",
+        workerId: "w1",
+        label: "Research",
+      }),
+    ).toEqual({
+      type: "worker_started",
+      workerId: "w1",
+      label: "Research",
+    });
+    expect(
       runtimeEventToNormalized({ type: "done", summary: "ok" }),
     ).toEqual({ type: "done", summary: "ok" });
     expect(

@@ -7,6 +7,15 @@ describe("ACP forward-compat decode", () => {
       decodeSessionUpdate({ sessionUpdate: "tool_call", kind: "edit" }).kind,
     ).toBe("tool_call");
     expect(
+      decodeSessionUpdate({ sessionUpdate: "SubagentSpawned" }).kind,
+    ).toBe("subagent_spawned");
+    expect(
+      decodeSessionUpdate({ sessionUpdate: "pending_interaction" }).kind,
+    ).toBe("pending_interaction");
+    expect(
+      decodeSessionUpdate({ sessionUpdate: "InteractionResolved" }).kind,
+    ).toBe("interaction_resolved");
+    expect(
       decodeSessionUpdate({ sessionUpdate: "turn_completed" }).kind,
     ).toBe("turn_completed");
     expect(

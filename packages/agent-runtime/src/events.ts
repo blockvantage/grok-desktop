@@ -56,7 +56,22 @@ export type RuntimeEvent =
       }>;
     }
   | { type: "done"; summary: string }
-  | { type: "error"; message: string; code?: string };
+  | { type: "error"; message: string; code?: string }
+  | {
+      type: "worker_started";
+      workerId: string;
+      label?: string;
+    }
+  | {
+      type: "worker_activity";
+      workerId: string;
+      summary?: string;
+    }
+  | {
+      type: "worker_completed";
+      workerId: string;
+      summary?: string;
+    };
 
 export type RuntimeEventSignal = "continue" | "abort";
 
