@@ -213,6 +213,8 @@ describe("renderer visual structure (design system)", () => {
     expect(ws).toMatch(/conversation=\{conversation\}/);
     expect(stream).toMatch(/ConversationTurn/);
     expect(stream).toMatch(/data-canonical-conversation/);
+    expect(stream).toMatch(/shouldVirtualizeConversation/);
+    expect(stream).toMatch(/ConversationTimelineRail/);
     expect(stream).not.toMatch(/<ThinkingTrail/);
     expect(stream).not.toMatch(/conversation\.queued\.map/);
     expect(stream).not.toMatch(/data-queued-turns/);

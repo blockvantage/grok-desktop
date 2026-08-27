@@ -31,6 +31,7 @@ Until the linked tests and phase-exit reports pass, **do not claim** the product
 | **Subagent HUD** | SubagentSpawned/Progress/Finished map to worker_* events, not parentTaskId heuristics | provider-grok + gateway | `packages/provider-grok/src/acp-decode.test.ts`, `packages/gateway/src/services/agent-provider-engine.test.ts` | 2026-08-27 Phase 1.6 |
 | **Composer parity** | Follow-up composer has model/approval/plan-first/role; next turn uses those settings; live catalog is not grok-4.5-only | desktop + gateway | `apps/desktop/src/renderer/lib/next-reply-preview.test.ts`, `packages/gateway/src/services/follow-up-settings.test.ts`, `packages/gateway/src/services/models-list.test.ts` | 2026-08-27 Phase 2.1 |
 | **ToolKind cards** | edit/write/execute/media/ask_user render calm one-liners; unknown kinds never dump JSON | desktop | `apps/desktop/src/renderer/lib/tool-kind-card.test.ts`, `apps/desktop/src/renderer/components/conversation/conversation-turn.test.tsx` | 2026-08-27 Phase 2.2 |
+| **Conversation timeline** | Long threads virtualize; a tick rail jumps to turns; long answers have back-to-start | desktop | `apps/desktop/src/renderer/lib/conversation-timeline.test.ts`, `components/conversation/conversation-timeline-rail.test.tsx`, `conversation-turn.test.tsx` (back-to-start), `task-stream.tsx` wires `shouldVirtualizeConversation` | 2026-08-27 Phase 2.3 |
 
 ## How to use
 

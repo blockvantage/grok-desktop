@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  ArrowUp,
   Check,
   ChevronRight,
   Copy,
@@ -44,6 +45,7 @@ import {
   type ApprovalDecision,
   type ApprovalActionTarget,
 } from "@/lib/approval-action";
+import { isLongAnswer } from "@/lib/conversation-timeline";
 
 const TERMINAL_TURN_STATES = new Set<ConversationTurnView["state"]>([
   "done",
@@ -180,6 +182,8 @@ export function ConversationTurn({
   const [saveBusy, setSaveBusy] = useState(false);
   const editInputRef = useRef<HTMLTextAreaElement | null>(null);
   const turnRef = useRef<HTMLElement | null>(null);
+  const answerStartRef = useRef<HTMLDivElement | null>(null);
+  const longAnswer = isLongAnswer(turn.answer?.text);
   const approveRef = useRef<HTMLButtonElement | null>(null);
   const rejectRef = useRef<HTMLButtonElement | null>(null);
   const approvalTarget = approvalTargetForTurn(turn);
@@ -247,6 +251,7 @@ export function ConversationTurn({
       tabIndex={-1}
       className="mx-auto w-full max-w-[46rem] space-y-3"
       data-conversation-turn
+      data-turn-id={turn.id}
       data-task-id={turn.taskId}
       data-regenerating={regenerating ? "true" : undefined}
     >
@@ -596,9 +601,28 @@ export function ConversationTurn({
           {...(turn.answer ? { "data-assistant-answer": true } : {})}
         >
           {turn.answer ? (
-            <Markdown className="max-w-none text-foreground" onOpenUrl={onOpenUrl}>
-              {turn.answer.text}
-            </Markdown>
+            <div ref={answerStartRef} data-answer-start>
+              <Markdown className="max-w-none text-foreground" onOpenUrl={onOpenUrl}>
+                {turn.answer.text}
+              </Markdown>
+            </div>
+          ) : null}
+          {longAnswer ? (
+            <button
+              type="button"
+              data-testid="back-to-answer-start"
+              className="mt-2 inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-2xs text-muted-foreground transition-colors hover:bg-white/[0.06] hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              aria-label={t("workspace.backToAnswerStart")}
+              onClick={() => {
+                answerStartRef.current?.scrollIntoView({
+                  behavior: "smooth",
+                  block: "start",
+                });
+              }}
+            >
+              <ArrowUp className="h-3 w-3" strokeWidth={1.75} aria-hidden="true" />
+              {t("workspace.backToAnswerStart")}
+            </button>
           ) : null}
           {showAssistantActions ? (
             <div

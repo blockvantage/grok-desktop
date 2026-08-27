@@ -89,6 +89,13 @@ import {
   scrollTargetForStream,
   STREAM_VIRTUALIZE_THRESHOLD,
 } from "@/lib/stream-virtual";
+import {
+  conversationTicks,
+  shouldShowTimelineRail,
+  shouldVirtualizeConversation,
+  tickIndexForTurnId,
+} from "@/lib/conversation-timeline";
+import { ConversationTimelineRail } from "@/components/conversation/conversation-timeline-rail";
 import { questionChipsForTerminalTurn } from "@/lib/user-question";
 import {
   legacyItemsHaveVisibleLiveSignal,
@@ -113,6 +120,7 @@ export { STREAM_VIRTUALIZE_THRESHOLD };
 /** Imperative scroll control for Jump-to-latest / soft-follow with virtualizer. */
 export type TaskStreamHandle = {
   scrollToEnd: (behavior?: ScrollBehavior) => void;
+  scrollToTurn: (turnId: string) => void;
   focusApproval: (target: ApprovalActionTarget) => boolean;
   itemCount: () => number;
 };
@@ -231,6 +239,7 @@ export const TaskStream = forwardRef<
   const { locale } = useI18n();
   const listScrollRef = useRef<TaskStreamHandle | null>(null);
   const canonicalRootRef = useRef<HTMLDivElement | null>(null);
+  const canonicalListRef = useRef<TaskStreamHandle | null>(null);
   /** CH-5: only animate items newer than first paint (virtualizer remounts otherwise replay). */
   const entranceBaselineSeq = useRef<number | null>(null);
   const blocks = useMemo(
@@ -453,6 +462,10 @@ export const TaskStream = forwardRef<
     () => ({
       scrollToEnd: (behavior) => {
         if (conversation && density !== "log") {
+          if (canonicalListRef.current) {
+            canonicalListRef.current.scrollToEnd(behavior);
+            return;
+          }
           const root = canonicalRootRef.current;
           const viewport = root?.closest<HTMLElement>(
             "[data-radix-scroll-area-viewport]",
@@ -464,6 +477,9 @@ export const TaskStream = forwardRef<
         }
         if (empty) return;
         listScrollRef.current?.scrollToEnd(behavior);
+      },
+      scrollToTurn: (turnId) => {
+        canonicalListRef.current?.scrollToTurn(turnId);
       },
       focusApproval: (target) =>
         focusApprovalTarget(canonicalRootRef.current, target),
@@ -539,58 +555,33 @@ export const TaskStream = forwardRef<
     const liveCaption = active ? activityStore.liveSummary : null;
 
     return (
-      <div
-        ref={canonicalRootRef}
-        className="flex w-full flex-col gap-6"
-        data-canonical-conversation
-      >
-        {conversation.turns.length === 0 ? (
-          <EmptyStreamState taskStatus={taskStatus} />
-        ) : (
-          conversation.turns.map((turn) => {
-            const approvalTarget = approvalTargetForTurn(turn);
-            const actionableApproval =
-              turn.state === "waiting_approval" && approvalTarget !== null;
-            const isLatest = turn.id === latestTurn?.id;
-            const showUnread =
-              firstUnreadTurnId != null && turn.id === firstUnreadTurnId;
-            return (
-              <div key={turn.id} className="flex flex-col gap-6">
-                {showUnread ? <UnreadBoundarySeparator label={t("stream.newSince")} /> : null}
-                <ConversationTurn
-                  turn={turn}
-                  onOpenFile={onOpenFile}
-                  onOpenDeliverables={onOpenDeliverables}
-                  onOpenUrl={onOpenUrl}
-                  baseDir={baseDir}
-                  onEdit={
-                    onEditConversationTurn && turn.taskId === editableTaskId
-                      ? onEditConversationTurn
-                      : undefined
-                  }
-                  onSaveEdit={
-                    onSaveConversationTurnEdit && turn.taskId === editableTaskId
-                      ? onSaveConversationTurnEdit
-                      : undefined
-                  }
-                  onRetryTurn={onRetryConversationTurn}
-                  regenerating={regeneratingTaskId === turn.taskId}
-                  onApprove={actionableApproval ? onApprove : undefined}
-                  onReject={actionableApproval ? onReject : undefined}
-                  approvalBusy={busyDecisionForApproval(approvalBusy, approvalTarget)}
-                  question={isLatest ? latestQuestion : null}
-                  onAnswerQuestion={
-                    isLatest ? onAnswerQuestion : undefined
-                  }
-                  answerBusy={followUpBusy}
-                  onRecoveryAction={onRecoveryAction}
-                  onUndoTurn={onUndoTurn}
-                  activityCaption={isLatest ? liveCaption : null}
-                />
-              </div>
-            );
-          })
-        )}
+      <div ref={canonicalRootRef} data-canonical-conversation>
+        <CanonicalConversation
+          ref={canonicalListRef}
+          conversation={conversation}
+          taskStatus={taskStatus}
+          latestTurnId={latestTurn?.id ?? null}
+          latestQuestion={latestQuestion}
+          liveCaption={liveCaption}
+          firstUnreadTurnId={firstUnreadTurnId}
+          unreadLabel={t("stream.newSince")}
+          baseDir={baseDir}
+          onOpenFile={onOpenFile}
+          onOpenDeliverables={onOpenDeliverables}
+          onOpenUrl={onOpenUrl}
+          editableTaskId={editableTaskId}
+          onEditConversationTurn={onEditConversationTurn}
+          onSaveConversationTurnEdit={onSaveConversationTurnEdit}
+          onRetryConversationTurn={onRetryConversationTurn}
+          regeneratingTaskId={regeneratingTaskId}
+          onApprove={onApprove}
+          onReject={onReject}
+          approvalBusy={approvalBusy}
+          onAnswerQuestion={onAnswerQuestion}
+          followUpBusy={followUpBusy}
+          onRecoveryAction={onRecoveryAction}
+          onUndoTurn={onUndoTurn}
+        />
       </div>
     );
   }
@@ -669,6 +660,209 @@ export const TaskStream = forwardRef<
   );
 });
 
+const CanonicalConversation = forwardRef<
+  TaskStreamHandle,
+  {
+    conversation: ConversationSnapshot;
+    taskStatus: string;
+    latestTurnId: string | null;
+    latestQuestion: {
+      prompt: string;
+      options: Array<{ id: string; label: string }>;
+    } | null;
+    liveCaption: string | null;
+    firstUnreadTurnId: string | null;
+    unreadLabel: string;
+    baseDir: string | null;
+    onOpenFile?: (path: string) => void;
+    onOpenDeliverables?: () => void;
+    onOpenUrl?: (url: string) => void;
+    editableTaskId?: string | null;
+    onEditConversationTurn?: (turn: ConversationTurnView) => void;
+    onSaveConversationTurnEdit?: (
+      turn: ConversationTurnView,
+      text: string,
+    ) => void | Promise<void>;
+    onRetryConversationTurn?: (
+      turn: ConversationTurnView,
+    ) => void | Promise<void>;
+    regeneratingTaskId?: string | null;
+    onApprove?: (target: ApprovalActionTarget) => void | Promise<void>;
+    onReject?: (target: ApprovalActionTarget) => void | Promise<void>;
+    approvalBusy?: ApprovalBusyState;
+    onAnswerQuestion?: (label: string) => void;
+    followUpBusy?: boolean;
+    onRecoveryAction?: (action: RecoveryAction, turnId: string) => void;
+    onUndoTurn?: (turn: ConversationTurnView) => void | Promise<void>;
+  }
+>(function CanonicalConversation(props, ref) {
+  const parentRef = useRef<HTMLDivElement>(null);
+  const turns = props.conversation.turns;
+  const ticks = useMemo(() => conversationTicks(turns), [turns]);
+  const showRail = shouldShowTimelineRail(turns.length);
+  const useVirtual = shouldVirtualizeConversation(turns.length);
+  const getScrollElement = () => {
+    const el = parentRef.current;
+    if (!el) return null;
+    return (
+      (el.closest(
+        "[data-radix-scroll-area-viewport]",
+      ) as HTMLElement | null) ?? el
+    );
+  };
+  const virtualizer = useVirtualizer({
+    count: useVirtual ? turns.length : 0,
+    getScrollElement,
+    estimateSize: () => 280,
+    overscan: 4,
+  });
+
+  const jumpToTurn = (turnId: string) => {
+    const index = tickIndexForTurnId(ticks, turnId);
+    if (index == null) return;
+    if (useVirtual) {
+      virtualizer.scrollToIndex(index, {
+        align: "start",
+        behavior: "smooth",
+      });
+      return;
+    }
+    const node = parentRef.current?.querySelector(
+      `[data-turn-id="${CSS.escape(turnId)}"]`,
+    );
+    node?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      itemCount: () => turns.length,
+      focusApproval: () => false,
+      scrollToTurn: jumpToTurn,
+      scrollToEnd: (behavior: ScrollBehavior = "auto") => {
+        const target = scrollTargetForStream({
+          itemCount: turns.length,
+          virtualize: useVirtual,
+        });
+        if (target.mode === "index") {
+          virtualizer.scrollToIndex(target.index, {
+            align: "end",
+            behavior: behavior === "smooth" ? "smooth" : "auto",
+          });
+        }
+        const vp = getScrollElement();
+        if (!vp) return;
+        if (behavior === "smooth") {
+          vp.scrollTo({ top: vp.scrollHeight, behavior: "smooth" });
+        } else {
+          vp.scrollTop = vp.scrollHeight;
+        }
+      },
+    }),
+    [turns.length, useVirtual, virtualizer, ticks],
+  );
+
+  const renderTurn = (turn: ConversationTurnView) => {
+    const approvalTarget = approvalTargetForTurn(turn);
+    const actionableApproval =
+      turn.state === "waiting_approval" && approvalTarget !== null;
+    const isLatest = turn.id === props.latestTurnId;
+    const showUnread =
+      props.firstUnreadTurnId != null && turn.id === props.firstUnreadTurnId;
+    return (
+      <div className="flex flex-col gap-6">
+        {showUnread ? (
+          <UnreadBoundarySeparator label={props.unreadLabel} />
+        ) : null}
+        <ConversationTurn
+          turn={turn}
+          onOpenFile={props.onOpenFile}
+          onOpenDeliverables={props.onOpenDeliverables}
+          onOpenUrl={props.onOpenUrl}
+          baseDir={props.baseDir}
+          onEdit={
+            props.onEditConversationTurn && turn.taskId === props.editableTaskId
+              ? props.onEditConversationTurn
+              : undefined
+          }
+          onSaveEdit={
+            props.onSaveConversationTurnEdit &&
+            turn.taskId === props.editableTaskId
+              ? props.onSaveConversationTurnEdit
+              : undefined
+          }
+          onRetryTurn={props.onRetryConversationTurn}
+          regenerating={props.regeneratingTaskId === turn.taskId}
+          onApprove={actionableApproval ? props.onApprove : undefined}
+          onReject={actionableApproval ? props.onReject : undefined}
+          approvalBusy={busyDecisionForApproval(
+            props.approvalBusy ?? {},
+            approvalTarget,
+          )}
+          question={isLatest ? props.latestQuestion : null}
+          onAnswerQuestion={isLatest ? props.onAnswerQuestion : undefined}
+          answerBusy={props.followUpBusy}
+          onRecoveryAction={props.onRecoveryAction}
+          onUndoTurn={props.onUndoTurn}
+          activityCaption={isLatest ? props.liveCaption : null}
+        />
+      </div>
+    );
+  };
+
+  if (turns.length === 0) {
+    return <EmptyStreamState taskStatus={props.taskStatus} />;
+  }
+
+  const activeTurnId =
+    props.conversation.activeTurnId ?? props.latestTurnId ?? turns.at(-1)?.id;
+
+  return (
+    <div className="relative flex w-full items-start gap-0">
+      <div
+        ref={parentRef}
+        className="min-w-0 flex-1"
+        data-stream-virtual={useVirtual ? "on" : "off"}
+      >
+        {useVirtual ? (
+          <div
+            className="relative w-full"
+            style={{ height: virtualizer.getTotalSize() }}
+          >
+            {virtualizer.getVirtualItems().map((vRow) => {
+              const turn = turns[vRow.index]!;
+              return (
+                <div
+                  key={turn.id}
+                  data-index={vRow.index}
+                  ref={virtualizer.measureElement}
+                  className="absolute left-0 top-0 w-full pb-6"
+                  style={{ transform: `translateY(${vRow.start}px)` }}
+                >
+                  {renderTurn(turn)}
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="flex w-full flex-col gap-6">
+            {turns.map((turn) => (
+              <div key={turn.id}>{renderTurn(turn)}</div>
+            ))}
+          </div>
+        )}
+      </div>
+      {showRail ? (
+        <ConversationTimelineRail
+          ticks={ticks}
+          activeTurnId={activeTurnId}
+          onJump={jumpToTurn}
+        />
+      ) : null}
+    </div>
+  );
+});
+
 const StreamItemList = forwardRef<
   TaskStreamHandle,
   {
@@ -729,6 +923,7 @@ const StreamItemList = forwardRef<
     () => ({
       itemCount: () => items.length,
       focusApproval: () => false,
+      scrollToTurn: () => {},
       scrollToEnd: (behavior: ScrollBehavior = "auto") => {
         const target = scrollTargetForStream({
           itemCount: items.length,

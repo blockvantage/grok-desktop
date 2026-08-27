@@ -9,6 +9,7 @@ import {
   applyWorkerSelection,
 } from "./conversation-turn";
 import { WorkDetails } from "./work-details";
+import { LONG_ANSWER_CHARS } from "@/lib/conversation-timeline";
 
 function workEntry(
   id: string,
@@ -157,6 +158,20 @@ describe("ConversationTurn", () => {
     expect(html).toContain('aria-expanded="false"');
     expect(html).not.toContain("Private chain thought");
     expect(html).not.toContain("data-live-work-card");
+    expect(html).toContain('data-turn-id="turn-1"');
+    expect(html).not.toContain('data-testid="back-to-answer-start"');
+  });
+
+  it("offers back-to-start on a long answer", () => {
+    const long = turn("done");
+    long.answer = {
+      eventId: "answer-1",
+      text: "x".repeat(LONG_ANSWER_CHARS),
+      createdAt: "2026-07-15T12:01:00.000Z",
+    };
+    const html = renderToStaticMarkup(<ConversationTurn turn={long} />);
+    expect(html).toContain('data-testid="back-to-answer-start"');
+    expect(html).toContain("Back to start of answer");
   });
 
   it("renders queued turns quietly without claiming work has started", () => {
