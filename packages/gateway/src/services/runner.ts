@@ -1575,6 +1575,14 @@ export class TaskRunner {
         this.tasks.appendEvent(taskId, "step", runProgressStepPayload(event));
         return "continue";
 
+      case "goal_update":
+        this.tasks.appendEvent(taskId, "step", {
+          title: "goal_update",
+          ...(event.objective ? { objective: event.objective } : {}),
+          ...(event.progress ? { progress: event.progress } : {}),
+        });
+        return "continue";
+
       case "session_meta":
         // Persist for resume only — never as conversation/task transcript.
         if (attemptId && this.runAttempts && event.providerSessionId) {

@@ -159,6 +159,17 @@ describe("runtimeEventToNormalized", () => {
     ).toEqual({ type: "done", summary: "ok" });
     expect(
       runtimeEventToNormalized({
+        type: "goal_update",
+        objective: "Ship it",
+        progress: "Drafting",
+      }),
+    ).toEqual({
+      type: "goal_update",
+      objective: "Ship it",
+      progress: "Drafting",
+    });
+    expect(
+      runtimeEventToNormalized({
         type: "usage",
         usage: { inputTokens: 10, outputTokens: 5 },
       }),

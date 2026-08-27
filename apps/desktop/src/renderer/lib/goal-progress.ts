@@ -59,16 +59,22 @@ export function projectGoalProgress(input: {
 
   for (const ev of input.events) {
     const p = ev.payload ?? {};
+    const titleRaw = String(p.title ?? "");
     if (
       ev.kind === "goal_update" ||
       ev.kind === "goal" ||
-      (ev.kind === "step" &&
-        String(p.title ?? "")
-          .toLowerCase()
-          .includes("goal"))
+      (ev.kind === "step" && isGoalStepTitle(titleRaw))
     ) {
-      const obj = str(p.objective ?? p.goal ?? p.title);
-      const st = str(p.status ?? p.message ?? p.progress);
+      const obj = str(
+        p.objective ?? p.goal ?? (isGoalKindToken(titleRaw) ? null : p.title),
+      );
+      const rawStatus = str(p.progress ?? p.message ?? p.statusText ?? p.status);
+      const st =
+        rawStatus === "start" ||
+        rawStatus === "end" ||
+        isGoalKindToken(rawStatus ?? "")
+          ? null
+          : rawStatus;
       if (obj && !isStaleStatus(obj)) objective = obj;
       if (st && !isStaleStatus(st)) {
         status = st;
@@ -78,6 +84,8 @@ export function projectGoalProgress(input: {
     if (ev.kind === "step") {
       const title = str(p.title);
       if (!title) continue;
+      // Persisted GoalUpdated rows use title "goal_update" — never a status line.
+      if (isGoalKindToken(title)) continue;
       if (isStaleStatus(title)) {
         // Early setup only — keep until something better arrives.
         if (!sawLiveWork && !status) status = title;
@@ -147,6 +155,15 @@ export function projectGoalProgress(input: {
   }
 
   return null;
+}
+
+/** Runner persists GoalUpdated as a step titled with the event kind. */
+function isGoalKindToken(s: string): boolean {
+  return /^(goal|goal_update|goal_updated)$/i.test(s.trim());
+}
+
+function isGoalStepTitle(s: string): boolean {
+  return isGoalKindToken(s) || s.toLowerCase().includes("goal");
 }
 
 function isStaleStatus(s: string): boolean {

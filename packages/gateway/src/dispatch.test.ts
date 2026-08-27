@@ -203,6 +203,33 @@ describe("dispatchGateway", () => {
     expect(next.maxConcurrentTasks).toBe(4);
   });
 
+  it("tray.status includes GoalUpdated progressLine for a live task", async () => {
+    const ws = path.join(dir, "ws");
+    fs.mkdirSync(ws);
+    const task = (await dispatchGateway(gateway, {
+      id: "1",
+      method: "tasks.create",
+      params: {
+        goal: "Hello",
+        workspaceRoots: [ws],
+        approvalMode: "autopilot",
+      },
+    })) as { id: string };
+    gateway.tasks.setStatus(task.id, "running");
+    gateway.tasks.appendEvent(task.id, "step", {
+      title: "goal_update",
+      objective: "Ship the brief",
+      progress: "Drafting",
+    });
+    const tray = (await dispatchGateway(gateway, {
+      id: "2",
+      method: "tray.status",
+      params: {},
+    })) as { progressLine?: string | null; status: string };
+    expect(tray.status).toBe("working");
+    expect(tray.progressLine).toBe("Ship the brief — Drafting");
+  });
+
   it("pauseAll / resumeAll via IPC", async () => {
     await dispatchGateway(gateway, {
       id: "1",

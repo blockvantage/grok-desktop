@@ -7,9 +7,12 @@ import type {
   GatewayNotifyParams,
   IpcRequest,
   Task,
-  TrayStatus,
 } from "@grokdesk/shared";
-import { getRolePack } from "@grokdesk/shared";
+import {
+  foldGoalProgressFields,
+  formatGoalProgressLine,
+  getRolePack,
+} from "@grokdesk/shared";
 import { openDatabase, type Db } from "./db.js";
 import {
   prepareWorkspaceAssetMeta,
@@ -110,8 +113,12 @@ import {
 import { recoverInterruptedTasks } from "./services/crash-recovery.js";
 import { authSignIn, authSignOut, authStatus } from "./services/auth-grok.js";
 import { autoTitleTask } from "./services/title-generation.js";
-import { computeTrayStatus } from "./services/tray-status.js";
+import {
+  computeTrayStatus,
+  type TrayStatusView,
+} from "./services/tray-status.js";
 import { syncInboxFromWaitingOnYou } from "./services/waiting-on-you-inbox.js";
+
 import { artifactCreateFromEvent } from "./services/artifact-event-persist.js";
 import { dispatchDomainMethod } from "./services/domain-dispatch.js";
 import { buildDomainDispatchDeps } from "./services/gateway-domain-deps.js";
@@ -1277,14 +1284,27 @@ export class Gateway {
     return authSignOut();
   }
 
-  private computeTrayStatus(): {
-    status: TrayStatus;
-    runningCount: number;
-    inboxBadge: number;
-    needsInput: boolean;
-    notificationTitle: string | null;
-  } {
-    const view = computeTrayStatus(this.tasks.list(), this.tasks.isPaused());
+  private computeTrayStatus(): TrayStatusView {
+    const tasks = this.tasks.list();
+    let progressLine: string | null = null;
+    const live = tasks.find(
+      (t) =>
+        t.status === "running" ||
+        t.status === "waiting_approval" ||
+        t.status === "waiting_user",
+    );
+    if (live) {
+      try {
+        progressLine = formatGoalProgressLine(
+          foldGoalProgressFields(this.tasks.listEvents(live.id)),
+        );
+      } catch {
+        progressLine = null;
+      }
+    }
+    const view = computeTrayStatus(tasks, this.tasks.isPaused(), {
+      progressLine,
+    });
     try {
       syncInboxFromWaitingOnYou(this.inbox, view);
     } catch {

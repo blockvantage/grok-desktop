@@ -561,6 +561,27 @@ export class AcpMediatedSession implements AgentSession {
       });
       return;
     }
+    if (decoded.kind === "goal_updated") {
+      if (sink) {
+        const objective = String(
+          decoded.raw.objective ?? decoded.raw.goal ?? decoded.raw.title ?? "",
+        ).trim();
+        const progress = String(
+          decoded.raw.progress ??
+            decoded.raw.status ??
+            decoded.raw.message ??
+            "",
+        ).trim();
+        void sink({
+          type: "goal_update",
+          ...(objective ? { objective } : {}),
+          ...(progress && progress !== "start" && progress !== "end"
+            ? { progress }
+            : {}),
+        });
+      }
+      return;
+    }
     if (decoded.kind === "unknown" || !sink) return;
 
     if (decoded.kind === "plan") {

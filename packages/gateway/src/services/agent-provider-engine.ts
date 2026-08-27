@@ -120,6 +120,12 @@ export function runtimeEventToNormalized(
         type: "session_status",
         status: event.status,
       };
+    case "goal_update":
+      return {
+        type: "goal_update",
+        objective: event.objective,
+        progress: event.progress,
+      };
     case "worker_started":
       return {
         type: "worker_started",

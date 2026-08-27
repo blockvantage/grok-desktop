@@ -157,6 +157,7 @@ export function createAppTray(opts: {
         const s = (await opts.gateway.request("tray.status", {})) as {
           status: string;
           runningCount: number;
+          progressLine?: string | null;
         };
         let remoteHint = "";
         try {
@@ -178,7 +179,12 @@ export function createAppTray(opts: {
         const taskPart = s.runningCount
           ? `${s.status} (${s.runningCount})`
           : s.status;
-        taskHint = remoteHint ? `${taskPart} · ${remoteHint}` : taskPart;
+        const goalPart =
+          typeof s.progressLine === "string" && s.progressLine.trim()
+            ? s.progressLine.trim()
+            : "";
+        const withGoal = goalPart ? `${taskPart} · ${goalPart}` : taskPart;
+        taskHint = remoteHint ? `${withGoal} · ${remoteHint}` : withGoal;
         lifecycle = "ready";
         refreshTooltip();
       } catch {

@@ -57,6 +57,14 @@ describe("computeTrayStatus", () => {
     expect(view.pending[0]?.kind).toBe("question");
   });
 
+  it("carries a goal progress line for the dock tooltip", () => {
+    expect(
+      computeTrayStatus([task("running")], false, {
+        progressLine: "Ship the brief — Drafting",
+      }).progressLine,
+    ).toBe("Ship the brief — Drafting");
+  });
+
   it("working when only running", () => {
     expect(
       computeTrayStatus([task("running"), task("queued")], false),

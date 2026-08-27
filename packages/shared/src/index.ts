@@ -28,6 +28,7 @@ export * from "./rewind-map.js";
 export * from "./session-status.js";
 export * from "./usage-math.js";
 export * from "./waiting-on-you.js";
+export * from "./goal-update.js";
 export * from "./recurrence.js";
 export * from "./role-packs.js";
 export * from "./connector-presets.js";

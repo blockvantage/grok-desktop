@@ -437,6 +437,11 @@ export function attachFakeAcpAgent(
       kind: string;
       title: string;
     };
+    /** Emit a GoalUpdated session/update before completing the prompt. */
+    emitGoalUpdated?: {
+      objective?: string;
+      progress?: string;
+    };
     /** Per-method responder; throw {code:-32601} to simulate method-not-found. */
     respond?: (method: string, params?: unknown) => unknown;
   },
@@ -664,6 +669,23 @@ export function attachFakeAcpAgent(
                     id: pending.id,
                     kind: pending.kind,
                     title: pending.title,
+                  },
+                },
+              }),
+            );
+          }
+          if (opts?.emitGoalUpdated) {
+            const goal = opts.emitGoalUpdated;
+            transport.writeLine(
+              encodeJsonRpc({
+                jsonrpc: "2.0",
+                method: "session/update",
+                params: {
+                  sessionId,
+                  update: {
+                    sessionUpdate: "GoalUpdated",
+                    ...(goal.objective ? { objective: goal.objective } : {}),
+                    ...(goal.progress ? { progress: goal.progress } : {}),
                   },
                 },
               }),

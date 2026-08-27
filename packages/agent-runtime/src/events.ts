@@ -49,6 +49,11 @@ export type RuntimeEvent =
       status: Record<string, unknown>;
     }
   | {
+      type: "goal_update";
+      objective?: string;
+      progress?: string;
+    }
+  | {
       type: "plan";
       content: string;
       status: "drafting" | "awaiting_approval";

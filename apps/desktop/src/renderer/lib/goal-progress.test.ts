@@ -21,6 +21,28 @@ describe("projectGoalProgress (C1)", () => {
     expect(v?.line).toContain("Writing tests");
   });
 
+  it("reads persisted runner GoalUpdated steps without using the kind as status", () => {
+    const v = projectGoalProgress({
+      events: [
+        {
+          kind: "step",
+          payload: {
+            title: "goal_update",
+            objective: "Ship the brief",
+            progress: "Drafting outline",
+          },
+        },
+      ],
+    });
+    expect(v?.source).toBe("goal_event");
+    expect(v?.objective).toBe("Ship the brief");
+    expect(v?.status).toBe("Drafting outline");
+    expect(v?.line).toContain("Working toward…");
+    expect(v?.line).toContain("Ship the brief");
+    expect(v?.line).toContain("Drafting outline");
+    expect(v?.line).not.toMatch(/goal_update/i);
+  });
+
   it("falls back to task goal when no events", () => {
     const v = projectGoalProgress({
       events: [],

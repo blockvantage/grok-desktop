@@ -252,6 +252,39 @@ describe("parseStreamingJsonLine", () => {
     ).toEqual([{ type: "done", summary: "actual final" }]);
   });
 
+  it("maps GoalUpdated envelopes to goal_update events", () => {
+    expect(
+      parseStreamingJsonLine(
+        JSON.stringify({
+          type: "goal_update",
+          objective: "Ship the brief",
+          progress: "Drafting",
+        }),
+      ),
+    ).toEqual([
+      {
+        type: "goal_update",
+        objective: "Ship the brief",
+        progress: "Drafting",
+      },
+    ]);
+    expect(
+      parseStreamingJsonLine(
+        JSON.stringify({
+          type: "GoalUpdated",
+          objective: "Ship the brief",
+          progress: "Drafting",
+        }),
+      ),
+    ).toEqual([
+      {
+        type: "goal_update",
+        objective: "Ship the brief",
+        progress: "Drafting",
+      },
+    ]);
+  });
+
   it("maps auto_compact envelopes to compact progress steps, not assistant text", () => {
     expect(
       parseStreamingJsonLine(

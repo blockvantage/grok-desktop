@@ -50,6 +50,24 @@ function normalizeJsonEvent(
     return normalizeVisibleText(data, "text", "assistant", depth);
   }
 
+  if (
+    type === "goal_update" ||
+    type === "goal_updated" ||
+    type === "goalupdated"
+  ) {
+    const objective = String(obj.objective ?? obj.goal ?? obj.title ?? "").trim();
+    const progress = String(obj.progress ?? obj.status ?? obj.message ?? "").trim();
+    return [
+      {
+        type: "goal_update",
+        ...(objective ? { objective } : {}),
+        ...(progress && progress !== "start" && progress !== "end"
+          ? { progress }
+          : {}),
+      },
+    ];
+  }
+
   // Terminal / session metadata. Never surface as user-visible messages.
   if (type === "end") {
     const out: NormalizedEngineEvent[] = [];

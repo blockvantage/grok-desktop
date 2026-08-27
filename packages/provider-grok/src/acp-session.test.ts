@@ -105,6 +105,34 @@ describe("ACP mediated session (SEC-01 policy authorizer)", () => {
     expect(JSON.stringify(status)).not.toMatch(/"total_cost_usd":0/);
   });
 
+  it("maps GoalUpdated session updates to goal_update runtime events", async () => {
+    const duplex = new MemoryLineDuplex();
+    const fake = attachFakeAcpAgent(duplex.b, {
+      emitGoalUpdated: {
+        objective: "Ship the brief",
+        progress: "Drafting",
+      },
+    });
+    cleanups.push(fake.dispose);
+    const session = new AcpMediatedSession({
+      transport: duplex.a,
+      policy: balancedPolicy,
+      binding: createAcpBinding("grok-4.5"),
+    });
+    cleanups.push(() => session.cancel("test"));
+    await session.start("/w");
+    const events: RuntimeEvent[] = [];
+    await session.runTurn({ goal: "hi" }, async (ev) => {
+      events.push(ev);
+      return "continue";
+    });
+    expect(events.find((e) => e.type === "goal_update")).toEqual({
+      type: "goal_update",
+      objective: "Ship the brief",
+      progress: "Drafting",
+    });
+  });
+
   it("maps PendingInteraction questions onto permission_request for the park path", async () => {
     const duplex = new MemoryLineDuplex();
     const fake = attachFakeAcpAgent(duplex.b, {

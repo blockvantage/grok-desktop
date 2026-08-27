@@ -94,6 +94,11 @@ export type NormalizedEngineEvent =
     }
   /** Transient progress — must not be persisted as assistant transcript. */
   | { type: "run_progress"; message: string }
+  | {
+      type: "goal_update";
+      objective?: string;
+      progress?: string;
+    }
   /**
    * Engine session identity for resume + optional spawn protection snapshot (T3).
    * Never user-visible as conversation transcript.
