@@ -4,7 +4,7 @@ These do **not** block the in-repo program. They need secrets, Apple/Microsoft s
 
 | ID | Work | Status in this repo |
 | --- | --- | --- |
-| readme-v1 7–8 | History rewrite, git tag, GitHub release, installers + `SHA256SUMS.txt` | Prepare only. Unsigned builds may trip Gatekeeper/SmartScreen; README already says to verify SHA-256. |
+| readme-v1 7–8 | History rewrite, git tag, GitHub release, installers + `SHA256SUMS.txt` | **Prepared 2026-08-28:** unsigned mac arm64 DMG+zip in `apps/desktop/release/` (gitignored); checksums in `docs/evidence/phase4-exit/SHA256SUMS.txt`. Tag + GitHub upload still owner. |
 | O-001 | macOS notarization + Windows Authenticode | Owner. Release notes must state the signing status of each artifact. |
 | O-005–007 site | Re-deploy grokdesk.app from `docs/honesty/site-copy.md` | Copy is paste-ready here. Landing repo is outside this workspace. |
 | Crash telemetry | Opt-in product telemetry | None exists; do not invent a pipeline for v1. |

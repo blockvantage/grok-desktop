@@ -178,7 +178,7 @@ Upstream `ToolKind` is now rich enough to drive renderers without name matching:
 
 ### 4.3 Release completion ✅ (2026-08-27; in-repo prep; tag/signing/GitHub owner-gated)
 - readme-v1 Tasks 7–8 (history rewrite, tag, GitHub release, installers + SHA256SUMS) — everything upstream of publish is done. Tag + GitHub + SHA256SUMS: see `docs/release/owner-gated.md`.
-- O-001 signing/notarization; opt-in crash telemetry (none exists today); bundle split I21 (entry is ~2.5MB vs 2.2MB target — lazy-split Home/Workspace/stream); begin `App.tsx` decomposition (90KB, ~60 useState, no router) with a nav/route module + task-selection store so Phases 2–3 don't widen the prop cone. Home/Workspace lazy in `App.tsx`; helpers in `nav-transition.ts`.
+- O-001 signing/notarization; opt-in crash telemetry (none exists today); bundle split I21 (entry **2,102,309 bytes** after lazy-split Home/Workspace/stream, under 2.2 MB); begin `App.tsx` decomposition with a nav/route module + task-selection store. Unsigned mac arm64 DMG+zip prepared 2026-08-28 (`docs/evidence/phase4-exit/SHA256SUMS.txt`).
 
 ---
 

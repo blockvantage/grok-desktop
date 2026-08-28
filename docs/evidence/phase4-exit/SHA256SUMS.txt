@@ -1,0 +1,6 @@
+# Grok Desk 1.0.0 unsigned local artifacts (2026-08-28)
+# Signing: skipped (electron-builder identity=null). Notarization: skipped.
+# Host: darwin arm64. Windows / mac x64 not produced on this machine.
+#
+438846057a59afc23ebe13831dd3c4855f1cee22e91ec30bcfb61a9feffd6417  Grok Desk-1.0.0-arm64.dmg
+4b406e59b673d02bfbfbda660c2108bb59b4c40e75ee1b506a40119b7d45c683  Grok Desk-1.0.0-arm64-mac.zip
