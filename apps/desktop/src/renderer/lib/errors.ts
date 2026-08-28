@@ -3,6 +3,7 @@
  * Never surface stack traces or engine internals to the user.
  */
 
+import { looksLikeEngineDump } from "@grokdesk/shared";
 import { recoveryFromErrorMessage } from "@/lib/error-recovery";
 
 type Translate = (key: string, vars?: Record<string, string | number>) => string;
@@ -39,6 +40,10 @@ export function humanizeError(
   }
   if (lower.includes("permission") || lower.includes("not allowed")) {
     return t("errors.permission");
+  }
+
+  if (looksLikeEngineDump(trimmed)) {
+    return t("errors.generic");
   }
 
   // Keep short plain messages; drop stack-ish multi-line dumps.

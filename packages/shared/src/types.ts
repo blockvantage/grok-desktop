@@ -202,7 +202,7 @@ export interface AuthState {
   /** Display name from the SuperGrok profile; UI prefers this over the email. */
   accountName?: string | null;
   needsReauth: boolean;
-  engineStatus: "unknown" | "missing" | "ready" | "needs_auth";
+  engineStatus: "unknown" | "missing" | "ready" | "needs_auth" | "signed_out";
 }
 
 /** SuperGrok credit/usage snapshot (Build /usage rails). Not Desk license. */

@@ -29,6 +29,8 @@ export {
   readAuthFileMetadata,
   probeModelsViaCli,
   parseModelsCliProbe,
+  overlayDeskSignedOut,
+  engineStatusForSession,
   type GrokAuthStatus,
   type CompleteSignOutResult,
 } from "./auth-bridge.js";

@@ -28,7 +28,11 @@ export type AuthStatusPayload = {
 };
 
 export type AccountControllerDeps = {
-  signIn: () => Promise<{ ok: boolean; message?: string }>;
+  signIn: () => Promise<{
+    ok: boolean;
+    message?: string;
+    reusedSession?: boolean;
+  }>;
   signOut: () => Promise<{
     ok: boolean;
     signedOut?: boolean;
@@ -151,6 +155,23 @@ export function createAccountController(
             message: res.message ?? "Sign-in failed",
           });
           return { ok: false };
+        }
+        if (res.reusedSession) {
+          const s = await deps.status();
+          if (s.signedIn) {
+            dispatch({ type: "sign_in_step", step: "connected" });
+            dispatch({
+              type: "status_resolved",
+              signedIn: true,
+              needsReauth: false,
+              accountLabel: s.accountLabel,
+              accountName: s.accountName,
+              engineStatus: s.engineStatus,
+              models: s.models,
+            });
+            void refreshUsage(true);
+            return { ok: true, accountLabel: s.accountLabel };
+          }
         }
         const steps: SignInStep[] = [
           "opening_browser",

@@ -10,6 +10,9 @@ export type RecoveryKind =
   | "usage_exhausted"
   | "usage_limit"
   | "rate_limited"
+  | "rate_limited_capacity"
+  | "rate_limited_team"
+  | "rate_limited_free"
   | "needs_reauth"
   | "context_pressure"
   | "desktop_permission"
@@ -21,6 +24,17 @@ export interface ClassifiedError {
   kind: RecoveryKind;
   retryable: boolean;
   desktopCode?: DesktopErrorCode;
+}
+
+/** True when a message looks like JSON, a stack, or protocol dump. */
+export function looksLikeEngineDump(message: string): boolean {
+  const t = message.trim();
+  if (!t) return false;
+  if (t.startsWith("{") || t.startsWith("[")) return true;
+  if (/"error"\s*:/.test(t) || /"code"\s*:/.test(t)) return true;
+  if (t.includes("\n") && /\bat\s+\S+\s+\(/.test(t)) return true;
+  if (/jsonrpc|session\/update|stack trace/i.test(t)) return true;
+  return false;
 }
 
 export function classifyEngineError(message: string): ClassifiedError {
@@ -36,8 +50,35 @@ export function classifyEngineError(message: string): ClassifiedError {
     return { kind: "usage_limit", retryable: false };
   }
   if (
+    /free[- ]?(tier|plan|usage)|free allowance|not (on|in) (a )?paid/i.test(m)
+  ) {
+    return { kind: "rate_limited_free", retryable: false };
+  }
+  if (
+    /team limit|org(?:anization)? limit|workspace (quota|limit)|seat limit/i.test(
+      m,
+    )
+  ) {
+    return { kind: "rate_limited_team", retryable: false };
+  }
+  if (
+    /capacity|overloaded|no (available )?capacity|try again later/i.test(m) &&
+    /\b429\b|rate|limit|unavailable|overloaded|capacity/i.test(m)
+  ) {
+    return { kind: "rate_limited_capacity", retryable: true };
+  }
+  if (
     /desktop_rate_limited|rate.?limit|too many requests|\b429\b/i.test(m)
   ) {
+    if (/capacity|overloaded/i.test(m)) {
+      return { kind: "rate_limited_capacity", retryable: true };
+    }
+    if (/team|org(?:anization)?|workspace/i.test(m)) {
+      return { kind: "rate_limited_team", retryable: false };
+    }
+    if (/free/i.test(m)) {
+      return { kind: "rate_limited_free", retryable: false };
+    }
     return { kind: "rate_limited", retryable: true };
   }
   if (

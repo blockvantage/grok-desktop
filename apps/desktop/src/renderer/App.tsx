@@ -33,11 +33,25 @@ import { useTaskSubmission } from "@/hooks/use-task-submission";
 import {
   buildTakeawaysContent,
   buildWeeklyRecap,
+  GROKDESK_VERSION,
   isActiveTaskStatus,
   projectWaitingOnYou,
   waitingOnYouTaskIds,
   type UsageSnapshot,
 } from "@grokdesk/shared";
+import {
+  loadProductTourCompleted,
+  saveProductTourCompleted,
+  shouldShowProductTour,
+} from "@/lib/product-tour";
+import {
+  allWhatsNew,
+  highestWhatsNewVersion,
+  loadWhatsNewSeen,
+  saveWhatsNewSeen,
+  shouldShowWhatsNew,
+  unseenWhatsNew,
+} from "@/lib/whats-new";
 import { buildChats, chatTitle, findChat } from "@/lib/chats";
 import {
   AppSidebar,
@@ -308,6 +322,16 @@ const OnboardingWizard = lazy(() =>
     default: m.OnboardingWizard,
   })),
 );
+const ProductTour = lazy(() =>
+  import("@/components/product-tour").then((m) => ({
+    default: m.ProductTour,
+  })),
+);
+const WhatsNewDialog = lazy(() =>
+  import("@/components/whats-new-dialog").then((m) => ({
+    default: m.WhatsNewDialog,
+  })),
+);
 const CommandPalette = lazy(() =>
   import("@/components/command-palette").then((m) => ({
     default: m.CommandPalette,
@@ -449,6 +473,12 @@ export function App() {
   const [bootStage, setBootStage] = useState<BootStage>("starting");
   // Optimistic first-launch until settings prove completed; never flash main shell first.
   const [showOnboarding, setShowOnboarding] = useState(true);
+  const [tourOpen, setTourOpen] = useState(false);
+  const [tourCompleted, setTourCompleted] = useState(() =>
+    loadProductTourCompleted(),
+  );
+  const [whatsNewOpen, setWhatsNewOpen] = useState(false);
+  const [whatsNewShowAll, setWhatsNewShowAll] = useState(false);
   const [gatewayUiStatus, setGatewayUiStatus] =
     useState<GatewayUiStatus>("ready");
   const [settingsTab, setSettingsTab] = useState<SettingsTabId>("account");
@@ -864,6 +894,30 @@ export function App() {
     if (booting || showOnboarding || nav !== "home") return;
     setFocusComposerToken((n) => n + 1);
   }, [nav, booting, showOnboarding]);
+
+  // Opt-in 5-scene tour after first-run wizard, then What's new if unseen.
+  useEffect(() => {
+    if (booting || showOnboarding) return;
+    if (
+      shouldShowProductTour({
+        onboardingCompleted: true,
+        tourCompleted,
+      })
+    ) {
+      setTourOpen(true);
+      return;
+    }
+    const unseen = unseenWhatsNew({
+      lastSeenVersion: loadWhatsNewSeen(),
+      runtimeVersion: updateStatus.status?.installed?.grokVersion ?? null,
+    });
+    if (shouldShowWhatsNew(unseen)) {
+      setWhatsNewShowAll(false);
+      setWhatsNewOpen(true);
+    }
+    // Intentionally not depending on updateStatus — reopen only after tour/onboarding.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [booting, showOnboarding, tourCompleted]);
 
   // Canonical signed-in: AccountController phase wins when resolved so Home,
   // Sidebar, Settings, and palette never disagree (and boot "checking" does
@@ -1458,8 +1512,8 @@ export function App() {
   }
 
   /**
-   * Sign out SuperGrok on this Mac (shared CLI session).
-   * Confirms when tasks are active; clears identity, usage, models atomically.
+   * Sign out of Desk only. The shared Grok CLI session (~/.grok/auth.json)
+   * stays. Confirms when tasks are active; clears identity, usage, models.
    */
   async function signOut() {
     const ctrl = accountCtrlRef.current;
@@ -1475,7 +1529,7 @@ export function App() {
     } else {
       const ok = await ownedConfirm.ask({
         title: t("nav.signOut"),
-        description: t("account.signOutConfirmSharedCli"),
+        description: t("account.signOutConfirmDeskOnly"),
       });
       if (!ok) return;
     }
@@ -2628,6 +2682,11 @@ export function App() {
                 // Re-enter setup with current values; never silently reset approval.
                 setShowOnboarding(true);
               }}
+              onShowTour={() => setTourOpen(true)}
+              onShowWhatsNew={() => {
+                setWhatsNewShowAll(true);
+                setWhatsNewOpen(true);
+              }}
               onSignIn={() => void signIn()}
               onSignOut={() => void signOut()}
               onRefreshAuth={() => void refreshAuth()}
@@ -2841,6 +2900,38 @@ export function App() {
       </Suspense>
 
       {ownedConfirm.dialog}
+      <Suspense fallback={null}>
+        <ProductTour
+          open={tourOpen}
+          onOpenChange={setTourOpen}
+          onComplete={() => {
+            saveProductTourCompleted();
+            setTourCompleted(true);
+          }}
+        />
+        <WhatsNewDialog
+          open={whatsNewOpen}
+          entries={
+            whatsNewShowAll
+              ? allWhatsNew(updateStatus.status?.installed?.grokVersion)
+              : unseenWhatsNew({
+                  lastSeenVersion: loadWhatsNewSeen(),
+                  runtimeVersion:
+                    updateStatus.status?.installed?.grokVersion ?? null,
+                })
+          }
+          onOpenChange={setWhatsNewOpen}
+          onDismiss={() => {
+            saveWhatsNewSeen(
+              highestWhatsNewVersion(
+                allWhatsNew(updateStatus.status?.installed?.grokVersion),
+                GROKDESK_VERSION,
+              ),
+            );
+            setWhatsNewShowAll(false);
+          }}
+        />
+      </Suspense>
       <UpdateRestartDialog
         open={shouldShowUpdateRestartDialog(updateStatus.status)}
         status={updateStatus.status}

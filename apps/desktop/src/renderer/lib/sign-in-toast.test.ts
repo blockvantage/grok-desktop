@@ -10,7 +10,8 @@ describe("signedOutAuthState", () => {
     const s = signedOutAuthState();
     expect(s.signedIn).toBe(false);
     expect(s.accountLabel).toBeNull();
-    expect(s.engineStatus).toBe("needs_auth");
+    expect(s.engineStatus).toBe("signed_out");
+    expect(s.needsReauth).toBe(false);
   });
 });
 

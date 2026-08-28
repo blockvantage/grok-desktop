@@ -900,7 +900,9 @@
     "appearanceDescription": "El oscuro es el valor por defecto. El claro usa los mismos tokens de marca.",
     "appearanceDark": "Oscuro",
     "appearanceLight": "Claro",
-    "appearanceSystem": "Seguir el sistema"
+    "appearanceSystem": "Seguir el sistema",
+    "showTour": "Ver tour",
+    "whatsNew": "Novedades"
   },
   "dictation": {
     "listening": "Escuchando con Grok… {text}",
@@ -942,7 +944,14 @@
     "viewUsage": "Ver uso",
     "signIn": "Iniciar sesión",
     "dismiss": "Cerrar",
-    "retry": "Reintentar"
+    "retry": "Reintentar",
+    "rateLimitedCapacityTitle": "Grok está saturado",
+    "rateLimitedCapacityBody": "Hay demasiada gente usando Grok ahora. Espera un momento y vuelve a intentarlo.",
+    "rateLimitedTeamTitle": "Límite del equipo alcanzado",
+    "rateLimitedTeamBody": "Tu equipo o espacio de trabajo llegó al límite de uso. Pide a un admin o gestiona la facturación.",
+    "rateLimitedFreeTitle": "Límite del plan gratuito",
+    "rateLimitedFreeBody": "Este plan SuperGrok agotó su cuota gratuita. Mejora el plan o espera al siguiente periodo.",
+    "genericBody": "Algo salió mal. Inténtalo de nuevo — los detalles quedan en los registros, no en esta pantalla."
   },
   "cat": {
     "all": "Todos",
@@ -993,7 +1002,8 @@
     "copyDiagnostics": "Copiar diagnóstico",
     "diagnosticsCopied": "Diagnóstico copiado",
     "diagnosticsCopyFailed": "No se pudo copiar el diagnóstico",
-    "gatewayRetryFailed": "No se pudo reiniciar el motor. Reinicia la app."
+    "gatewayRetryFailed": "No se pudo reiniciar el motor. Reinicia la app.",
+    "signed_out": "Sin sesión"
   },
   "effort": {
     "fast": "Rápido",
@@ -1573,11 +1583,12 @@
   "account": {
     "connected": "Conectado",
     "needsAttention": "Requiere atención",
-    "signOutConfirmActiveTasks": "¿Cerrar sesión de SuperGrok en este Mac? Las tareas activas se pausarán. También cierra la sesión de Grok CLI.",
-    "signOutConfirmSharedCli": "¿Cerrar sesión de SuperGrok en este Mac? También cierra la sesión compartida de Grok CLI.",
+    "signOutConfirmActiveTasks": "¿Cerrar sesión de Grok Desk? Las tareas activas se pausarán. El Grok CLI de esta máquina sigue con sesión.",
+    "signOutConfirmSharedCli": "¿Cerrar sesión de Grok Desk? El Grok CLI de esta máquina sigue con sesión.",
     "signInCancelled": "Inicio de sesión cancelado",
     "signInVerifying": "Verificando cuenta SuperGrok…",
-    "demoModeBanner": "Modo demo — inicia sesión para SuperGrok completo"
+    "demoModeBanner": "Modo demo — inicia sesión para SuperGrok completo",
+    "signOutConfirmDeskOnly": "¿Cerrar sesión de Grok Desk? El Grok CLI de esta máquina sigue con sesión."
   },
   "progress": {
     "renderingVideo": "Renderizando vídeo — suele tardar 1–2 min",
@@ -1846,6 +1857,55 @@
       "eve": "Eve",
       "leo": "Leo",
       "rex": "Rex"
+    }
+  },
+  "tour": {
+    "skip": "Saltar tour",
+    "next": "Siguiente",
+    "back": "Atrás",
+    "done": "Entendido",
+    "stepOf": "{current} de {total}",
+    "approvals": {
+      "title": "Aprobaciones",
+      "body": "Cuando Grok necesita permiso — un archivo, un comando, una pregunta — espera aquí. Apruebas, editas o dices que no. Nada corre hasta que lo hagas."
+    },
+    "files": {
+      "title": "Dónde quedan los archivos",
+      "body": "El trabajo ocurre en la carpeta que eliges. Los entregables aparecen en Artefactos. Grok no reescribe en silencio archivos fuera de esa carpeta."
+    },
+    "followUps": {
+      "title": "Seguimientos",
+      "body": "Escribe lo siguiente mientras Grok sigue trabajando. Se pone en cola y se envía cuando lo indiques, o al terminar el turno actual."
+    },
+    "memory": {
+      "title": "Memoria",
+      "body": "Recordar esto guarda una idea para reutilizar. La memoria recuperada es contexto para comprobar, no una reescritura silenciosa de tus notas."
+    },
+    "trust": {
+      "title": "Confianza",
+      "body": "Las aprobaciones, la confianza de carpetas y el control de escritorio están en Ajustes. Puedes endurecerlos o relajarlos cuando quieras, también después de Autopiloto."
+    }
+  },
+  "whatsNew": {
+    "title": "Novedades",
+    "subtitle": "Cambios recientes de Grok Desk y del runtime.",
+    "gotIt": "Entendido",
+    "deskBadge": "Grok Desk",
+    "runtimeBadge": "Runtime Grok",
+    "desk": {
+      "v1": {
+        "title": "Grok Desk",
+        "a": "Espacio de chat con progreso en vivo, aprobaciones y seguimientos en un solo sitio.",
+        "b": "Busca conversaciones, fija las importantes y guarda un resumen semanal.",
+        "c": "Investigación profunda, medios y programaciones sin salir del hilo."
+      }
+    },
+    "runtime": {
+      "v1010": {
+        "title": "Runtime Grok 1.0.10",
+        "a": "Búsqueda de sesiones, flujos y actualizaciones de memoria por el protocolo del agente.",
+        "b": "Las tareas de vigilar-hasta y las programadas siguen sincronizadas con Grok Desk."
+      }
     }
   }
 }

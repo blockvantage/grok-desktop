@@ -19,6 +19,7 @@ export type EngineReadiness =
   | "missing"
   | "ready"
   | "needs_auth"
+  | "signed_out"
   | "starting";
 
 export type AccountIdentity = {
@@ -136,7 +137,7 @@ export function clearAccountBoundState(snapshot: AccountSnapshot): AccountSnapsh
     errorMessage: null,
     signInStep: null,
     authenticatedModels: [],
-    engine: snapshot.engine === "ready" ? "needs_auth" : snapshot.engine,
+    engine: snapshot.engine === "ready" ? "signed_out" : snapshot.engine,
   };
 }
 
@@ -296,6 +297,7 @@ function mapEngine(
     status === "missing" ||
     status === "ready" ||
     status === "needs_auth" ||
+    status === "signed_out" ||
     status === "starting"
   ) {
     return status;
@@ -316,10 +318,10 @@ export function signOutActiveTaskPolicy(activeTaskCount: number): {
   return {
     requiresConfirm: activeTaskCount > 0,
     stopsTasks: true,
-    sharedCliSessionAffected: true,
+    sharedCliSessionAffected: false,
     confirmMessageKey:
       activeTaskCount > 0
         ? "account.signOutConfirmActiveTasks"
-        : "account.signOutConfirmSharedCli",
+        : "account.signOutConfirmDeskOnly",
   };
 }

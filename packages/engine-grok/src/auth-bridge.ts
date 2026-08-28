@@ -249,13 +249,12 @@ export async function getGrokAuthStatus(
   // 2) CLI explicitly "you are logged in"
   // Soft access expiry with a refresh token is normal — CLI refreshes on use.
   const signedIn = fileMeta.signedIn || modelsProbe.signedIn;
-
-  let engineStatus: EngineStatus;
-  if (signedIn) {
-    engineStatus = "ready";
-  } else {
-    engineStatus = "needs_auth";
-  }
+  const needsReauth = signedIn ? false : deriveNeedsReauth(fileMeta);
+  const engineStatus = engineStatusForSession({
+    signedIn,
+    needsReauth,
+    binaryPath,
+  });
 
   // Never invent a "session active" label when we only have a public model list.
   const accountLabel = fileMeta.accountLabel;
@@ -264,11 +263,55 @@ export async function getGrokAuthStatus(
     signedIn,
     accountLabel,
     accountName: fileMeta.accountName,
-    needsReauth: signedIn ? false : deriveNeedsReauth(fileMeta),
+    needsReauth,
     engineStatus,
     binaryPath,
     models: modelsProbe.models,
     defaultModel: modelsProbe.defaultModel,
+  };
+}
+
+/**
+ * Map session + binary presence to engineStatus.
+ * Never-signed-in is `signed_out`, not `needs_auth` ("session expired").
+ */
+export function engineStatusForSession(input: {
+  signedIn: boolean;
+  needsReauth: boolean;
+  binaryPath: string | null;
+}): EngineStatus {
+  if (!input.binaryPath) return "missing";
+  if (input.signedIn) return "ready";
+  if (input.needsReauth) return "needs_auth";
+  return "signed_out";
+}
+
+/**
+ * Desk-scoped sign-out overlay. The CLI session file is untouched; Desk
+ * reports signed-out until the user signs in again (which reuses the CLI
+ * session if it is still valid).
+ */
+export function overlayDeskSignedOut<
+  T extends {
+    signedIn: boolean;
+    needsReauth: boolean;
+    engineStatus: EngineStatus;
+    accountLabel: string | null;
+    accountName?: string | null;
+  },
+>(status: T, deskSignedOut: boolean): T {
+  if (!deskSignedOut) return status;
+  const engineStatus: EngineStatus =
+    status.engineStatus === "missing" || status.engineStatus === "unknown"
+      ? status.engineStatus
+      : "signed_out";
+  return {
+    ...status,
+    signedIn: false,
+    needsReauth: false,
+    accountLabel: null,
+    accountName: null,
+    engineStatus,
   };
 }
 
@@ -374,8 +417,9 @@ export type CompleteSignOutResult = {
 };
 
 /**
- * Full sign-out: CLI logout (when binary present) + clear local auth.json,
- * then verify file no longer reports a session.
+ * Full CLI sign-out: `grok logout` + unlink ~/.grok/auth.json.
+ * Desk product sign-out must NOT call this — it kills the shared Grok CLI
+ * session. Use settings `deskSignedOut` + overlayDeskSignedOut instead.
  */
 export async function completeGrokSignOut(opts?: {
   binary?: string | null;

@@ -54,4 +54,13 @@ describe("humanizeError", () => {
       "Folder not found",
     );
   });
+
+  it("never surfaces JSON-RPC dumps", () => {
+    expect(
+      humanizeError(
+        new Error('{"jsonrpc":"2.0","error":{"code":-32601}}'),
+        t,
+      ),
+    ).toBe("Something went wrong. Try again.");
+  });
 });

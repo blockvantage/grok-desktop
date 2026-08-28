@@ -900,7 +900,9 @@
     "appearanceDescription": "ダークが既定のデザインです。ライトも同じブランドトークンを使います。",
     "appearanceDark": "ダーク",
     "appearanceLight": "ライト",
-    "appearanceSystem": "システムに合わせる"
+    "appearanceSystem": "システムに合わせる",
+    "showTour": "ツアーを表示",
+    "whatsNew": "新着情報"
   },
   "dictation": {
     "listening": "Grok が聞き取り中… {text}",
@@ -942,7 +944,14 @@
     "viewUsage": "利用状況を見る",
     "signIn": "サインイン",
     "dismiss": "閉じる",
-    "retry": "再試行"
+    "retry": "再試行",
+    "rateLimitedCapacityTitle": "Grok が混み合っています",
+    "rateLimitedCapacityBody": "いま利用が集中しています。少し待ってから再試行してください。",
+    "rateLimitedTeamTitle": "チーム上限に達しました",
+    "rateLimitedTeamBody": "チームまたはワークスペースの利用上限です。管理者に確認するか、請求を管理してください。",
+    "rateLimitedFreeTitle": "無料プランの上限です",
+    "rateLimitedFreeBody": "この SuperGrok プランの無料枠を使い切りました。アップグレードするか、期間の更新を待ってください。",
+    "genericBody": "問題が発生しました。再試行してください。詳細は画面ではなくログに残ります。"
   },
   "cat": {
     "all": "すべて",
@@ -993,7 +1002,8 @@
     "copyDiagnostics": "診断をコピー",
     "diagnosticsCopied": "診断をコピーしました",
     "diagnosticsCopyFailed": "診断をコピーできませんでした",
-    "gatewayRetryFailed": "エンジンを再起動できませんでした。アプリを再起動してください。"
+    "gatewayRetryFailed": "エンジンを再起動できませんでした。アプリを再起動してください。",
+    "signed_out": "未サインイン"
   },
   "effort": {
     "fast": "高速",
@@ -1573,11 +1583,12 @@
   "account": {
     "connected": "接続済み",
     "needsAttention": "要確認",
-    "signOutConfirmActiveTasks": "この Mac で SuperGrok からサインアウトしますか？実行中のタスクは一時停止します。Grok CLI もサインアウトします。",
-    "signOutConfirmSharedCli": "この Mac で SuperGrok からサインアウトしますか？共有 Grok CLI セッションもサインアウトします。",
+    "signOutConfirmActiveTasks": "Grok Desk からサインアウトしますか？実行中のタスクは一時停止します。このマシンの Grok CLI はサインインしたままです。",
+    "signOutConfirmSharedCli": "Grok Desk からサインアウトしますか？このマシンの Grok CLI はサインインしたままです。",
     "signInCancelled": "サインインをキャンセルしました",
     "signInVerifying": "SuperGrok アカウントを確認中…",
-    "demoModeBanner": "デモモード — フル機能はサインイン後"
+    "demoModeBanner": "デモモード — フル機能はサインイン後",
+    "signOutConfirmDeskOnly": "Grok Desk からサインアウトしますか？このマシンの Grok CLI はサインインしたままです。"
   },
   "progress": {
     "renderingVideo": "動画をレンダリング中 — 通常1〜2分",
@@ -1846,6 +1857,55 @@
       "eve": "Eve",
       "leo": "Leo",
       "rex": "Rex"
+    }
+  },
+  "tour": {
+    "skip": "ツアーをスキップ",
+    "next": "次へ",
+    "back": "戻る",
+    "done": "了解",
+    "stepOf": "{current} / {total}",
+    "approvals": {
+      "title": "承認",
+      "body": "Grok が許可を求めるとき — ファイル変更、コマンド、質問 — ここで待ちます。承認、編集、または拒否するまで何も実行されません。"
+    },
+    "files": {
+      "title": "ファイルの行き先",
+      "body": "作業は選んだフォルダで行われます。成果物はアーティファクトに出ます。Grok はそのフォルダの外のファイルを黙って書き換えません。"
+    },
+    "followUps": {
+      "title": "フォローアップ",
+      "body": "Grok の作業中でも次の指示を書けます。キューに入り、送ると決めたとき、または今のターンが終わったときに送られます。"
+    },
+    "memory": {
+      "title": "メモリ",
+      "body": "これを覚えると、再利用できる要点が保存されます。呼び出されたメモリは確認する文脈であり、メモの無断上書きではありません。"
+    },
+    "trust": {
+      "title": "信頼",
+      "body": "承認、フォルダの信頼、デスクトップ操作は設定にあります。オートパイロットの後でも、いつでも厳しくしたり緩くしたりできます。"
+    }
+  },
+  "whatsNew": {
+    "title": "新着情報",
+    "subtitle": "Grok Desk とランタイムの最近の変更です。",
+    "gotIt": "了解",
+    "deskBadge": "Grok Desk",
+    "runtimeBadge": "Grok ランタイム",
+    "desk": {
+      "v1": {
+        "title": "Grok Desk",
+        "a": "ライブ進捗、承認、フォローアップを一つのチャット空間にまとめました。",
+        "b": "過去の会話を検索し、大事なものをピン留めし、週次の振り返りを残せます。",
+        "c": "深い調査、メディア、スケジュールもスレッドを離れずに使えます。"
+      }
+    },
+    "runtime": {
+      "v1010": {
+        "title": "Grok ランタイム 1.0.10",
+        "a": "エージェントプロトコルでセッション検索、ワークフロー、メモリ更新が届きます。",
+        "b": "Watch-until とスケジュール済みタスクが Grok Desk と同期します。"
+      }
     }
   }
 }

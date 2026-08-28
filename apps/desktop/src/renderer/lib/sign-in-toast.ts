@@ -49,7 +49,7 @@ export function signedOutAuthState(): {
   accountLabel: null;
   accountName: null;
   needsReauth: false;
-  engineStatus: "needs_auth";
+  engineStatus: "signed_out";
   models: string[];
 } {
   return {
@@ -57,7 +57,7 @@ export function signedOutAuthState(): {
     accountLabel: null,
     accountName: null,
     needsReauth: false,
-    engineStatus: "needs_auth",
+    engineStatus: "signed_out",
     models: [],
   };
 }

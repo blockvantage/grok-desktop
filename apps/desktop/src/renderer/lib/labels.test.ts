@@ -22,6 +22,7 @@ describe("labels", () => {
   it("humanizes engine status", () => {
     expect(engineStatusLabel("ready")).toBe("Connected");
     expect(engineStatusLabel("needs_auth")).toBe("Sign in required");
+    expect(engineStatusLabel("signed_out")).toBe("Not signed in");
     expect(engineStatusLabel(null)).toBe("Checking…");
     expect(engineStatusLabel("unknown")).toBe("Checking…");
   });
@@ -31,6 +32,12 @@ describe("labels", () => {
       "SuperGrok",
     );
     expect(accountSubtitle({ signedIn: false })).toBe("Not signed in");
+    expect(
+      accountSubtitle({ signedIn: false, engineStatus: "signed_out" }),
+    ).toBe("Not signed in");
+    expect(
+      accountSubtitle({ signedIn: true, engineStatus: "needs_auth" }),
+    ).toBe("Session expired");
   });
 
   it("switches language with setLabelsLocale", () => {

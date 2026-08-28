@@ -900,7 +900,9 @@
     "appearanceDescription": "Dunkel ist die gestaltete Standardansicht. Hell nutzt dieselben Marken-Token.",
     "appearanceDark": "Dunkel",
     "appearanceLight": "Hell",
-    "appearanceSystem": "System folgen"
+    "appearanceSystem": "System folgen",
+    "showTour": "Tour zeigen",
+    "whatsNew": "Neuigkeiten"
   },
   "dictation": {
     "listening": "Grok hört zu… {text}",
@@ -942,7 +944,14 @@
     "viewUsage": "Nutzung anzeigen",
     "signIn": "Anmelden",
     "dismiss": "Schließen",
-    "retry": "Wiederholen"
+    "retry": "Wiederholen",
+    "rateLimitedCapacityTitle": "Grok ist ausgelastet",
+    "rateLimitedCapacityBody": "Gerade nutzen zu viele Leute Grok. Kurz warten und erneut versuchen.",
+    "rateLimitedTeamTitle": "Team-Limit erreicht",
+    "rateLimitedTeamBody": "Dein Team oder Workspace hat das Nutzungslimit erreicht. Frag eine Admin-Person oder verwalte die Abrechnung.",
+    "rateLimitedFreeTitle": "Limit des Gratisplans",
+    "rateLimitedFreeBody": "Dieser SuperGrok-Plan hat sein Gratis-Kontingent verbraucht. Upgrade oder warte auf den nächsten Zeitraum.",
+    "genericBody": "Etwas ist schiefgelaufen. Bitte erneut versuchen — Details bleiben in den Logs, nicht auf diesem Bildschirm."
   },
   "cat": {
     "all": "Alle",
@@ -993,7 +1002,8 @@
     "copyDiagnostics": "Diagnose kopieren",
     "diagnosticsCopied": "Diagnose kopiert",
     "diagnosticsCopyFailed": "Diagnose konnte nicht kopiert werden",
-    "gatewayRetryFailed": "Engine konnte nicht neu gestartet werden. App neu starten."
+    "gatewayRetryFailed": "Engine konnte nicht neu gestartet werden. App neu starten.",
+    "signed_out": "Nicht angemeldet"
   },
   "effort": {
     "fast": "Schnell",
@@ -1573,11 +1583,12 @@
   "account": {
     "connected": "Verbunden",
     "needsAttention": "Handlung nötig",
-    "signOutConfirmActiveTasks": "Von SuperGrok auf diesem Mac abmelden? Aktive Aufgaben werden pausiert. Dies meldet auch die Grok CLI ab.",
-    "signOutConfirmSharedCli": "Von SuperGrok auf diesem Mac abmelden? Dies meldet auch die gemeinsame Grok-CLI-Sitzung ab.",
+    "signOutConfirmActiveTasks": "Von Grok Desk abmelden? Aktive Aufgaben werden pausiert. Die Grok-CLI auf diesem Rechner bleibt angemeldet.",
+    "signOutConfirmSharedCli": "Von Grok Desk abmelden? Die Grok-CLI auf diesem Rechner bleibt angemeldet.",
     "signInCancelled": "Anmeldung abgebrochen",
     "signInVerifying": "SuperGrok-Konto wird geprüft…",
-    "demoModeBanner": "Demo-Modus — anmelden für volles SuperGrok"
+    "demoModeBanner": "Demo-Modus — anmelden für volles SuperGrok",
+    "signOutConfirmDeskOnly": "Von Grok Desk abmelden? Die Grok-CLI auf diesem Rechner bleibt angemeldet."
   },
   "progress": {
     "renderingVideo": "Video wird gerendert — meist 1–2 Min.",
@@ -1846,6 +1857,55 @@
       "eve": "Eve",
       "leo": "Leo",
       "rex": "Rex"
+    }
+  },
+  "tour": {
+    "skip": "Tour überspringen",
+    "next": "Weiter",
+    "back": "Zurück",
+    "done": "Verstanden",
+    "stepOf": "{current} von {total}",
+    "approvals": {
+      "title": "Freigaben",
+      "body": "Wenn Grok eine Erlaubnis braucht — Datei, Befehl, Frage — wartet es hier. Du gibst frei, bearbeitest oder sagst nein. Nichts läuft vorher."
+    },
+    "files": {
+      "title": "Wohin Dateien kommen",
+      "body": "Die Arbeit passiert im gewählten Ordner. Ergebnisse erscheinen unter Artefakte. Grok schreibt nicht still Dateien außerhalb dieses Ordners um."
+    },
+    "followUps": {
+      "title": "Nachfragen",
+      "body": "Schreib das Nächste, während Grok noch arbeitet. Es wird vorgemerkt und gesendet, wenn du es sagst — oder wenn der aktuelle Turn endet."
+    },
+    "memory": {
+      "title": "Gedächtnis",
+      "body": "Merken speichert eine wiederverwendbare Notiz. Abgerufenes Gedächtnis ist Kontext zum Prüfen, keine stille Umschreibung deiner Notizen."
+    },
+    "trust": {
+      "title": "Vertrauen",
+      "body": "Freigaben, Ordnervertrauen und Desktop-Steuerung liegen in den Einstellungen. Du kannst sie jederzeit enger oder lockerer setzen, auch nach Autopilot."
+    }
+  },
+  "whatsNew": {
+    "title": "Neuigkeiten",
+    "subtitle": "Aktuelle Änderungen an Grok Desk und der Runtime.",
+    "gotIt": "Verstanden",
+    "deskBadge": "Grok Desk",
+    "runtimeBadge": "Grok-Runtime",
+    "desk": {
+      "v1": {
+        "title": "Grok Desk",
+        "a": "Chat-zuerst mit Live-Fortschritt, Freigaben und Nachfragen an einem Ort.",
+        "b": "Frühere Gespräche suchen, wichtige anheften und eine Wochenübersicht behalten.",
+        "c": "Tiefenrecherche, Medien und Zeitpläne — ohne den Thread zu verlassen."
+      }
+    },
+    "runtime": {
+      "v1010": {
+        "title": "Grok-Runtime 1.0.10",
+        "a": "Sitzungssuche, Workflows und Speicher-Updates über das Agent-Protokoll.",
+        "b": "Watch-until und geplante Aufgaben bleiben mit Grok Desk synchron."
+      }
     }
   }
 }

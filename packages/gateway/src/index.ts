@@ -1289,11 +1289,23 @@ export class Gateway {
   }
 
   private async authStatus(): Promise<AuthState & { models?: string[] }> {
-    return authStatus();
+    return authStatus({
+      deskSignedOut: this.settings.getAll().deskSignedOut,
+    });
   }
 
-  private async authSignIn(): Promise<{ ok: boolean; message: string }> {
-    return authSignIn();
+  private async authSignIn(): Promise<{
+    ok: boolean;
+    message: string;
+    reusedSession?: boolean;
+  }> {
+    return authSignIn({
+      clearDeskSignedOut: () => {
+        if (this.settings.getAll().deskSignedOut) {
+          this.settings.set({ deskSignedOut: false });
+        }
+      },
+    });
   }
 
   private async authSignOut(): Promise<{
@@ -1301,7 +1313,11 @@ export class Gateway {
     signedOut: boolean;
     message?: string;
   }> {
-    return authSignOut();
+    return authSignOut({
+      persistDeskSignedOut: () => {
+        this.settings.set({ deskSignedOut: true });
+      },
+    });
   }
 
   private computeTrayStatus(): TrayStatusView {

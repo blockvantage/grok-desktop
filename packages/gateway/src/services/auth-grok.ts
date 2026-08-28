@@ -1,30 +1,46 @@
 /**
  * Grok account auth surface for the gateway (composition uses engine-composition).
  * Keeps OAuth/login/logout out of the main Gateway class body.
+ *
+ * Desk sign-out is overlay-only (`deskSignedOut` settings flag). It must never
+ * run `grok logout` or delete ~/.grok/auth.json — that file is the shared CLI
+ * session.
  */
 import type { AuthState } from "@grokdesk/shared";
 import {
-  completeGrokSignOut,
+  overlayDeskSignedOut,
   resolveManagedGrokBinary,
   getGrokAuthStatus,
   startGrokLogin,
 } from "../engine-composition.js";
 
-export async function authStatus(): Promise<
-  AuthState & { models?: string[] }
-> {
+export async function authStatus(opts?: {
+  deskSignedOut?: boolean;
+}): Promise<AuthState & { models?: string[] }> {
   const st = await getGrokAuthStatus();
+  const overlaid = overlayDeskSignedOut(st, Boolean(opts?.deskSignedOut));
   return {
-    signedIn: st.signedIn,
-    accountLabel: st.accountLabel,
-    accountName: st.accountName,
-    needsReauth: st.needsReauth,
-    engineStatus: st.engineStatus,
-    models: st.models,
-  } as AuthState & { models?: string[] };
+    signedIn: overlaid.signedIn,
+    accountLabel: overlaid.accountLabel,
+    accountName: overlaid.accountName,
+    needsReauth: overlaid.needsReauth,
+    engineStatus: overlaid.engineStatus,
+    models: overlaid.models,
+  };
 }
 
-export async function authSignIn(): Promise<{ ok: boolean; message: string }> {
+export async function authSignIn(opts?: {
+  clearDeskSignedOut?: () => void;
+}): Promise<{ ok: boolean; message: string; reusedSession?: boolean }> {
+  opts?.clearDeskSignedOut?.();
+  const existing = await getGrokAuthStatus();
+  if (existing.signedIn) {
+    return {
+      ok: true,
+      reusedSession: true,
+      message: "Using your existing SuperGrok session.",
+    };
+  }
   const binary = await resolveManagedGrokBinary();
   if (!binary) {
     return {
@@ -49,21 +65,16 @@ export async function authSignIn(): Promise<{ ok: boolean; message: string }> {
 }
 
 /**
- * Sign out of SuperGrok for Desk:
- * 1) `grok logout` when managed CLI is available
- * 2) clear `~/.grok/auth.json` so status cannot flip back to signed-in from stale tokens
- * Returns whether the session is actually gone (not a silent always-ok).
+ * Desk-only sign-out. Caller persists `deskSignedOut: true`. Does not unlink
+ * ~/.grok/auth.json and does not run `grok logout`.
  */
-export async function authSignOut(): Promise<{
+export async function authSignOut(opts?: {
+  persistDeskSignedOut?: () => void;
+}): Promise<{
   ok: boolean;
   signedOut: boolean;
   message?: string;
 }> {
-  const binary = await resolveManagedGrokBinary();
-  const result = await completeGrokSignOut({ binary });
-  return {
-    ok: result.ok,
-    signedOut: result.signedOut,
-    message: result.message,
-  };
+  opts?.persistDeskSignedOut?.();
+  return { ok: true, signedOut: true };
 }

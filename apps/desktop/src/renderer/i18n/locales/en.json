@@ -944,7 +944,9 @@
     "inheritUserGrokConfirm": "Enable plugins & hooks",
     "inheritUserGrokCancel": "Keep isolated",
     "trustedFolders": "Trusted folders",
-    "trustedFoldersDesc": "Project tools only run in folders you trust. First use asks once per folder."
+    "trustedFoldersDesc": "Project tools only run in folders you trust. First use asks once per folder.",
+    "showTour": "Show tour",
+    "whatsNew": "What's new"
   },
   "dictation": {
     "listening": "Listening with Grok… {text}",
@@ -986,7 +988,14 @@
     "viewUsage": "View usage",
     "signIn": "Sign in",
     "dismiss": "Dismiss",
-    "retry": "Retry"
+    "retry": "Retry",
+    "rateLimitedCapacityTitle": "Grok is at capacity",
+    "rateLimitedCapacityBody": "Too many people are using Grok right now. Wait a moment and try again.",
+    "rateLimitedTeamTitle": "Team limit reached",
+    "rateLimitedTeamBody": "Your team or workspace has hit its usage limit. Ask an admin or manage billing.",
+    "rateLimitedFreeTitle": "Free plan limit reached",
+    "rateLimitedFreeBody": "This SuperGrok plan has used its free allowance. Upgrade or wait for the period to reset.",
+    "genericBody": "Something went wrong. Try again — the details stay in logs, not on this screen."
   },
   "cat": {
     "all": "All",
@@ -1037,7 +1046,8 @@
     "copyDiagnostics": "Copy diagnostics",
     "diagnosticsCopied": "Diagnostics copied",
     "diagnosticsCopyFailed": "Could not copy diagnostics",
-    "gatewayRetryFailed": "Could not restart the engine. Try relaunching the app."
+    "gatewayRetryFailed": "Could not restart the engine. Try relaunching the app.",
+    "signed_out": "Not signed in"
   },
   "effort": {
     "fast": "Fast",
@@ -1673,11 +1683,12 @@
   "account": {
     "connected": "Connected",
     "needsAttention": "Needs attention",
-    "signOutConfirmActiveTasks": "Sign out of SuperGrok on this Mac? Active tasks will be paused. This also signs out the Grok CLI on this machine.",
-    "signOutConfirmSharedCli": "Sign out of SuperGrok on this Mac? This also signs out the shared Grok CLI session.",
+    "signOutConfirmActiveTasks": "Sign out of Grok Desk? Active tasks will be paused. The Grok CLI on this machine stays signed in.",
+    "signOutConfirmSharedCli": "Sign out of Grok Desk? The Grok CLI on this machine stays signed in.",
     "signInCancelled": "Sign-in cancelled",
     "signInVerifying": "Verifying SuperGrok account…",
-    "demoModeBanner": "Demo mode — sign in for full SuperGrok work"
+    "demoModeBanner": "Demo mode — sign in for full SuperGrok work",
+    "signOutConfirmDeskOnly": "Sign out of Grok Desk? The Grok CLI on this machine stays signed in."
   },
   "progress": {
     "renderingVideo": "Rendering video — usually 1–2 min",
@@ -1847,5 +1858,54 @@
     "payWhatYouWantHint": "Optional support — any amount",
     "starGithub": "Star on GitHub",
     "starGithubHint": "Free social proof helps a lot"
+  },
+  "tour": {
+    "skip": "Skip tour",
+    "next": "Next",
+    "back": "Back",
+    "done": "Got it",
+    "stepOf": "{current} of {total}",
+    "approvals": {
+      "title": "Approvals",
+      "body": "When Grok needs permission — a file change, a command, a question — it waits here. You approve, edit, or say no. Nothing runs until you do."
+    },
+    "files": {
+      "title": "Where files land",
+      "body": "Work happens in the folder you choose. Deliverables show up in Artifacts. Grok does not silently rewrite files outside that folder."
+    },
+    "followUps": {
+      "title": "Follow-ups",
+      "body": "Type the next thing while Grok is still working. It queues, then sends when you say so — or when the current turn finishes."
+    },
+    "memory": {
+      "title": "Memory",
+      "body": "Remember this saves a takeaway you can reuse. Recalled memory is context to check, not a silent rewrite of your notes."
+    },
+    "trust": {
+      "title": "Trust",
+      "body": "Approvals, folder trust, and desktop control live in Settings. You can tighten or loosen them anytime — including after Autopilot."
+    }
+  },
+  "whatsNew": {
+    "title": "What's new",
+    "subtitle": "Recent Grok Desk and runtime changes.",
+    "gotIt": "Got it",
+    "deskBadge": "Grok Desk",
+    "runtimeBadge": "Grok runtime",
+    "desk": {
+      "v1": {
+        "title": "Grok Desk",
+        "a": "Chat-first workspace with live progress, approvals, and follow-ups in one place.",
+        "b": "Search past conversations, pin the important ones, and keep a weekly recap.",
+        "c": "Deep research, media, and schedules — without leaving the thread."
+      }
+    },
+    "runtime": {
+      "v1010": {
+        "title": "Grok runtime 1.0.10",
+        "a": "Session search, workflows, and memory updates over the agent protocol.",
+        "b": "Watch-until and scheduled tasks stay in sync with Grok Desk."
+      }
+    }
   }
 }

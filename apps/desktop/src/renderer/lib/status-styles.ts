@@ -71,6 +71,7 @@ export function engineOnlineClass(signedIn: boolean, engineStatus?: string | nul
   // Session/runtime needs attention (not "needs approval") — still caution amber
   if (engineStatus === "missing" || engineStatus === "needs_auth")
     return "text-warning";
+  if (engineStatus === "signed_out") return "text-muted-foreground";
   return "text-muted-foreground";
 }
 

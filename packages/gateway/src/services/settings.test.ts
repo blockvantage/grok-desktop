@@ -165,6 +165,13 @@ describe("SettingsService skills + connectors + license", () => {
     expect(settings.getAll().onboardingCompleted).toBe(true);
   });
 
+  it("defaults deskSignedOut to false and persists true", () => {
+    expect(settings.getAll().deskSignedOut).toBe(false);
+    const next = settings.set({ deskSignedOut: true });
+    expect(next.deskSignedOut).toBe(true);
+    expect(settings.getAll().deskSignedOut).toBe(true);
+  });
+
   it("stores license activation state", () => {
     const act = {
       key: "GD1.test",

@@ -11,6 +11,8 @@ import {
   completeGrokSignOut,
   parseModelsCliProbe,
   deriveNeedsReauth,
+  overlayDeskSignedOut,
+  engineStatusForSession,
 } from "./auth-bridge.js";
 
 describe("readAuthFileMetadata", () => {
@@ -239,6 +241,44 @@ describe("getGrokAuthStatus", () => {
     expect(status.signedIn).toBe(false);
     expect(status.needsReauth).toBe(true);
     expect(status.accountLabel).toBe("stale@example.com");
+  });
+});
+
+describe("engineStatusForSession / overlayDeskSignedOut", () => {
+  it("never-signed-in with a binary is signed_out, not needs_auth", () => {
+    expect(
+      engineStatusForSession({
+        signedIn: false,
+        needsReauth: false,
+        binaryPath: "/opt/grok",
+      }),
+    ).toBe("signed_out");
+    expect(
+      engineStatusForSession({
+        signedIn: false,
+        needsReauth: true,
+        binaryPath: "/opt/grok",
+      }),
+    ).toBe("needs_auth");
+  });
+
+  it("Desk overlay hides a live CLI session without touching the file", () => {
+    const live = {
+      signedIn: true,
+      accountLabel: "user@example.com",
+      accountName: "User",
+      needsReauth: false,
+      engineStatus: "ready" as const,
+      binaryPath: "/opt/grok",
+      models: ["grok-4.5"],
+      defaultModel: "grok-4.5",
+    };
+    const overlaid = overlayDeskSignedOut(live, true);
+    expect(overlaid.signedIn).toBe(false);
+    expect(overlaid.needsReauth).toBe(false);
+    expect(overlaid.accountLabel).toBeNull();
+    expect(overlaid.engineStatus).toBe("signed_out");
+    expect(overlayDeskSignedOut(live, false)).toEqual(live);
   });
 });
 

@@ -27,5 +27,37 @@ describe("recoveryFromErrorMessage", () => {
     expect(v.kind).toBe("generic");
     expect(v.primary?.action).toBe("retry");
     expect(v.primary?.label).toBe("recovery.retry");
+    expect(v.body).toBe("some unclassified failure");
+  });
+
+  it("splits 429-style limits into capacity, team, and free banners", () => {
+    const capacity = recoveryFromErrorMessage(
+      "429 capacity overloaded, try again later",
+      t,
+    );
+    expect(capacity.kind).toBe("rate_limited_capacity");
+    expect(capacity.title).toBe("recovery.rateLimitedCapacityTitle");
+    expect(capacity.primary?.action).toBe("retry");
+
+    const team = recoveryFromErrorMessage(
+      "team limit reached for this workspace",
+      t,
+    );
+    expect(team.kind).toBe("rate_limited_team");
+    expect(team.body).toBe("recovery.rateLimitedTeamBody");
+
+    const free = recoveryFromErrorMessage("free tier usage allowance exhausted", t);
+    expect(free.kind).toBe("rate_limited_free");
+    expect(free.primary?.action).toBe("openBilling");
+  });
+
+  it("never dumps JSON or stacks into the generic banner", () => {
+    const v = recoveryFromErrorMessage(
+      '{"error":"nope","code":-32601,"jsonrpc":"2.0"}',
+      t,
+    );
+    expect(v.kind).toBe("generic");
+    expect(v.body).toBe("recovery.genericBody");
+    expect(v.body).not.toContain("jsonrpc");
   });
 });

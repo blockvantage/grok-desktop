@@ -23,6 +23,15 @@ describe("settings-schema", () => {
     if (r.ok) expect(r.value.onboardingCompleted).toBe(true);
   });
 
+  it("accepts deskSignedOut boolean", () => {
+    const on = parsePartialAppSettings({ deskSignedOut: true });
+    expect(on.ok).toBe(true);
+    if (on.ok) expect(on.value.deskSignedOut).toBe(true);
+    const off = parsePartialAppSettings({ deskSignedOut: false });
+    expect(off.ok).toBe(true);
+    if (off.ok) expect(off.value.deskSignedOut).toBe(false);
+  });
+
   it("accepts weeklyRecapEnabled boolean", () => {
     const on = parsePartialAppSettings({ weeklyRecapEnabled: true });
     expect(on.ok).toBe(true);

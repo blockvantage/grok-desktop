@@ -202,4 +202,9 @@ export interface EngineAdapter {
   rewindTo?(taskId: string, pointId: string): Promise<boolean>;
 }
 
-export type EngineStatus = "unknown" | "missing" | "ready" | "needs_auth";
+export type EngineStatus =
+  | "unknown"
+  | "missing"
+  | "ready"
+  | "needs_auth"
+  | "signed_out";

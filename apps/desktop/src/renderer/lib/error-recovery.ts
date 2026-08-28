@@ -1,5 +1,5 @@
 import type { RecoveryKind } from "@grokdesk/shared";
-import { classifyEngineError } from "@grokdesk/shared";
+import { classifyEngineError, looksLikeEngineDump } from "@grokdesk/shared";
 
 export type RecoveryAction =
   | "openBilling"
@@ -48,6 +48,29 @@ export function recoveryFromErrorMessage(
         body: t("recovery.rateLimitedBody"),
         primary: { label: t("recovery.dismiss"), action: "dismiss" },
       };
+    case "rate_limited_capacity":
+      return {
+        kind,
+        title: t("recovery.rateLimitedCapacityTitle"),
+        body: t("recovery.rateLimitedCapacityBody"),
+        primary: { label: t("recovery.retry"), action: "retry" },
+      };
+    case "rate_limited_team":
+      return {
+        kind,
+        title: t("recovery.rateLimitedTeamTitle"),
+        body: t("recovery.rateLimitedTeamBody"),
+        primary: { label: t("recovery.manageBilling"), action: "openBilling" },
+        secondary: { label: t("recovery.dismiss"), action: "dismiss" },
+      };
+    case "rate_limited_free":
+      return {
+        kind,
+        title: t("recovery.rateLimitedFreeTitle"),
+        body: t("recovery.rateLimitedFreeBody"),
+        primary: { label: t("recovery.manageBilling"), action: "openBilling" },
+        secondary: { label: t("recovery.dismiss"), action: "dismiss" },
+      };
     case "needs_reauth":
       return {
         kind,
@@ -66,10 +89,17 @@ export function recoveryFromErrorMessage(
       return {
         kind: "generic",
         title: t("recovery.genericTitle"),
-        body: message.slice(0, 280) || t("common.error"),
+        body: genericRecoveryBody(message, t),
         // Retry re-submits (smart-retry goal) and clears the failed state, so
         // the banner self-dismisses — no dead-end no-op "Dismiss" button.
         primary: { label: t("recovery.retry"), action: "retry" },
       };
   }
+}
+
+function genericRecoveryBody(message: string, t: Translate): string {
+  if (looksLikeEngineDump(message)) return t("recovery.genericBody");
+  const trimmed = message.trim();
+  if (!trimmed) return t("recovery.genericBody");
+  return trimmed.slice(0, 280);
 }

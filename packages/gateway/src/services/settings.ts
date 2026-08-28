@@ -81,6 +81,12 @@ export interface AppSettings {
   trustedFolders: string[];
   /** Phase 3.3: emit a weekly recap inbox item (default on). */
   weeklyRecapEnabled: boolean;
+  /**
+   * Phase 3.6: Desk-only sign-out. When true, auth.status reports signed-out
+   * even if ~/.grok/auth.json still has a SuperGrok session. Never deletes
+   * the CLI file; sign-in clears this flag and reuses the session if valid.
+   */
+  deskSignedOut: boolean;
 }
 
 const DEFAULTS: AppSettings = {
@@ -98,6 +104,7 @@ const DEFAULTS: AppSettings = {
   inheritUserGrok: false,
   trustedFolders: [],
   weeklyRecapEnabled: true,
+  deskSignedOut: false,
 };
 
 /** Drop corrupt/hostile MCP rows on settings load (same bounds as settings.set). */
@@ -212,6 +219,10 @@ export class SettingsService {
           typeof parsed.weeklyRecapEnabled === "boolean"
             ? parsed.weeklyRecapEnabled
             : undefined,
+        deskSignedOut:
+          typeof parsed.deskSignedOut === "boolean"
+            ? parsed.deskSignedOut
+            : undefined,
       };
       return {
         ...DEFAULTS,
@@ -238,6 +249,10 @@ export class SettingsService {
           typeof rest.weeklyRecapEnabled === "boolean"
             ? rest.weeklyRecapEnabled
             : DEFAULTS.weeklyRecapEnabled,
+        deskSignedOut:
+          typeof rest.deskSignedOut === "boolean"
+            ? rest.deskSignedOut
+            : DEFAULTS.deskSignedOut,
       };
     } catch {
       return {
@@ -306,6 +321,7 @@ export class SettingsService {
         parsed.value.trustedFolders ?? current.trustedFolders,
       weeklyRecapEnabled:
         parsed.value.weeklyRecapEnabled ?? current.weeklyRecapEnabled,
+      deskSignedOut: parsed.value.deskSignedOut ?? current.deskSignedOut,
       // Never accept license from set()
       license: current.license,
     };

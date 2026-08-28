@@ -71,6 +71,7 @@ export function accountSubtitle(opts: {
   if (!opts.signedIn) return t("status.notSignedIn");
   if (opts.engineStatus === "missing") return t("status.cliMissing");
   if (opts.engineStatus === "needs_auth") return t("status.sessionExpired");
+  if (opts.engineStatus === "signed_out") return t("status.notSignedIn");
   return "SuperGrok";
 }
 

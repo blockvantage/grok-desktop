@@ -18,6 +18,8 @@ export function AccountTab(props: {
   onRefreshAuth: () => void;
   /** Re-enter first-run setup without silently resetting approval mode. */
   onRunSetupAgain?: () => void;
+  onShowTour?: () => void;
+  onShowWhatsNew?: () => void;
   /** Shared usage snapshot from AccountController when available. */
   usageSnapshot?: UsageSnapshot | null;
   onUsageChange?: (snap: UsageSnapshot | null) => void;
@@ -95,7 +97,9 @@ export function AccountTab(props: {
                     ? t("settings.connected")
                     : props.auth?.signedIn
                       ? engineStatusLabel(props.auth.engineStatus)
-                      : t("status.needs_auth")}
+                      : engineStatusLabel(
+                          props.auth?.engineStatus ?? "signed_out",
+                        )}
                 </span>
               </div>
             </div>
@@ -125,6 +129,26 @@ export function AccountTab(props: {
                   onClick={props.onRunSetupAgain}
                 >
                   {t("settings.runSetupAgain")}
+                </Button>
+              ) : null}
+              {props.onShowTour ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  data-testid="account-show-tour"
+                  onClick={props.onShowTour}
+                >
+                  {t("settings.showTour")}
+                </Button>
+              ) : null}
+              {props.onShowWhatsNew ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  data-testid="account-whats-new"
+                  onClick={props.onShowWhatsNew}
+                >
+                  {t("settings.whatsNew")}
                 </Button>
               ) : null}
               <Button

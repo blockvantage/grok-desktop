@@ -56,6 +56,15 @@ async function dismissOnboarding(page: import("@playwright/test").Page) {
     await next.first().click({ timeout: 3_000 }).catch(() => {});
     await page.waitForTimeout(250);
   }
+  // Tour / What's new mount after the wizard unmounts — wait briefly.
+  await page
+    .getByTestId("product-tour-skip")
+    .click({ timeout: 5_000 })
+    .catch(() => {});
+  await page
+    .getByTestId("whats-new-dismiss")
+    .click({ timeout: 3_000 })
+    .catch(() => {});
 }
 
 /** Seed SuperGrok auth.json under HOME so Desk boots signed-in (no OAuth). */
@@ -239,10 +248,10 @@ test.describe("account + onboarding", () => {
         });
         await expect(page.getByText(/sign in again/i)).toHaveCount(0);
 
-        // Local session file must be cleared (deterministic sign-out)
+        // Desk sign-out must not delete the shared CLI session file.
         await expect
           .poll(() => authFileExists(userData), { timeout: 15_000 })
-          .toBe(false);
+          .toBe(true);
       } finally {
         await closeElectron(app);
       }
@@ -267,7 +276,7 @@ test.describe("account + onboarding", () => {
         await expect(page.getByText(/sign in/i).first()).toBeVisible({
           timeout: 20_000,
         });
-        expect(authFileExists(userData)).toBe(false);
+        expect(authFileExists(userData)).toBe(true);
       } finally {
         await closeElectron(app);
         fs.rmSync(userData, { recursive: true, force: true });

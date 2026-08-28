@@ -157,7 +157,7 @@ Upstream `ToolKind` is now rich enough to drive renderers without name matching:
 ### 3.5 Watch-until & schedules refresh ✅ (2026-08-27; unit + IPC/ACP)
 - Monitor tool + `MonitorEvent` → "Watch this until…" task mode (parity C6); `/loop`-style recurring in-conversation checks bridged to Desk's scheduler (C7); `ScheduledTask{Created,Fired,Deleted}` events reconcile the Schedules view with engine-created schedules. Morning-brief strip (coworker B1–B3) turns overnight schedule outcomes into a Home digest.
 
-### 3.6 Onboarding & explainability for non-coders
+### 3.6 Onboarding & explainability for non-coders ✅ (2026-08-27; unit + IPC + i18n)
 - Guided tour modeled on upstream `/tutorial` (nine-topic opt-in): 5-scene Desk version — what approvals are, where files land, how to queue follow-ups, what memory does, where to change trust.
 - Fix the two worst first-run bugs from the July audit if still present: fresh signed-out state rendering as "session expired" (`getGrokAuthStatus` sets `needsReauth = !signedIn`) and sign-out deleting `~/.grok/auth.json` (kills the user's CLI session outside the app — scope sign-out to Desk).
 - "What's new" surface: render Desk release notes + relevant runtime release notes in-app (upstream ships per-version changelog md/json we can reuse).

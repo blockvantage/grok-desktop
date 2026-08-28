@@ -900,7 +900,9 @@
     "appearanceDescription": "深色是精心设计的默认外观。浅色使用同一套品牌色板。",
     "appearanceDark": "深色",
     "appearanceLight": "浅色",
-    "appearanceSystem": "跟随系统"
+    "appearanceSystem": "跟随系统",
+    "showTour": "显示导览",
+    "whatsNew": "更新说明"
   },
   "dictation": {
     "listening": "Grok 正在听… {text}",
@@ -942,7 +944,14 @@
     "viewUsage": "查看用量",
     "signIn": "登录",
     "dismiss": "关闭",
-    "retry": "重试"
+    "retry": "重试",
+    "rateLimitedCapacityTitle": "Grok 正忙",
+    "rateLimitedCapacityBody": "此刻使用的人太多。请稍等片刻再试。",
+    "rateLimitedTeamTitle": "已达团队限额",
+    "rateLimitedTeamBody": "你的团队或工作区已达用量上限。请联系管理员，或去管理账单。",
+    "rateLimitedFreeTitle": "免费额度已用完",
+    "rateLimitedFreeBody": "此 SuperGrok 方案的免费额度已用尽。请升级，或等到下一周期重置。",
+    "genericBody": "出了点问题。请再试一次——细节留在日志里，不会出现在这个画面上。"
   },
   "cat": {
     "all": "全部",
@@ -993,7 +1002,8 @@
     "copyDiagnostics": "复制诊断信息",
     "diagnosticsCopied": "已复制诊断信息",
     "diagnosticsCopyFailed": "无法复制诊断信息",
-    "gatewayRetryFailed": "无法重启引擎。请尝试重新启动应用。"
+    "gatewayRetryFailed": "无法重启引擎。请尝试重新启动应用。",
+    "signed_out": "未登录"
   },
   "effort": {
     "fast": "快速",
@@ -1573,11 +1583,12 @@
   "account": {
     "connected": "已连接",
     "needsAttention": "需要注意",
-    "signOutConfirmActiveTasks": "在此 Mac 上退出 SuperGrok？活动任务将暂停。同时会退出本机 Grok CLI。",
-    "signOutConfirmSharedCli": "在此 Mac 上退出 SuperGrok？同时会退出共享的 Grok CLI 会话。",
+    "signOutConfirmActiveTasks": "退出 Grok Desk？活动任务将暂停。本机 Grok CLI 仍保持登录。",
+    "signOutConfirmSharedCli": "退出 Grok Desk？本机 Grok CLI 仍保持登录。",
     "signInCancelled": "已取消登录",
     "signInVerifying": "正在验证 SuperGrok 账户…",
-    "demoModeBanner": "演示模式 — 登录后使用完整 SuperGrok"
+    "demoModeBanner": "演示模式 — 登录后使用完整 SuperGrok",
+    "signOutConfirmDeskOnly": "退出 Grok Desk？本机 Grok CLI 仍保持登录。"
   },
   "progress": {
     "renderingVideo": "正在渲染视频 — 通常需要 1–2 分钟",
@@ -1846,6 +1857,55 @@
       "eve": "Eve",
       "leo": "Leo",
       "rex": "Rex"
+    }
+  },
+  "tour": {
+    "skip": "跳过导览",
+    "next": "下一步",
+    "back": "返回",
+    "done": "知道了",
+    "stepOf": "{current} / {total}",
+    "approvals": {
+      "title": "审批",
+      "body": "当 Grok 需要许可——改文件、跑命令、提问——会在这里等待。你批准、编辑或拒绝之前，什么都不会执行。"
+    },
+    "files": {
+      "title": "文件会落到哪里",
+      "body": "工作发生在你选择的文件夹。交付物出现在“产物”。Grok 不会默默改写该文件夹之外的文件。"
+    },
+    "followUps": {
+      "title": "跟进",
+      "body": "Grok 还在工作时，你可以写下下一句。它会排队，等你发送，或等当前回合结束后再发。"
+    },
+    "memory": {
+      "title": "记忆",
+      "body": "“记住这个”会保存可复用的要点。被召回的记忆是供你核对的上下文，不是悄悄改写你的笔记。"
+    },
+    "trust": {
+      "title": "信任",
+      "body": "审批、文件夹信任和桌面控制都在设置里。随时可以收紧或放宽，包括开启自动驾驶之后。"
+    }
+  },
+  "whatsNew": {
+    "title": "更新说明",
+    "subtitle": "Grok Desk 与运行时的近期变化。",
+    "gotIt": "知道了",
+    "deskBadge": "Grok Desk",
+    "runtimeBadge": "Grok 运行时",
+    "desk": {
+      "v1": {
+        "title": "Grok Desk",
+        "a": "以聊天为先：实时进度、审批和跟进都在同一处。",
+        "b": "搜索过往对话、钉住重要的，并保留每周回顾。",
+        "c": "深度研究、媒体和日程——不用离开这条线程。"
+      }
+    },
+    "runtime": {
+      "v1010": {
+        "title": "Grok 运行时 1.0.10",
+        "a": "通过代理协议提供会话搜索、工作流和记忆更新。",
+        "b": "监视直到完成与定时任务会与 Grok Desk 保持同步。"
+      }
     }
   }
 }

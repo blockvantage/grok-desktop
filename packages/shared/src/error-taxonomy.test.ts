@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { classifyEngineError } from "./error-taxonomy.js";
+import { classifyEngineError, looksLikeEngineDump } from "./error-taxonomy.js";
 
 describe("classifyEngineError", () => {
   it("detects usage pool exhausted", () => {
@@ -38,6 +38,18 @@ describe("classifyEngineError", () => {
     });
   });
 
+  it("splits 429-style limits into capacity, team, and free usage", () => {
+    expect(
+      classifyEngineError("429 capacity overloaded, try again later"),
+    ).toMatchObject({ kind: "rate_limited_capacity", retryable: true });
+    expect(
+      classifyEngineError("team limit reached for this workspace"),
+    ).toMatchObject({ kind: "rate_limited_team", retryable: false });
+    expect(
+      classifyEngineError("free tier usage allowance exhausted"),
+    ).toMatchObject({ kind: "rate_limited_free", retryable: false });
+  });
+
   it("detects reauth", () => {
     expect(classifyEngineError("please log in / unauthorized")).toMatchObject({
       kind: "needs_reauth",
@@ -60,6 +72,14 @@ describe("classifyEngineError", () => {
       kind: "generic",
       retryable: false,
     });
+  });
+
+  it("flags JSON and stack dumps so UI never shows them", () => {
+    expect(looksLikeEngineDump('{"error":"nope","code":-32601}')).toBe(true);
+    expect(looksLikeEngineDump("Error\n    at runTurn (acp-session.ts:1:1)")).toBe(
+      true,
+    );
+    expect(looksLikeEngineDump("Folder not found")).toBe(false);
   });
 
   it("detects desktop permission and disabled codes in messages", () => {

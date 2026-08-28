@@ -51,6 +51,8 @@ export const APP_SETTINGS_SETTABLE_KEYS = [
   "trustedFolders",
   /** Phase 3.3: weekly recap inbox item (default on). */
   "weeklyRecapEnabled",
+  /** Phase 3.6: Desk-only sign-out; does not delete ~/.grok/auth.json. */
+  "deskSignedOut",
 ] as const;
 
 export type SettableSettingsKey = (typeof APP_SETTINGS_SETTABLE_KEYS)[number];
@@ -104,6 +106,8 @@ export const partialAppSettingsSchema = z
       .max(64)
       .optional(),
     weeklyRecapEnabled: z.boolean().optional(),
+    /** Desk-scoped sign-out overlay (CLI session file is left alone). */
+    deskSignedOut: z.boolean().optional(),
   })
   .partial();
 

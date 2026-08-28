@@ -71,6 +71,8 @@ export function SettingsView(props: {
   /** Deep-link into a settings tab (e.g. Tools from home checklist). */
   initialTab?: SettingsTabId;
   onRunSetupAgain?: () => void;
+  onShowTour?: () => void;
+  onShowWhatsNew?: () => void;
   /** Shared SuperGrok usage snapshot (Home/Sidebar/Settings single source). */
   usageSnapshot?: UsageSnapshot | null;
   onUsageChange?: (snap: UsageSnapshot | null) => void;
@@ -369,6 +371,8 @@ export function SettingsView(props: {
               onSignOut={props.onSignOut}
               onRefreshAuth={props.onRefreshAuth}
               onRunSetupAgain={props.onRunSetupAgain}
+              onShowTour={props.onShowTour}
+              onShowWhatsNew={props.onShowWhatsNew}
               usageSnapshot={props.usageSnapshot}
               onUsageChange={props.onUsageChange}
             />

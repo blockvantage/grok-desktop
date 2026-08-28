@@ -26,6 +26,26 @@ describe("createAccountController", () => {
     expect(ctrl.getSnapshot().phase).toBe("signed_in");
   });
 
+  it("reused CLI session skips the browser poll", async () => {
+    const ctrl = createAccountController({
+      signIn: async () => ({ ok: true, reusedSession: true }),
+      signOut: async () => ({ ok: true, signedOut: true }),
+      status: async () => ({
+        signedIn: true,
+        accountLabel: "reuse@x.ai",
+        needsReauth: false,
+        engineStatus: "ready",
+      }),
+      sleep: async () => {
+        throw new Error("should not poll");
+      },
+    });
+    const r = await ctrl.startSignIn();
+    expect(r.ok).toBe(true);
+    expect(r.accountLabel).toBe("reuse@x.ai");
+    expect(ctrl.getSnapshot().phase).toBe("signed_in");
+  });
+
   it("cancelSignIn stops polling without marking reauth for fresh users", async () => {
     const ctrl = createAccountController({
       signIn: async () => ({ ok: true }),

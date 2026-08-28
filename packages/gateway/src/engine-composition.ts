@@ -18,6 +18,8 @@ export {
   runGrokLogout,
   completeGrokSignOut,
   clearLocalAuthSession,
+  overlayDeskSignedOut,
+  engineStatusForSession,
   resolveManagedGrokBinary,
   findGlobalGrokBinary,
   /** Diagnostics alias only — not for production engine selection. */

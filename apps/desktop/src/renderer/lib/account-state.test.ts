@@ -134,12 +134,14 @@ describe("signOutActiveTaskPolicy", () => {
     const p = signOutActiveTaskPolicy(2);
     expect(p.requiresConfirm).toBe(true);
     expect(p.stopsTasks).toBe(true);
-    expect(p.sharedCliSessionAffected).toBe(true);
+    expect(p.sharedCliSessionAffected).toBe(false);
+    expect(p.confirmMessageKey).toBe("account.signOutConfirmActiveTasks");
   });
 
-  it("still flags shared CLI session when idle", () => {
+  it("does not claim the shared CLI session is signed out", () => {
     const p = signOutActiveTaskPolicy(0);
     expect(p.requiresConfirm).toBe(false);
-    expect(p.sharedCliSessionAffected).toBe(true);
+    expect(p.sharedCliSessionAffected).toBe(false);
+    expect(p.confirmMessageKey).toBe("account.signOutConfirmDeskOnly");
   });
 });

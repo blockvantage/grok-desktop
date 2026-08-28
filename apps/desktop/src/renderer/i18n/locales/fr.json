@@ -900,7 +900,9 @@
     "appearanceDescription": "Le sombre est le défaut soigné. Le clair réutilise les mêmes jetons de marque.",
     "appearanceDark": "Sombre",
     "appearanceLight": "Clair",
-    "appearanceSystem": "Suivre le système"
+    "appearanceSystem": "Suivre le système",
+    "showTour": "Voir la visite",
+    "whatsNew": "Nouveautés"
   },
   "dictation": {
     "listening": "Écoute avec Grok… {text}",
@@ -942,7 +944,14 @@
     "viewUsage": "Voir l’utilisation",
     "signIn": "Se connecter",
     "dismiss": "Fermer",
-    "retry": "Réessayer"
+    "retry": "Réessayer",
+    "rateLimitedCapacityTitle": "Grok est saturé",
+    "rateLimitedCapacityBody": "Trop de monde utilise Grok en ce moment. Attendez un peu puis réessayez.",
+    "rateLimitedTeamTitle": "Limite d’équipe atteinte",
+    "rateLimitedTeamBody": "Votre équipe ou espace de travail a atteint sa limite. Demandez à un admin ou gérez la facturation.",
+    "rateLimitedFreeTitle": "Limite de l’offre gratuite",
+    "rateLimitedFreeBody": "Ce forfait SuperGrok a épuisé son quota gratuit. Passez à un forfait supérieur ou attendez le prochain cycle.",
+    "genericBody": "Une erreur s’est produite. Réessayez — les détails restent dans les journaux, pas à l’écran."
   },
   "cat": {
     "all": "Tous",
@@ -993,7 +1002,8 @@
     "copyDiagnostics": "Copier le diagnostic",
     "diagnosticsCopied": "Diagnostic copié",
     "diagnosticsCopyFailed": "Impossible de copier le diagnostic",
-    "gatewayRetryFailed": "Impossible de redémarrer le moteur. Relancez l’app."
+    "gatewayRetryFailed": "Impossible de redémarrer le moteur. Relancez l’app.",
+    "signed_out": "Non connecté"
   },
   "effort": {
     "fast": "Rapide",
@@ -1573,11 +1583,12 @@
   "account": {
     "connected": "Connecté",
     "needsAttention": "Attention requise",
-    "signOutConfirmActiveTasks": "Se déconnecter de SuperGrok sur ce Mac ? Les tâches actives seront mises en pause. Cela déconnecte aussi le CLI Grok.",
-    "signOutConfirmSharedCli": "Se déconnecter de SuperGrok sur ce Mac ? Cela déconnecte aussi la session CLI Grok partagée.",
+    "signOutConfirmActiveTasks": "Se déconnecter de Grok Desk ? Les tâches actives seront mises en pause. Le CLI Grok de cette machine reste connecté.",
+    "signOutConfirmSharedCli": "Se déconnecter de Grok Desk ? Le CLI Grok de cette machine reste connecté.",
     "signInCancelled": "Connexion annulée",
     "signInVerifying": "Vérification du compte SuperGrok…",
-    "demoModeBanner": "Mode démo — connectez-vous pour SuperGrok complet"
+    "demoModeBanner": "Mode démo — connectez-vous pour SuperGrok complet",
+    "signOutConfirmDeskOnly": "Se déconnecter de Grok Desk ? Le CLI Grok de cette machine reste connecté."
   },
   "progress": {
     "renderingVideo": "Rendu vidéo — généralement 1–2 min",
@@ -1846,6 +1857,55 @@
       "eve": "Eve",
       "leo": "Leo",
       "rex": "Rex"
+    }
+  },
+  "tour": {
+    "skip": "Passer la visite",
+    "next": "Suivant",
+    "back": "Retour",
+    "done": "Compris",
+    "stepOf": "{current} sur {total}",
+    "approvals": {
+      "title": "Approbations",
+      "body": "Quand Grok a besoin d’une permission — un fichier, une commande, une question — il attend ici. Vous approuvez, modifiez ou refusez. Rien ne s’exécute avant."
+    },
+    "files": {
+      "title": "Où vont les fichiers",
+      "body": "Le travail se fait dans le dossier choisi. Les livrables apparaissent dans Artefacts. Grok ne réécrit pas en silence des fichiers hors de ce dossier."
+    },
+    "followUps": {
+      "title": "Suivis",
+      "body": "Tapez la suite pendant que Grok travaille. Le message est mis en file, puis envoyé quand vous le dites — ou à la fin du tour en cours."
+    },
+    "memory": {
+      "title": "Mémoire",
+      "body": "Mémoriser ceci enregistre une idée réutilisable. La mémoire rappelée est un contexte à vérifier, pas une réécriture silencieuse de vos notes."
+    },
+    "trust": {
+      "title": "Confiance",
+      "body": "Les approbations, la confiance des dossiers et le contrôle du bureau sont dans Réglages. Vous pouvez les resserrer ou les assouplir à tout moment, y compris après Autopilote."
+    }
+  },
+  "whatsNew": {
+    "title": "Nouveautés",
+    "subtitle": "Changements récents de Grok Desk et du runtime.",
+    "gotIt": "Compris",
+    "deskBadge": "Grok Desk",
+    "runtimeBadge": "Runtime Grok",
+    "desk": {
+      "v1": {
+        "title": "Grok Desk",
+        "a": "Un espace de chat avec progression en direct, approbations et suivis au même endroit.",
+        "b": "Recherchez d’anciennes conversations, épinglez les importantes et gardez un récap hebdo.",
+        "c": "Recherche approfondie, médias et plannings sans quitter le fil."
+      }
+    },
+    "runtime": {
+      "v1010": {
+        "title": "Runtime Grok 1.0.10",
+        "a": "Recherche de sessions, workflows et mises à jour mémoire via le protocole agent.",
+        "b": "Les tâches « surveiller jusqu’à » et planifiées restent alignées avec Grok Desk."
+      }
     }
   }
 }
