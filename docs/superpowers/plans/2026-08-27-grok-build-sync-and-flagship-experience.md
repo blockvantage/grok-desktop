@@ -103,33 +103,33 @@ The ACP factory must provide the same controlled environment as headless.
 
 ## Phase 2 — Chat & interaction experience (~2 weeks)
 
-### 2.1 Composer parity in-conversation
+### 2.1 Composer parity in-conversation ✅ (2026-08-27)
 - Bring model, approval mode, plan-first, and role pack into the follow-up composer (today effort-only, `task-workspace-view.tsx:2633-2692`); reuse the Home advanced popover (`home-view.tsx:1546-1650`). Model list from `x.ai/models/list` (live catalog), not the hardcoded `grok-4.5` defaults (`models-list.ts:12`, `scheduler.ts:159`).
 - Mid-conversation changes apply to the *next* turn and say so ("Next reply will use Grok 4.5 · heavy").
 
-### 2.2 Tool-call rendering by kind (non-coder legibility)
+### 2.2 Tool-call rendering by kind (non-coder legibility) ✅ (2026-08-27)
 Upstream `ToolKind` is now rich enough to drive renderers without name matching:
 - `edit`/`write` → filename-first diff card (port `xai-grok-pager-diff` line-tagging logic to TS; input shape is what arrives in `tool_call_update.rawOutput`). Collapsed by default with a one-line plain-language summary ("Updated launch-brief.md — 12 lines changed").
 - `execute` → command card with friendly title, collapsed output.
 - `task`/`active_agent_message` → subagent card. `web_search`/`web_fetch` → citation cards (already exist). `image_gen`/`video_gen`/`image_to_video`/`reference_to_video` → media card + lightbox. `ask_user` → inline form (1.4). `plan` → plan card (exists).
 - Everything defaults to a calm one-line summary; "show details" reveals raw. Non-coders should never see a raw JSON envelope (the quarantine work from 2026-08-05 holds; this is the presentation layer on top).
 
-### 2.3 Conversation navigation for long runs
+### 2.3 Conversation navigation for long runs ✅ (2026-08-27)
 - Timeline rail (upstream `/jump`+`/timeline` concept): clickable tick rail of turns on the right edge of the stream; "back to start of answer" arrow on long replies. Reintroduce virtualization for long conversations (it was removed with the dead stream path — nothing virtualizes today).
 
-### 2.4 Compaction as a calm, legible event
+### 2.4 Compaction as a calm, legible event ✅ (2026-08-27)
 - Surface `auto_compact_started/completed/failed` as a friendly inline marker ("Tidied up earlier conversation to keep going — nothing is lost"). Optional "view what was summarized" backed by the compaction transcript segments (upstream `xai-compaction-transcript`, `compaction/INDEX.md`).
 
-### 2.5 Goal & progress binding
+### 2.5 Goal & progress binding ✅ (2026-08-27)
 - Consume `GoalUpdated` → objective/progress line in the conversation header and tray tooltip (`lib/goal-progress.ts` exists; bind it to real events). "Send now" during goals works upstream since 1.0.1 — verify.
 
-### 2.6 Interaction polish sweep
+### 2.6 Interaction polish sweep ✅ (2026-08-27)
 - i18n leaks: mermaid chrome (`components/ui/mermaid-block.tsx:56-72`) and both OS-notification bodies (`src/main/index.ts:675,991`) through the catalogs.
 - `shortcuts-help.tsx`: platform-aware modifier glyphs; add Esc-to-stop and queue Cmd+Enter entries.
 - Light theme + system-follow (app is dark-only; DESIGN.md tokens make this tractable — define the light palette on the token layer, keep dark as the crafted default).
 - Slash surface expansion in `packages/shared/src/command-registry.ts` (today: brief/research/image/video/schedule only). Add product-language commands mapped to real RPCs: "Summarize so far" (`compact`), "Undo last turn" (rewind), "Remember this" (memory), "Watch this until…" (monitor, Phase 3), "Deep research" (workflows, Phase 3). Non-coders get these as palette/menu actions, not just slash.
 
-### 2.7 Test engineering for the chat surface (enables everything above)
+### 2.7 Test engineering for the chat surface (enables everything above) ✅ (2026-08-27; e2e:chat 11×2, visual-qa fail-closed)
 - Switch component tests to jsdom + Testing Library (today `vitest.config.ts` is `environment: "node"`; 16 files assert on `renderToStaticMarkup` strings — zero interaction coverage on approve/send-now/edit-turn/slash menu). **Started 2026-08-27:** jsdom is limited to `*.interaction.test.tsx`.
 - Convert the three grep-only "e2e" specs (`chat-delivery`, `chat-recovery`, `chat-approvals`) into real Playwright journeys on the fake provider: queue+interject, retry-on-failed, missing-attachment repick, drag-drop, undo turn, compact. ✅ (2026-08-27; `pnpm --filter @grokdesk/desktop e2e:chat` 11 passed ×2)
 - Un-soft-skip `visual-qa` (it currently exits 0 with "1 skipped"); run full `pnpm test` in the release gate.
