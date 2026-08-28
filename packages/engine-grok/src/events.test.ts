@@ -252,6 +252,31 @@ describe("parseStreamingJsonLine", () => {
     ).toEqual([{ type: "done", summary: "actual final" }]);
   });
 
+  it("maps WorkflowUpdated envelopes to workflow_update events", () => {
+    expect(
+      parseStreamingJsonLine(
+        JSON.stringify({
+          type: "WorkflowUpdated",
+          handle: "deep-research-2",
+          objective: "Compare databases",
+          agents_used: 1,
+          agent_budget: 4,
+        }),
+      ),
+    ).toEqual([
+      {
+        type: "workflow_update",
+        payload: {
+          type: "WorkflowUpdated",
+          handle: "deep-research-2",
+          objective: "Compare databases",
+          agents_used: 1,
+          agent_budget: 4,
+        },
+      },
+    ]);
+  });
+
   it("maps GoalUpdated envelopes to goal_update events", () => {
     expect(
       parseStreamingJsonLine(

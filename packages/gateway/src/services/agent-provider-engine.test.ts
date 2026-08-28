@@ -170,6 +170,15 @@ describe("runtimeEventToNormalized", () => {
     });
     expect(
       runtimeEventToNormalized({
+        type: "workflow_update",
+        payload: { handle: "deep-research-2", agents_used: 1 },
+      }),
+    ).toEqual({
+      type: "workflow_update",
+      payload: { handle: "deep-research-2", agents_used: 1 },
+    });
+    expect(
+      runtimeEventToNormalized({
         type: "usage",
         usage: { inputTokens: 10, outputTokens: 5 },
       }),

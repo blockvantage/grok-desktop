@@ -1770,5 +1770,15 @@
     "viewSource": "Ver código",
     "viewDiagram": "Ver diagrama",
     "rendering": "A renderizar…"
+  },
+  "workflow": {
+    "title": "Uma equipa a trabalhar por ti",
+    "pause": "Pausar",
+    "resume": "Retomar",
+    "stop": "Parar",
+    "nowIn": "Agora: {phase}",
+    "budgetLine": "{used} ocupados · {reserved} reservados · {remaining} restantes",
+    "researchDeeply": "Investigar a fundo",
+    "researchDeeplyDesc": "Uma equipa investiga por fases e mostra o progresso ao vivo"
   }
 }

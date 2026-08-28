@@ -99,6 +99,10 @@ export type NormalizedEngineEvent =
       objective?: string;
       progress?: string;
     }
+  | {
+      type: "workflow_update";
+      payload: Record<string, unknown>;
+    }
   /**
    * Engine session identity for resume + optional spawn protection snapshot (T3).
    * Never user-visible as conversation transcript.

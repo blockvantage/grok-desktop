@@ -288,6 +288,7 @@ import {
 } from "@/lib/next-reply-preview";
 import { ContextMeter } from "@/components/context-meter";
 import { SessionStatusHeader } from "@/components/session-status-header";
+import { WorkflowRunPanel } from "@/components/conversation/workflow-run-panel";
 import { ProtectionChip } from "@/components/protection-chip";
 import { DegradedModeLabel } from "@/components/degraded-mode-label";
 import { ReviewChangesStrip } from "@/components/review-changes-strip";
@@ -310,13 +311,16 @@ import { projectHelpersHud } from "@/lib/helpers-hud";
 import {
   taskContextUsage,
   taskCompact,
+  taskInterject,
   taskRewindPoints,
   taskRewind,
 } from "@/lib/api";
 import {
+  foldWorkflowRun,
   latestSessionStatusFromEvents,
   mapTurnToRewindPoint,
   projectSessionStatusHeader,
+  workflowControlPrompt,
 } from "@grokdesk/shared";
 import { collapseEventsToBlocks, extractResultSummary } from "@/lib/stream-view";
 import { questionChipsForTerminalTurn } from "@/lib/user-question";
@@ -552,6 +556,13 @@ export function TaskWorkspaceView(props: {
       }),
     // t: goal-progress lines use module-level t()
     [props.events, task.goal, isLive, isTerminal, t],
+  );
+  const workflowRun = useMemo(
+    () =>
+      foldWorkflowRun(
+        props.events.map((e) => ({ kind: e.kind, payload: e.payload })),
+      ),
+    [props.events],
   );
   // C2: file-level review strip from write/edit events
   const reviewChangesBase = useMemo(
@@ -1875,6 +1886,22 @@ export function TaskWorkspaceView(props: {
                   >
                     {goalProgress.line}
                   </p>
+                ) : null}
+                {workflowRun ? (
+                  <WorkflowRunPanel
+                    view={workflowRun}
+                    onControl={(action) => {
+                      const prompt = workflowControlPrompt(
+                        action,
+                        workflowRun.handle,
+                      );
+                      if (isLive) {
+                        void taskInterject(task.id, prompt);
+                        return;
+                      }
+                      void Promise.resolve(props.onFollowUp?.(prompt));
+                    }}
+                  />
                 ) : null}
                 {task.status === "waiting_approval" ||
                 task.status === "waiting_user" ? (

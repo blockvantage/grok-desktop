@@ -126,6 +126,11 @@ export function runtimeEventToNormalized(
         objective: event.objective,
         progress: event.progress,
       };
+    case "workflow_update":
+      return {
+        type: "workflow_update",
+        payload: event.payload,
+      };
     case "worker_started":
       return {
         type: "worker_started",

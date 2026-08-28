@@ -1123,6 +1123,16 @@
     "stopEsc": "Stop the running reply",
     "queueSendNow": "Send the queued message now"
   },
+  "workflow": {
+    "title": "A team working for you",
+    "pause": "Pause",
+    "resume": "Resume",
+    "stop": "Stop",
+    "nowIn": "Now: {phase}",
+    "budgetLine": "{used} busy · {reserved} held · {remaining} left",
+    "researchDeeply": "Research deeply",
+    "researchDeeplyDesc": "A team researches in phases and shows live progress"
+  },
   "mermaid": {
     "title": "Diagram",
     "viewSource": "View source",

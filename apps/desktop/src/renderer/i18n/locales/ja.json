@@ -1770,5 +1770,15 @@
     "viewSource": "ソースを表示",
     "viewDiagram": "図を表示",
     "rendering": "描画中…"
+  },
+  "workflow": {
+    "title": "あなたのために動くチーム",
+    "pause": "一時停止",
+    "resume": "再開",
+    "stop": "停止",
+    "nowIn": "いま: {phase}",
+    "budgetLine": "稼働 {used} · 予約 {reserved} · 残り {remaining}",
+    "researchDeeply": "深く調べる",
+    "researchDeeplyDesc": "チームが段階的に調べ、進み具合をその場で見せます"
   }
 }

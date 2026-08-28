@@ -51,6 +51,14 @@ function normalizeJsonEvent(
   }
 
   if (
+    type === "workflow_update" ||
+    type === "workflow_updated" ||
+    type === "workflowupdated"
+  ) {
+    return [{ type: "workflow_update", payload: obj }];
+  }
+
+  if (
     type === "goal_update" ||
     type === "goal_updated" ||
     type === "goalupdated"

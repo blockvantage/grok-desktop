@@ -582,6 +582,15 @@ export class AcpMediatedSession implements AgentSession {
       }
       return;
     }
+    if (decoded.kind === "workflow_updated") {
+      if (sink) {
+        void sink({
+          type: "workflow_update",
+          payload: decoded.raw,
+        });
+      }
+      return;
+    }
     if (decoded.kind === "unknown" || !sink) return;
 
     if (decoded.kind === "plan") {

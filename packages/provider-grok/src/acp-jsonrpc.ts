@@ -442,6 +442,8 @@ export function attachFakeAcpAgent(
       objective?: string;
       progress?: string;
     };
+    /** Emit a WorkflowUpdated session/update before completing the prompt. */
+    emitWorkflowUpdated?: Record<string, unknown>;
     /** Per-method responder; throw {code:-32601} to simulate method-not-found. */
     respond?: (method: string, params?: unknown) => unknown;
   },
@@ -686,6 +688,21 @@ export function attachFakeAcpAgent(
                     sessionUpdate: "GoalUpdated",
                     ...(goal.objective ? { objective: goal.objective } : {}),
                     ...(goal.progress ? { progress: goal.progress } : {}),
+                  },
+                },
+              }),
+            );
+          }
+          if (opts?.emitWorkflowUpdated) {
+            transport.writeLine(
+              encodeJsonRpc({
+                jsonrpc: "2.0",
+                method: "session/update",
+                params: {
+                  sessionId,
+                  update: {
+                    sessionUpdate: "WorkflowUpdated",
+                    ...opts.emitWorkflowUpdated,
                   },
                 },
               }),

@@ -54,6 +54,10 @@ export type RuntimeEvent =
       progress?: string;
     }
   | {
+      type: "workflow_update";
+      payload: Record<string, unknown>;
+    }
+  | {
       type: "plan";
       content: string;
       status: "drafting" | "awaiting_approval";

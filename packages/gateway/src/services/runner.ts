@@ -1583,6 +1583,13 @@ export class TaskRunner {
         });
         return "continue";
 
+      case "workflow_update":
+        this.tasks.appendEvent(taskId, "step", {
+          title: "workflow_update",
+          ...event.payload,
+        });
+        return "continue";
+
       case "session_meta":
         // Persist for resume only — never as conversation/task transcript.
         if (attemptId && this.runAttempts && event.providerSessionId) {

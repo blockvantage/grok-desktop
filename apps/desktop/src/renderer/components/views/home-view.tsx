@@ -1555,6 +1555,20 @@ export function HomeView(props: {
             </div>
           </TooltipProvider>
 
+          <div className="mt-4 flex justify-center">
+            <button
+              type="button"
+              data-testid="home-research-deeply"
+              className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary/15"
+              onClick={() => {
+                props.onGoal("/deep-research ");
+                focusComposer();
+              }}
+            >
+              {t("workflow.researchDeeply")}
+            </button>
+          </div>
+
           {/* Phase 3 workflow intents — plain language, no slash; compact row.
               Prefer calm-desk budget (landing.showSmartStarts) so busy desks stay quiet;
               still show a short set when other secondaries claim the slot. */}

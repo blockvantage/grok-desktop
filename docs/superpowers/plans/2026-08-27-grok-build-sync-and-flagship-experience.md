@@ -138,7 +138,7 @@ Upstream `ToolKind` is now rich enough to drive renderers without name matching:
 
 ## Phase 3 — Non-coder value: new surfaces (~2–3 weeks)
 
-### 3.1 Deep Research & Workflows — "a team working for you"
+### 3.1 Deep Research & Workflows — "a team working for you" ✅ (2026-08-27)
 - Wire `/deep-research` and `/workflow` (agent-side builtins, gated by `WorkflowLaunches`/`WorkflowManagement`) with a run panel driven entirely by `WorkflowUpdated`: objective, phases with the active one highlighted, per-agent rows, budget gauge (`agents_used/reserved/remaining`), pause/resume/stop. The payload already carries everything — this is a rendering task, and it is the single most "wow" non-coder feature available.
 - Home gets a "Research deeply" recipe tile that maps to it.
 

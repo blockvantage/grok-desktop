@@ -1770,5 +1770,15 @@
     "viewSource": "查看源码",
     "viewDiagram": "查看图表",
     "rendering": "正在渲染…"
+  },
+  "workflow": {
+    "title": "有一支团队在替你干活",
+    "pause": "暂停",
+    "resume": "继续",
+    "stop": "停止",
+    "nowIn": "当前：{phase}",
+    "budgetLine": "占用 {used} · 预留 {reserved} · 剩余 {remaining}",
+    "researchDeeply": "深入研究",
+    "researchDeeplyDesc": "一支团队分阶段研究，并实时显示进度"
   }
 }

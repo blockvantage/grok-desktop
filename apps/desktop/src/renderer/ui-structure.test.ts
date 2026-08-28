@@ -606,6 +606,8 @@ describe("Wave I/T parity structure", () => {
 
     const home = read("components/views/home-view.tsx");
     expect(home).toMatch(/composer-intent-chips|home-workflow-intents/);
+    expect(home).toMatch(/home-research-deeply/);
+    expect(home).toMatch(/\/deep-research /);
     expect(home).toMatch(/intent-chip-/);
     expect(home).toMatch(/onComposerIntent|composerIntentId/);
     expect(home).toMatch(/clearComposerIntent|selectComposerIntent/);

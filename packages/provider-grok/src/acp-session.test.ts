@@ -133,6 +133,41 @@ describe("ACP mediated session (SEC-01 policy authorizer)", () => {
     });
   });
 
+  it("maps WorkflowUpdated session updates to workflow_update runtime events", async () => {
+    const duplex = new MemoryLineDuplex();
+    const fake = attachFakeAcpAgent(duplex.b, {
+      emitWorkflowUpdated: {
+        handle: "deep-research-2",
+        objective: "Compare databases",
+        current_phase: "Sources",
+        phases: ["Plan", "Sources"],
+        agents_used: 1,
+        agent_budget: 4,
+      },
+    });
+    cleanups.push(fake.dispose);
+    const session = new AcpMediatedSession({
+      transport: duplex.a,
+      policy: balancedPolicy,
+      binding: createAcpBinding("grok-4.5"),
+    });
+    cleanups.push(() => session.cancel("test"));
+    await session.start("/w");
+    const events: RuntimeEvent[] = [];
+    await session.runTurn({ goal: "hi" }, async (ev) => {
+      events.push(ev);
+      return "continue";
+    });
+    expect(events.find((e) => e.type === "workflow_update")).toMatchObject({
+      type: "workflow_update",
+      payload: {
+        handle: "deep-research-2",
+        objective: "Compare databases",
+        current_phase: "Sources",
+      },
+    });
+  });
+
   it("maps PendingInteraction questions onto permission_request for the park path", async () => {
     const duplex = new MemoryLineDuplex();
     const fake = attachFakeAcpAgent(duplex.b, {
