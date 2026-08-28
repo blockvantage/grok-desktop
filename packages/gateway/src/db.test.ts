@@ -3,7 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import Database from "better-sqlite3";
-import { openDatabase, type Db } from "./db.js";
+import { CURRENT_SCHEMA_VERSION, openDatabase, type Db } from "./db.js";
 
 describe("db schema", () => {
   let dir: string;
@@ -23,7 +23,7 @@ describe("db schema", () => {
     const row = db
       .prepare("SELECT value FROM meta WHERE key = 'schema_version'")
       .get() as { value: string } | undefined;
-    expect(row?.value).toBe("14");
+    expect(row?.value).toBe(String(CURRENT_SCHEMA_VERSION));
   });
 
   it("creates conversation_outbox table (v12 migration)", () => {
@@ -341,7 +341,7 @@ describe("db schema", () => {
     const row = db
       .prepare("SELECT value FROM meta WHERE key = 'schema_version'")
       .get() as { value: string };
-    expect(row.value).toBe("14");
+    expect(row.value).toBe(String(CURRENT_SCHEMA_VERSION));
   });
 
   it("creates remote device tables (v3 migration)", () => {

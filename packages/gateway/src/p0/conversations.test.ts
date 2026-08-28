@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { openDatabase, type Db } from "../db.js";
+import { CURRENT_SCHEMA_VERSION, openDatabase, type Db } from "../db.js";
 import { ConversationService } from "../services/conversations.js";
 import { TaskService } from "../services/tasks.js";
 
@@ -34,7 +34,7 @@ describe("conversations / turns (TASK-02)", () => {
     const ver = db
       .prepare("SELECT value FROM meta WHERE key = 'schema_version'")
       .get() as { value: string };
-    expect(Number(ver.value)).toBe(14);
+    expect(Number(ver.value)).toBe(CURRENT_SCHEMA_VERSION);
     const tables = (
       db
         .prepare(
