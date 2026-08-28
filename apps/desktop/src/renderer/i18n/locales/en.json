@@ -762,7 +762,7 @@
     "workspaceBehavior": "Workspace behavior",
     "workspaceBehaviorDesc": "Defaults for new runs on this machine.",
     "security": "Security & privacy",
-    "securityDesc": "Task history and project files stay on this machine. Relevant memory items are sent to SuperGrok with each run. SuperGrok sign-in and credits are managed with xAI (same account as Grok Build).",
+    "securityDesc": "Task history and project files stay on this machine. Relevant memory items are sent to SuperGrok with each run. SuperGrok sign-in and credits are managed with xAI (same account as Grok Build). Product keys stay in an encrypted app-data vault on this disk, not the macOS Keychain or Windows Credential Manager.",
     "notSignedIn": "Not signed in",
     "connected": "Connected",
     "refreshStatus": "Refresh status",

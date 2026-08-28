@@ -708,7 +708,7 @@
     "workspaceBehavior": "Arbeitsbereich-Verhalten",
     "workspaceBehaviorDesc": "Voreinstellungen für neue Läufe auf diesem Gerät.",
     "security": "Sicherheit & Datenschutz",
-    "securityDesc": "Aufgabenverlauf und Projektdateien bleiben auf diesem Gerät. Relevante Memory-Einträge werden mit jedem Lauf an SuperGrok gesendet. SuperGrok-Anmeldung und Credits verwaltet xAI (gleicher Account wie Grok Build).",
+    "securityDesc": "Aufgabenverlauf und Projektdateien bleiben auf diesem Gerät. Relevante Memory-Einträge werden mit jedem Lauf an SuperGrok gesendet. SuperGrok-Anmeldung und Credits verwaltet xAI (gleicher Account wie Grok Build). Produktschlüssel liegen in einem verschlüsselten Tresor im App-Datenordner auf dieser Festplatte, nicht im macOS-Schlüsselbund und nicht in der Windows-Anmeldeinformationsverwaltung.",
     "notSignedIn": "Nicht angemeldet",
     "connected": "Verbunden",
     "refreshStatus": "Status aktualisieren",

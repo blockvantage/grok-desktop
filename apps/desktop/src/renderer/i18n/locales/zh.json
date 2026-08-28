@@ -708,7 +708,7 @@
     "workspaceBehavior": "工作区行为",
     "workspaceBehaviorDesc": "本机新运行的默认设置。",
     "security": "安全与隐私",
-    "securityDesc": "任务历史与项目文件保存在本机。相关记忆项会在每次运行时发送给 SuperGrok。SuperGrok 登录与额度由 xAI 管理（与 Grok Build 同一账户）。",
+    "securityDesc": "任务历史与项目文件保存在本机。相关记忆项会在每次运行时发送给 SuperGrok。SuperGrok 登录与额度由 xAI 管理（与 Grok Build 同一账户）。产品密钥保存在本机应用数据目录的加密保险库中，不使用 macOS 钥匙串或 Windows 凭据管理器。",
     "notSignedIn": "未登录",
     "connected": "已连接",
     "refreshStatus": "刷新状态",

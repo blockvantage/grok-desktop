@@ -32,6 +32,15 @@ describe("i18n safety copy", () => {
     expect(sub!).toMatch(/SuperGrok/i);
     expect(sub!.toLowerCase()).toMatch(/sent|send/);
   });
+
+  it("securityDesc names the encrypted vault and not OS keychain storage", () => {
+    const desc = (
+      CATALOG.en as { settings?: { securityDesc?: string } }
+    ).settings?.securityDesc;
+    expect(desc).toBeTruthy();
+    expect(desc!.toLowerCase()).toMatch(/encrypted/);
+    expect(desc!.toLowerCase()).toMatch(/not the macos keychain/);
+  });
 });
 
 describe("i18n catalog (100% key coverage)", () => {

@@ -708,7 +708,7 @@
     "workspaceBehavior": "Comportamento do espaço",
     "workspaceBehaviorDesc": "Predefinições para novas execuções nesta máquina.",
     "security": "Segurança e privacidade",
-    "securityDesc": "O histórico de tarefas e os ficheiros do projeto ficam neste dispositivo. Itens de memória relevantes são enviados ao SuperGrok em cada execução. Início de sessão e créditos SuperGrok são geridos pela xAI (a mesma conta do Grok Build).",
+    "securityDesc": "O histórico de tarefas e os ficheiros do projeto ficam neste dispositivo. Itens de memória relevantes são enviados ao SuperGrok em cada execução. Início de sessão e créditos SuperGrok são geridos pela xAI (a mesma conta do Grok Build). As chaves de produto ficam num cofre cifrado na pasta de dados da app neste disco, não no Porta-chaves do macOS nem no Gestor de credenciais do Windows.",
     "notSignedIn": "Sem sessão",
     "connected": "Ligado",
     "refreshStatus": "Atualizar estado",

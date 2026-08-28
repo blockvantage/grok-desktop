@@ -83,7 +83,7 @@ In-repo code for these items is already fail-closed or honest where possible; **
 
 > **Where secrets live.** Product keys and device credentials are stored in an encrypted vault inside Grok Desk’s application data on your disk (not in the macOS Keychain or Windows Credential Manager by default). SuperGrok still processes the prompts and relevant context when you run a task—same as using Grok in a browser.
 
-In-app license tab already corrected (F-006).
+In-app license tab already corrected (F-006). Paste-ready copy lives in `docs/honesty/site-copy.md` (2026-08-27). Site deploy still owner-gated.
 
 ---
 
@@ -102,7 +102,7 @@ In-app license tab already corrected (F-006).
 
 > **Deletes and approvals.** In **Strict** and **Balanced**, destructive file operations wait for your approval. **Autopilot** can delete and overwrite inside your allowed workspace folders without asking—use it only when you trust the folder and the task.
 
-In-app Autopilot disclosure already present (F-007).
+In-app Autopilot disclosure already present (F-007). Paste-ready copy lives in `docs/honesty/site-copy.md` (2026-08-27). Site deploy still owner-gated.
 
 ---
 
@@ -119,7 +119,7 @@ In-app Autopilot disclosure already present (F-007).
 
 > **Memory.** Grok Desk keeps memory records on your disk. When you run a task, relevant memory is included in the prompt sent to SuperGrok (like chat history)—it is not uploaded as a continuous cloud sync.
 
-In-app securityDesc honesty already fixed (F-041).
+In-app securityDesc honesty already fixed (F-041). Paste-ready copy lives in `docs/honesty/site-copy.md` (2026-08-27). Site deploy still owner-gated.
 
 ---
 

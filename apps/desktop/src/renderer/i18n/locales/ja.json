@@ -708,7 +708,7 @@
     "workspaceBehavior": "ワークスペースの動作",
     "workspaceBehaviorDesc": "このマシン上の新しい実行の既定値。",
     "security": "セキュリティとプライバシー",
-    "securityDesc": "タスク履歴とプロジェクトファイルはこの端末に残ります。関連するメモリ項目は各実行時に SuperGrok へ送られます。SuperGrok のサインインとクレジットは xAI が管理します（Grok Build と同じアカウント）。",
+    "securityDesc": "タスク履歴とプロジェクトファイルはこの端末に残ります。関連するメモリ項目は各実行時に SuperGrok へ送られます。SuperGrok のサインインとクレジットは xAI が管理します（Grok Build と同じアカウント）。プロダクトキーはこのディスク上のアプリデータ内の暗号化ボールトに保存されます。macOS キーチェーンや Windows 資格情報マネージャーには入れません。",
     "notSignedIn": "未サインイン",
     "connected": "接続済み",
     "refreshStatus": "状態を更新",

@@ -195,6 +195,15 @@ export function AccountTab(props: {
             {t("settings.usageManageBilling")}
           </Button>
         </div>
+        <p
+          className="mt-3 text-xs leading-relaxed text-muted-foreground"
+          data-testid="privacy-honesty"
+        >
+          {t("settings.securityDesc")}
+        </p>
+        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+          {t("settings.privacyPointLocal")}
+        </p>
       </CardContent>
     </Card>
   );
