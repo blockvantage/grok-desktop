@@ -747,6 +747,10 @@ export function attachFakeAcpAgent(
       case "x.ai/toggle_plan_mode":
       case "x.ai/memory/flush":
       case "x.ai/memory/rewrite":
+      case "x.ai/session/search":
+      case "x.ai/sessions/search":
+      case "x.ai/session/list":
+      case "x.ai/sessions/list":
         // Default: method not found so callers test degrade paths unless
         // opts.respond handles them.
         replyErr(-32601, `Method not found: ${req.method}`);

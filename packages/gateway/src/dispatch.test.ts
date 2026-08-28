@@ -203,6 +203,37 @@ describe("dispatchGateway", () => {
     expect(next.maxConcurrentTasks).toBe(4);
   });
 
+  it("sessions.search finds a desk conversation by title", async () => {
+    const ws = path.join(dir, "ws");
+    fs.mkdirSync(ws);
+    const created = (await dispatchGateway(gateway, {
+      id: "c1",
+      method: "tasks.create",
+      params: {
+        goal: "Write the Q3 launch brief",
+        workspaceRoots: [ws],
+      },
+    })) as { id: string };
+    await dispatchGateway(gateway, {
+      id: "c2",
+      method: "tasks.setTitle",
+      params: { taskId: created.id, title: "Launch brief" },
+    });
+    const view = (await dispatchGateway(gateway, {
+      id: "c3",
+      method: "sessions.search",
+      params: { query: "brief" },
+    })) as { status: string; hits: Array<{ sessionId: string; title: string }> };
+    expect(view.status).toBe("ready");
+    expect(view.hits.map((h) => h.sessionId)).toContain(created.id);
+    const reset = (await dispatchGateway(gateway, {
+      id: "c4",
+      method: "tasks.setTitle",
+      params: { taskId: created.id, resetToAuto: true },
+    })) as { title: string | null };
+    expect(reset.title === null || reset.title === "").toBe(true);
+  });
+
   it("tray.status includes GoalUpdated progressLine for a live task", async () => {
     const ws = path.join(dir, "ws");
     fs.mkdirSync(ws);

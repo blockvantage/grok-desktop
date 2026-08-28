@@ -38,7 +38,8 @@
     "withUnread": "{label}, {count} non lus",
     "pin": "Épingler",
     "unpin": "Désépingler",
-    "needsReview": "À revoir"
+    "needsReview": "À revoir",
+    "resetTitle": "Revenir au titre automatique"
   },
   "topbar": {
     "searchPlaceholder": "Rechercher…",
@@ -140,6 +141,8 @@
     "manage": "Gérer",
     "activity": "Activité",
     "continueLast": "Continuer le dernier chat",
+    "continueFromElsewhere": "Continuer depuis ailleurs",
+    "continueFromElsewhereDesc": "Discussions récentes de Claude Code, Codex ou Cursor. Ouvre un nouveau chat Grok — n’importe pas l’ancien transcript.",
     "briefingTitle": "Sur votre bureau",
     "playbooksTitle": "Vos playbooks",
     "playbooksEmpty": "Terminez une tâche et enregistrez-la en playbook pour la relancer en un clic.",
@@ -1064,7 +1067,23 @@
     "stop": "Arrêter",
     "shortcuts": "Raccourcis clavier",
     "admin": "Configuration et compte",
-    "chatActions": "Dans ce chat"
+    "chatActions": "Dans ce chat",
+    "conversations": "Discussions",
+    "stillIndexing": "Indexation des discussions…"
+  },
+  "roster": {
+    "activity": {
+      "working": "En cours",
+      "idle": "Inactive",
+      "needs_input": "Vous attend",
+      "dormant": "Arrêtée",
+      "completed": "Terminée"
+    }
+  },
+  "foreign": {
+    "claude": "Claude Code",
+    "codex": "Codex",
+    "cursor": "Cursor"
   },
   "empty": {
     "title": "Rien ici pour l’instant",

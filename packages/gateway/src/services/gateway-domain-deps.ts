@@ -21,7 +21,13 @@ import {
   enableRecommendedConnectors,
 } from "./connector-ops.js";
 import type { AppSettings } from "./settings.js";
-import type { AuditEntry, TaskEvent } from "@grokdesk/shared";
+import type {
+  AuditEntry,
+  InboxItem,
+  Task,
+  TaskEvent,
+} from "@grokdesk/shared";
+import { scanForeignSessionsFromHome } from "./session-roster.js";
 import {
   buildBrowserCapabilityHandshake,
   detectDeskControlPlanes,
@@ -357,5 +363,22 @@ export function buildDomainDispatchDeps(
       list: (taskId) => g.artifacts.list(taskId),
     },
     outbox: g.outboxDispatch,
+    sessionRoster: {
+      listTasks: () => g.tasks.list() as Task[],
+      needsInputIds: () => {
+        const ids = new Set<string>();
+        for (const item of g.inbox.list() as InboxItem[]) {
+          if (
+            item.taskId &&
+            (item.kind === "approval" || item.kind === "clarification")
+          ) {
+            ids.add(item.taskId);
+          }
+        }
+        return ids;
+      },
+      scanForeign: (opts) =>
+        scanForeignSessionsFromHome({ cwd: opts.cwd ?? null }),
+    },
   };
 }

@@ -77,6 +77,7 @@ import type {
   MemoryItem,
   RolePack,
   ScheduleRule,
+  SessionSearchView,
   Task,
   TaskEvent,
 } from "@grokdesk/shared";
@@ -1560,6 +1561,15 @@ export function App() {
     }
   }
 
+  async function resetChatTitle(rootId: string) {
+    try {
+      await rpc("tasks.setTitle", { taskId: rootId, resetToAuto: true });
+      await refreshTasks();
+    } catch (e) {
+      toast({ description: humanizeError(e, t), variant: "destructive" });
+    }
+  }
+
   async function removeChat(rootId: string) {
     const chat = chats.find((c) => c.id === rootId);
     const wasSelected = chatContainsSelectedTurn(chat?.turns, selectedId);
@@ -1827,6 +1837,7 @@ export function App() {
         selectedChatId={selectedChat?.id ?? null}
         onOpenChat={(latestId) => openTaskWorkspace(latestId)}
         onRenameChat={(rootId, title) => void renameChat(rootId, title)}
+        onResetChatTitle={(rootId) => void resetChatTitle(rootId)}
         onDeleteChat={(rootId) => void removeChat(rootId)}
         onTogglePinChat={(rootId) => togglePinChat(rootId)}
         pinnedChatIds={pinStore.ids}
@@ -2655,6 +2666,9 @@ export function App() {
           open={paletteOpen}
           onOpenChange={setPaletteOpen}
           tasks={tasks}
+          searchConversations={(query) =>
+            rpc<SessionSearchView>("sessions.search", { query })
+          }
           signedIn={signedIn}
           readinessBlocked={
             projectDesktopReadiness(shellReadinessInput).blocked

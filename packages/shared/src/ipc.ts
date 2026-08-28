@@ -193,11 +193,17 @@ export const IpcRequestSchema = z.discriminatedUnion("method", [
   z.object({
     id: z.string().min(1).max(128),
     method: z.literal("tasks.setTitle"),
-    params: z.object({
-      taskId: z.string().min(1).max(128),
-      title: z.string().min(1).max(120),
-      clientMutationId: ClientMutationIdSchema,
-    }),
+    params: z
+      .object({
+        taskId: z.string().min(1).max(128),
+        title: z.string().max(120).optional().default(""),
+        resetToAuto: z.boolean().optional(),
+        clientMutationId: ClientMutationIdSchema,
+      })
+      .refine(
+        (p) => p.resetToAuto === true || p.title.trim().length >= 1,
+        { message: "title required unless resetToAuto" },
+      ),
   }),
   z.object({
     id: z.string().min(1).max(128),
@@ -507,6 +513,34 @@ export const IpcRequestSchema = z.discriminatedUnion("method", [
     id: z.string().min(1).max(128),
     method: z.literal("memory.delete"),
     params: z.object({ id: z.string().min(1).max(128) }),
+  }),
+  z.object({
+    id: z.string().min(1).max(128),
+    method: z.literal("sessions.search"),
+    params: z.object({
+      query: z.string().max(500),
+      headless: z.enum(["exclude", "include", "only"]).optional(),
+      limit: z.number().int().min(1).max(100).optional(),
+    }),
+  }),
+  z.object({
+    id: z.string().min(1).max(128),
+    method: z.literal("sessions.list"),
+    params: z
+      .object({
+        headless: z.enum(["exclude", "include", "only"]).optional(),
+        limit: z.number().int().min(1).max(100).optional(),
+      })
+      .default({}),
+  }),
+  z.object({
+    id: z.string().min(1).max(128),
+    method: z.literal("sessions.foreignList"),
+    params: z
+      .object({
+        cwd: z.string().max(4096).optional(),
+      })
+      .default({}),
   }),
   z.object({
     id: z.string().min(1).max(128),

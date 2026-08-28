@@ -27,8 +27,10 @@ import {
 import { isManagedWorkspacePath } from "@/lib/managed-workspace";
 import {
   MEDIA_DURATION_DEFAULT,
+  foreignContinuePrompt,
   mediaKindFromTokens,
   stillImagePathFromAttachments,
+  type ForeignSessionSummary,
   type MediaStudioOptions,
 } from "@grokdesk/shared";
 import { DictationButton } from "@/components/dictation-button";
@@ -248,6 +250,24 @@ export function HomeView(props: {
     kind: "video",
     durationSec: MEDIA_DURATION_DEFAULT,
   });
+  const [foreignSessions, setForeignSessions] = useState<
+    ForeignSessionSummary[]
+  >([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const cwd = isManagedWorkspacePath(props.root) ? undefined : props.root;
+    void rpc<ForeignSessionSummary[]>("sessions.foreignList", { cwd })
+      .then((list) => {
+        if (!cancelled) setForeignSessions(Array.isArray(list) ? list : []);
+      })
+      .catch(() => {
+        if (!cancelled) setForeignSessions([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [props.root]);
 
   useEffect(() => {
     if (props.focusComposerToken == null) return;
@@ -1696,6 +1716,43 @@ export function HomeView(props: {
                     </button>
                   );
                 })}
+              </div>
+            </section>
+          )}
+
+          {foreignSessions.length > 0 && (
+            <section className="mt-7" data-testid="home-foreign-sessions">
+              <SectionHeading
+                title={t("home.continueFromElsewhere")}
+                description={t("home.continueFromElsewhereDesc")}
+              />
+              <div className="surface-quiet overflow-hidden shadow-[0_1px_0_0_rgba(255,255,255,0.03)_inset]">
+                {foreignSessions.slice(0, 6).map((session, i) => (
+                  <button
+                    key={`${session.tool}-${session.nativeId}`}
+                    type="button"
+                    data-testid="home-foreign-session"
+                    onClick={() => {
+                      props.onGoal(foreignContinuePrompt(session));
+                      focusComposer();
+                    }}
+                    className={cn(
+                      "flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-white/[0.035]",
+                      i > 0 && "border-t border-white/[0.04]",
+                    )}
+                  >
+                    <span className="shrink-0 text-2xs text-muted-foreground">
+                      {t(`foreign.${session.tool}`)}
+                    </span>
+                    <span className="min-w-0 flex-1 truncate text-sm text-foreground/90">
+                      {session.title}
+                    </span>
+                    <span className="shrink-0 text-2xs text-muted-foreground">
+                      {relativeTime(session.updatedAt)}
+                    </span>
+                    <ArrowRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                  </button>
+                ))}
               </div>
             </section>
           )}

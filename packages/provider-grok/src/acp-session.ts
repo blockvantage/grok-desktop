@@ -36,6 +36,14 @@ import {
 import { grokAcpClientInfo } from "./client-info.js";
 import { decodeSessionUpdate, decodeToolKind } from "./acp-decode.js";
 import {
+  decodeSessionSearchResponse,
+  isSessionsChangedNotification,
+  SESSION_LIST_METHODS,
+  SESSION_SEARCH_METHODS,
+  type SessionHeadlessPolicy,
+  type SessionSearchView,
+} from "@grokdesk/shared";
+import {
   parseAcpInitializeCapabilities,
   type AcpCapabilityTable,
 } from "./acp-capabilities.js";
@@ -423,6 +431,9 @@ export class AcpMediatedSession implements AgentSession {
     params: unknown,
     sink: RuntimeEventSink | null,
   ): void {
+    if (isSessionsChangedNotification(method)) {
+      return;
+    }
     if (method !== "session/update") return;
     const p = params as { update?: unknown };
     const decoded = decodeSessionUpdate(p.update);
@@ -883,6 +894,58 @@ export class AcpMediatedSession implements AgentSession {
    * Push Desk-authoritative memory toward the engine. Fail-open when the
    * CLI does not advertise the method.
    */
+  async searchSessions(input: {
+    query: string;
+    headless?: SessionHeadlessPolicy;
+    limit?: number;
+  }): Promise<SessionSearchView | null> {
+    const query = input.query.trim();
+    if (!query) {
+      return decodeSessionSearchResponse({ results: [] }, {
+        headless: input.headless,
+      });
+    }
+    const params = {
+      query,
+      headless: input.headless ?? "exclude",
+      limit: input.limit ?? 24,
+    };
+    for (const method of SESSION_SEARCH_METHODS) {
+      try {
+        const raw = await this.client.request(method, params);
+        return decodeSessionSearchResponse(raw, {
+          headless: input.headless,
+        });
+      } catch (e) {
+        if (isMethodNotFound(e)) continue;
+        throw e;
+      }
+    }
+    return null;
+  }
+
+  async listSessions(input?: {
+    headless?: SessionHeadlessPolicy;
+    limit?: number;
+  }): Promise<SessionSearchView | null> {
+    const params = {
+      headless: input?.headless ?? "exclude",
+      limit: input?.limit ?? 40,
+    };
+    for (const method of SESSION_LIST_METHODS) {
+      try {
+        const raw = await this.client.request(method, params);
+        return decodeSessionSearchResponse(raw, {
+          headless: input?.headless,
+        });
+      } catch (e) {
+        if (isMethodNotFound(e)) continue;
+        throw e;
+      }
+    }
+    return null;
+  }
+
   async flushMemory(): Promise<boolean> {
     if (!this.sessionId) return false;
     try {

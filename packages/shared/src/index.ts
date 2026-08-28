@@ -33,6 +33,8 @@ export * from "./workflow-update.js";
 export * from "./media-studio.js";
 export * from "./weekly-recap.js";
 export * from "./memory-update.js";
+export * from "./session-roster.js";
+export * from "./foreign-sessions.js";
 export * from "./recurrence.js";
 export * from "./role-packs.js";
 export * from "./connector-presets.js";

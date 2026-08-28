@@ -24,6 +24,9 @@ const ALLOWED = new Set<string>([
   "memory.list",
   "memory.upsert",
   "memory.delete",
+  "sessions.search",
+  "sessions.list",
+  "sessions.foreignList",
   "remote.status",
   "remote.devices.list",
   /** CX-14: phone rotates ECDH device key over the live channel. */

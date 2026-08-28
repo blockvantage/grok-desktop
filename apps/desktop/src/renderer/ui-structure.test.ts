@@ -646,6 +646,23 @@ describe("Wave I/T parity structure", () => {
     expect(appPhase3).toMatch(/memory\.upsert/);
     expect(appPhase3).toMatch(/composerIntentId|setComposerIntentId/);
     expect(appPhase3).toMatch(/mediaStudio/);
+    expect(appPhase3).toMatch(/sessions\.search|searchConversations/);
+    expect(appPhase3).toMatch(/resetToAuto|onResetChatTitle/);
+
+    const sidebar34 = read("components/shell/app-sidebar.tsx");
+    expect(sidebar34).toMatch(/lastTurnSummary|chat-row-summary/);
+    expect(sidebar34).toMatch(/resetToAuto|onResetTitle|nav\.resetTitle/);
+    expect(sidebar34).toMatch(/data-roster-activity/);
+
+    const palette34 = read("components/command-palette.tsx");
+    expect(palette34).toMatch(/sessions\.search|searchConversations/);
+    expect(palette34).toMatch(/stillIndexing|session-search-indexing/);
+    expect(palette34).toMatch(/data-palette-section=\"conversations\"/);
+
+    const home34 = read("components/views/home-view.tsx");
+    expect(home34).toMatch(/home-foreign-sessions/);
+    expect(home34).toMatch(/sessions\.foreignList/);
+    expect(home34).toMatch(/foreignContinuePrompt/);
   });
 
   it("phase-2 continued: palette ranking, artifacts single search, app wiring", () => {
@@ -660,6 +677,9 @@ describe("Wave I/T parity structure", () => {
     expect(palette).toMatch(/data-palette-demoted/);
     // Daily group appears before admin in source order
     expect(palette.indexOf('data-palette-section="daily"')).toBeLessThan(
+      palette.indexOf('data-palette-section="admin"'),
+    );
+    expect(palette.indexOf('data-palette-section="conversations"')).toBeLessThan(
       palette.indexOf('data-palette-section="admin"'),
     );
     expect(palette.indexOf('data-palette-section="stop"')).toBeLessThan(

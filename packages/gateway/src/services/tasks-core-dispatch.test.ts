@@ -41,6 +41,28 @@ describe("dispatchTasksCoreMethod", () => {
     expect(deps.cancel).toHaveBeenCalledWith("t1");
   });
 
+  it("setTitle resetToAuto writes an empty stored title", async () => {
+    const setTitle = vi.fn();
+    const deps = {
+      list: vi.fn(),
+      get: vi.fn(),
+      cancel: vi.fn(),
+      setTitle,
+      deleteChat: vi.fn(),
+      approve: vi.fn(),
+      registerBrowserHostApproval: vi.fn(),
+      pauseAll: vi.fn(),
+      resumeAll: vi.fn(),
+      pumpQueue: vi.fn(),
+    };
+    await dispatchTasksCoreMethod(
+      "tasks.setTitle",
+      { taskId: "t1", resetToAuto: true },
+      deps,
+    );
+    expect(setTitle).toHaveBeenCalledWith("t1", "");
+  });
+
   it("cancel uses cancel-outcome for missing and non-gateway ids", async () => {
     const deps = {
       list: vi.fn(() => []),

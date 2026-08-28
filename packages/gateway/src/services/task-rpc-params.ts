@@ -11,11 +11,14 @@ export function taskIdParam(
 
 export function tasksSetTitleParams(
   params: Record<string, unknown>,
-): { taskId: string; title: string } | null {
+): { taskId: string; title: string; resetToAuto: boolean } | null {
   const taskId = taskIdParam(params);
+  const resetToAuto = params.resetToAuto === true;
+  if (!taskId) return null;
+  if (resetToAuto) return { taskId, title: "", resetToAuto: true };
   const title = params.title;
-  if (!taskId || typeof title !== "string") return null;
-  return { taskId, title };
+  if (typeof title !== "string") return null;
+  return { taskId, title, resetToAuto: false };
 }
 
 export type ApproveDecision = "approve" | "reject";

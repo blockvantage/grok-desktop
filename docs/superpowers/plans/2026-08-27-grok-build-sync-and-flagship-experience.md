@@ -149,7 +149,7 @@ Upstream `ToolKind` is now rich enough to drive renderers without name matching:
 - One-tap "Remember this" on any answer; weekly recap card ("Learn from this week") per coworker plan C1–C3 (`weekly-recap.ts`, `"recap"` InboxKind).
 - Bridge to engine memory where it helps: `x.ai/memory/flush` / `x.ai/memory/rewrite` exist over ACP; keep Desk's store authoritative, present engine memory events (`Memory*` updates) as takeaway suggestions. Present recalled memory as historical context to verify (upstream 1.0.9 language).
 
-### 3.4 Conversations you can find and trust
+### 3.4 Conversations you can find and trust ✅ (2026-08-27; unit + IPC dispatch)
 - Global search over past conversations via `x.ai/session/search` (FTS5; show `bootstrapping` as "still indexing"; default `headless: "exclude"`).
 - Sidebar upgraded with roster semantics: `x.ai/sessions/list` + `sessions/changed`, two-line rows with `lastTurnSummary`, activity states (`working / idle / needs_input / dormant / completed`), pin + rename (with `resetToAuto` unpin), delete with confirmation.
 - "Continue from elsewhere": foreign-session import (Claude Code / Codex / Cursor) via the `xai-grok-foreign-sessions` data (read-only, metadata-only; not exposed over ACP — read from disk with the same caps). Strong onboarding magnet.

@@ -57,6 +57,11 @@ import {
   isOutboxMethod,
   type OutboxDispatchDeps,
 } from "./outbox-dispatch.js";
+import {
+  dispatchSessionRosterMethod,
+  isSessionRosterMethod,
+  type SessionRosterDeps,
+} from "./session-roster-dispatch.js";
 
 export type DomainDispatchDeps = {
   tasksCore: TasksCoreDeps;
@@ -70,6 +75,7 @@ export type DomainDispatchDeps = {
   eventsExport: EventsExportDeps;
   artifactsList: ArtifactsListDeps;
   outbox?: OutboxDispatchDeps;
+  sessionRoster?: SessionRosterDeps;
 };
 
 /**
@@ -153,6 +159,16 @@ export async function dispatchDomainMethod(
     return {
       handled: true,
       result: await dispatchOutboxMethod(method, params, deps.outbox),
+    };
+  }
+  if (deps.sessionRoster && isSessionRosterMethod(method)) {
+    return {
+      handled: true,
+      result: await dispatchSessionRosterMethod(
+        method,
+        params,
+        deps.sessionRoster,
+      ),
     };
   }
   return { handled: false };

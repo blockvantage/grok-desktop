@@ -17,7 +17,13 @@ export type PaletteActionId =
   | "navigate"
   | "open_settings";
 
-export type PaletteSectionId = "daily" | "goto" | "stop" | "recent" | "admin";
+export type PaletteSectionId =
+  | "daily"
+  | "conversations"
+  | "goto"
+  | "stop"
+  | "recent"
+  | "admin";
 
 /** Primary navigation targets (settings is demoted into admin). */
 export const PALETTE_PRIMARY_NAV_IDS = [
@@ -43,7 +49,7 @@ export function shouldShowRunSetupInPalette(input: {
  * Daily work first; setup/billing/docs last.
  */
 export function paletteSectionOrder(): PaletteSectionId[] {
-  return ["daily", "stop", "recent", "goto", "admin"];
+  return ["daily", "conversations", "stop", "recent", "goto", "admin"];
 }
 
 /**

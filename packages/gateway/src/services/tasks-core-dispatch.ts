@@ -150,7 +150,7 @@ export async function dispatchTasksCoreMethod(
     case "tasks.setTitle": {
       const p = tasksSetTitleParams(params);
       if (!p) throw new Error("taskId and title required");
-      return deps.setTitle(p.taskId, p.title);
+      return deps.setTitle(p.taskId, p.resetToAuto ? "" : p.title);
     }
     case "tasks.delete":
       return deps.deleteChat(taskIdParam(params));

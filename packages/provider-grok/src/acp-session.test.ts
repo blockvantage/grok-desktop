@@ -196,6 +196,58 @@ describe("ACP mediated session (SEC-01 policy authorizer)", () => {
     });
   });
 
+  it("searchSessions decodes FTS hits and excludes headless by default", async () => {
+    const duplex = new MemoryLineDuplex();
+    const fake = attachFakeAcpAgent(duplex.b, {
+      respond: (method) => {
+        if (method === "x.ai/session/search") {
+          return {
+            status: "bootstrapping",
+            results: [
+              {
+                sessionId: "s1",
+                title: "Launch brief",
+                last_turn_summary: "Drafted three channels",
+              },
+              {
+                sessionId: "h1",
+                title: "one-shot",
+                session_kind: "headless",
+              },
+            ],
+          };
+        }
+        return undefined;
+      },
+    });
+    cleanups.push(fake.dispose);
+    const session = new AcpMediatedSession({
+      transport: duplex.a,
+      policy: balancedPolicy,
+      binding: createAcpBinding("grok-4.5"),
+    });
+    cleanups.push(() => session.cancel("test"));
+    await session.start("/w");
+    const view = await session.searchSessions({ query: "brief" });
+    expect(view?.status).toBe("bootstrapping");
+    expect(view?.hits.map((h) => h.sessionId)).toEqual(["s1"]);
+    expect(view?.hits[0]?.lastTurnSummary).toBe("Drafted three channels");
+  });
+
+  it("searchSessions degrades when the CLI has no search RPC", async () => {
+    const duplex = new MemoryLineDuplex();
+    const fake = attachFakeAcpAgent(duplex.b);
+    cleanups.push(fake.dispose);
+    const session = new AcpMediatedSession({
+      transport: duplex.a,
+      policy: balancedPolicy,
+      binding: createAcpBinding("grok-4.5"),
+    });
+    cleanups.push(() => session.cancel("test"));
+    await session.start("/w");
+    expect(await session.searchSessions({ query: "brief" })).toBeNull();
+  });
+
   it("flushMemory degrades when the CLI has no x.ai/memory/flush", async () => {
     const duplex = new MemoryLineDuplex();
     const fake = attachFakeAcpAgent(duplex.b);

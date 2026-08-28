@@ -32,6 +32,8 @@ describe("palette ranking", () => {
     expect(order.indexOf("recent")).toBeLessThan(order.indexOf("admin"));
     expect(order.indexOf("goto")).toBeLessThan(order.indexOf("admin"));
     // Daily work band: actions → stop running → open recent → navigate
+    expect(order.indexOf("daily")).toBeLessThan(order.indexOf("conversations"));
+    expect(order.indexOf("conversations")).toBeLessThan(order.indexOf("stop"));
     expect(order.indexOf("daily")).toBeLessThan(order.indexOf("stop"));
     expect(order.indexOf("stop")).toBeLessThan(order.indexOf("recent"));
     expect(order.indexOf("recent")).toBeLessThan(order.indexOf("goto"));

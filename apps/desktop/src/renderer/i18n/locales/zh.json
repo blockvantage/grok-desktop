@@ -38,7 +38,8 @@
     "withUnread": "{label}，{count} 条未读",
     "pin": "置顶",
     "unpin": "取消置顶",
-    "needsReview": "需要复查"
+    "needsReview": "需要复查",
+    "resetTitle": "使用自动标题"
   },
   "topbar": {
     "searchPlaceholder": "搜索…",
@@ -140,6 +141,8 @@
     "manage": "管理",
     "activity": "动态",
     "continueLast": "继续上次聊天",
+    "continueFromElsewhere": "从其他工具继续",
+    "continueFromElsewhereDesc": "来自 Claude Code、Codex 或 Cursor 的近期对话。会新开一个 Grok 对话，不会导入旧记录。",
     "briefingTitle": "你的桌面",
     "playbooksTitle": "你的行动手册",
     "playbooksEmpty": "完成任务后保存为行动手册，一键重跑。",
@@ -1064,7 +1067,23 @@
     "stop": "停止",
     "shortcuts": "键盘快捷键",
     "admin": "设置与账户",
-    "chatActions": "当前对话"
+    "chatActions": "当前对话",
+    "conversations": "对话",
+    "stillIndexing": "仍在为对话建立索引…"
+  },
+  "roster": {
+    "activity": {
+      "working": "进行中",
+      "idle": "空闲",
+      "needs_input": "需要你",
+      "dormant": "已停止",
+      "completed": "已完成"
+    }
+  },
+  "foreign": {
+    "claude": "Claude Code",
+    "codex": "Codex",
+    "cursor": "Cursor"
   },
   "empty": {
     "title": "这里还没有内容",

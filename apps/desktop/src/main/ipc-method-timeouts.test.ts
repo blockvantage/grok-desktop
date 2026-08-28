@@ -11,6 +11,9 @@ describe("gatewayMethodTimeoutMs", () => {
     expect(gatewayMethodTimeoutMs("outbox.list")).toBe(12_000);
     expect(gatewayMethodTimeoutMs("events.page")).toBe(12_000);
     expect(gatewayMethodTimeoutMs("tasks.list")).toBe(12_000);
+    expect(gatewayMethodTimeoutMs("sessions.search")).toBe(12_000);
+    expect(gatewayMethodTimeoutMs("sessions.list")).toBe(12_000);
+    expect(gatewayMethodTimeoutMs("sessions.foreignList")).toBe(12_000);
     expect(gatewayMethodTimeoutMs("tasks.create")).toBe(15_000);
   });
 

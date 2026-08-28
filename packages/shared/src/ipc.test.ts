@@ -291,6 +291,40 @@ describe("ipc schemas", () => {
     ).toBe("memory.upsert");
     expect(
       parseIpcRequest({
+        id: "ss1",
+        method: "sessions.search",
+        params: { query: "brief" },
+      }).method,
+    ).toBe("sessions.search");
+    expect(
+      parseIpcRequest({
+        id: "ss2",
+        method: "sessions.list",
+        params: {},
+      }).method,
+    ).toBe("sessions.list");
+    expect(
+      parseIpcRequest({
+        id: "ss3",
+        method: "sessions.foreignList",
+      }).method,
+    ).toBe("sessions.foreignList");
+    expect(
+      parseIpcRequest({
+        id: "st1",
+        method: "tasks.setTitle",
+        params: { taskId: "t1", resetToAuto: true },
+      }).params,
+    ).toMatchObject({ taskId: "t1", resetToAuto: true, title: "" });
+    expect(() =>
+      parseIpcRequest({
+        id: "st2",
+        method: "tasks.setTitle",
+        params: { taskId: "t1", title: "" },
+      }),
+    ).toThrow();
+    expect(
+      parseIpcRequest({
         id: "t1",
         method: "remote.telepresence.listDisplays",
         params: {},

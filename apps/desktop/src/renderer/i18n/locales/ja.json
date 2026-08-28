@@ -38,7 +38,8 @@
     "withUnread": "{label}、未読 {count}",
     "pin": "固定",
     "unpin": "解除",
-    "needsReview": "要確認"
+    "needsReview": "要確認",
+    "resetTitle": "自動タイトルに戻す"
   },
   "topbar": {
     "searchPlaceholder": "検索…",
@@ -140,6 +141,8 @@
     "manage": "管理",
     "activity": "アクティビティ",
     "continueLast": "最後のチャットを続ける",
+    "continueFromElsewhere": "別のツールから続ける",
+    "continueFromElsewhereDesc": "Claude Code、Codex、Cursor の最近のチャット。新しい Grok チャットを開きます。会話履歴は取り込みません。",
     "briefingTitle": "デスクの状況",
     "playbooksTitle": "プレイブック",
     "playbooksEmpty": "タスク完了後にプレイブックとして保存すると、ワンクリックで再実行できます。",
@@ -1064,7 +1067,23 @@
     "stop": "停止",
     "shortcuts": "キーボードショートカット",
     "admin": "セットアップとアカウント",
-    "chatActions": "このチャット"
+    "chatActions": "このチャット",
+    "conversations": "会話",
+    "stillIndexing": "会話をインデックスしています…"
+  },
+  "roster": {
+    "activity": {
+      "working": "作業中",
+      "idle": "待機",
+      "needs_input": "入力待ち",
+      "dormant": "停止",
+      "completed": "完了"
+    }
+  },
+  "foreign": {
+    "claude": "Claude Code",
+    "codex": "Codex",
+    "cursor": "Cursor"
   },
   "empty": {
     "title": "まだ何もありません",

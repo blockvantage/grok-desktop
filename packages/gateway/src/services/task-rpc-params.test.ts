@@ -16,9 +16,15 @@ describe("tasksSetTitleParams", () => {
   it("requires taskId and string title", () => {
     expect(
       tasksSetTitleParams({ taskId: "t1", title: "Hello" }),
-    ).toEqual({ taskId: "t1", title: "Hello" });
+    ).toEqual({ taskId: "t1", title: "Hello", resetToAuto: false });
     expect(tasksSetTitleParams({ taskId: "t1" })).toBeNull();
     expect(tasksSetTitleParams({ title: "x" })).toBeNull();
+  });
+
+  it("allows empty title when resetToAuto", () => {
+    expect(
+      tasksSetTitleParams({ taskId: "t1", resetToAuto: true }),
+    ).toEqual({ taskId: "t1", title: "", resetToAuto: true });
   });
 });
 

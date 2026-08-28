@@ -86,6 +86,9 @@ function emptyDeps() {
       harvest: vi.fn(),
       list: vi.fn(() => []),
     },
+    sessionRoster: {
+      listTasks: vi.fn(() => []),
+    },
   };
 }
 
@@ -95,6 +98,21 @@ describe("dispatchDomainMethod", () => {
     const r = await dispatchDomainMethod("tasks.list", {}, deps);
     expect(r).toEqual({ handled: true, result: [] });
     expect(deps.tasksCore.list).toHaveBeenCalled();
+  });
+
+  it("handles sessions.search via session roster", async () => {
+    const deps = emptyDeps();
+    deps.sessionRoster!.listTasks = vi.fn(() => []);
+    const r = await dispatchDomainMethod(
+      "sessions.search",
+      { query: "brief" },
+      deps,
+    );
+    expect(r.handled).toBe(true);
+    expect(r).toMatchObject({
+      handled: true,
+      result: { status: "ready", hits: [] },
+    });
   });
 
   it("handles artifacts.list", async () => {

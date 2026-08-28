@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Command } from "cmdk";
 import {
   Boxes,
@@ -16,7 +16,11 @@ import {
 } from "lucide-react";
 import { statusDotClass } from "@/lib/status-styles";
 import { taskStatusLabel } from "@/lib/labels";
-import { isActiveTaskStatus, type Task } from "@grokdesk/shared";
+import {
+  isActiveTaskStatus,
+  type SessionSearchView,
+  type Task,
+} from "@grokdesk/shared";
 import type { NavId } from "@/components/shell/app-sidebar";
 import { useT } from "@/i18n";
 import {
@@ -50,6 +54,7 @@ export function CommandPalette(props: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   tasks: Task[];
+  searchConversations?: (query: string) => Promise<SessionSearchView>;
   signedIn: boolean;
   /**
    * When true, "Run setup again" may appear under admin.
@@ -79,6 +84,10 @@ export function CommandPalette(props: {
 }) {
   const t = useT();
   const { open, onOpenChange } = props;
+  const [query, setQuery] = useState("");
+  const [searchView, setSearchView] = useState<SessionSearchView | null>(null);
+  const searchRef = useRef(props.searchConversations);
+  searchRef.current = props.searchConversations;
 
   // Primary destinations only — Settings lives under demoted admin.
   const primaryNav = useMemo(
@@ -102,6 +111,46 @@ export function CommandPalette(props: {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onOpenChange]);
+
+  useEffect(() => {
+    if (!open) {
+      setQuery("");
+      setSearchView(null);
+    }
+  }, [open]);
+
+  useEffect(() => {
+    const search = searchRef.current;
+    if (!open || !search) return;
+    const q = query.trim();
+    if (q.length < 2) {
+      setSearchView(null);
+      return;
+    }
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      void search(q)
+        .then((view) => {
+          if (!cancelled) setSearchView(view);
+        })
+        .catch(() => {
+          if (!cancelled) setSearchView(null);
+        });
+    }, 160);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [query, open]);
+
+  const knownTaskIds = useMemo(
+    () => new Set(props.tasks.map((task) => task.id)),
+    [props.tasks],
+  );
+  const conversationHits = (searchView?.hits ?? []).filter((hit) =>
+    knownTaskIds.has(hit.sessionId),
+  );
+  const searchBootstrapping = searchView?.status === "bootstrapping";
 
   const runningTasks = useMemo(
     () => props.tasks.filter((task) => isActiveTaskStatus(task.status)),
@@ -205,6 +254,8 @@ export function CommandPalette(props: {
         <Sparkles className="h-4 w-4 shrink-0 text-primary" strokeWidth={1.75} />
         <Command.Input
           autoFocus
+          value={query}
+          onValueChange={setQuery}
           placeholder={t("command.searchTasks")}
           className="h-12 w-full border-0 bg-transparent text-base text-foreground outline-none placeholder:text-muted-foreground"
         />
@@ -232,6 +283,41 @@ export function CommandPalette(props: {
             />
           ))}
         </Command.Group>
+
+        {(searchBootstrapping || conversationHits.length > 0) && (
+          <Command.Group
+            heading={t("command.conversations")}
+            className={groupHeadingClass}
+            data-palette-section="conversations"
+            data-testid="session-search-hits"
+          >
+            {searchBootstrapping && (
+              <p
+                data-testid="session-search-indexing"
+                className="px-2.5 py-1.5 text-2xs text-muted-foreground"
+              >
+                {t("command.stillIndexing")}
+              </p>
+            )}
+            {conversationHits.map((hit) => (
+              <PaletteItem
+                key={`search-${hit.sessionId}`}
+                value={`${hit.title} ${hit.lastTurnSummary ?? ""} ${query}`}
+                keywords={["chat", "conversation", "search"]}
+                onSelect={() => run(() => props.onOpenTask(hit.sessionId))}
+                data-palette-action="open_search"
+                data-testid="session-search-hit"
+              >
+                <span className="min-w-0 flex-1 truncate">{hit.title}</span>
+                {hit.lastTurnSummary && (
+                  <span className="min-w-0 max-w-[45%] truncate text-2xs text-muted-foreground">
+                    {hit.lastTurnSummary}
+                  </span>
+                )}
+              </PaletteItem>
+            ))}
+          </Command.Group>
+        )}
 
         {props.chatCommands && props.chatCommands.length > 0 && (
           <Command.Group

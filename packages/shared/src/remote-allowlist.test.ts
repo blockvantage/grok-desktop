@@ -24,6 +24,9 @@ describe("remote-allowlist", () => {
     expect(isRemoteAllowedMethod("memory.list")).toBe(true);
     expect(isRemoteAllowedMethod("memory.upsert")).toBe(true);
     expect(isRemoteAllowedMethod("memory.delete")).toBe(true);
+    expect(isRemoteAllowedMethod("sessions.search")).toBe(true);
+    expect(isRemoteAllowedMethod("sessions.list")).toBe(true);
+    expect(isRemoteAllowedMethod("sessions.foreignList")).toBe(true);
   });
 
   it("denies auth and license mutation from phone", () => {

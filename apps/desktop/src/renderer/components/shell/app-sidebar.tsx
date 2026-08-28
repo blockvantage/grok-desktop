@@ -12,13 +12,13 @@ import {
   MoreHorizontal,
   Pencil,
   Pin,
+  RotateCcw,
   Square,
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { relativeTime } from "@/lib/format";
 import { getActiveIntlLocale } from "@/i18n/active";
-import { taskStatusLabel } from "@/lib/labels";
 import { statusDotClass } from "@/lib/status-styles";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -73,6 +73,10 @@ import {
   parseFolderOrderRaw,
 } from "@/lib/folder-order";
 import { partitionSidebarChats } from "@/lib/sidebar-chat-sections";
+import {
+  rosterActivityLabelKey,
+  rosterRowView,
+} from "@/lib/roster-row";
 import { useT } from "@/i18n";
 import { SupportContributeMenu } from "@/components/shell/support-contribute-menu";
 
@@ -109,6 +113,7 @@ export function AppSidebar(props: {
   selectedChatId: string | null;
   onOpenChat: (latestTurnId: string) => void;
   onRenameChat: (rootId: string, title: string) => void;
+  onResetChatTitle?: (rootId: string) => void;
   onDeleteChat: (rootId: string) => void;
   onTogglePinChat?: (rootId: string) => void;
   pinnedChatIds?: string[];
@@ -409,10 +414,20 @@ export function AppSidebar(props: {
                       onCancelRename={() => setRenamingId(null)}
                       onCommitRename={(title) => {
                         setRenamingId(null);
-                        if (title && title !== chat.title) {
+                        if (!title) {
+                          props.onResetChatTitle?.(chat.id);
+                          return;
+                        }
+                        if (title !== chat.title) {
                           props.onRenameChat(chat.id, title);
                         }
                       }}
+                      onResetTitle={
+                        props.onResetChatTitle
+                          ? () => props.onResetChatTitle?.(chat.id)
+                          : undefined
+                      }
+                      hasCustomTitle={Boolean(chat.root.title?.trim())}
                       onRequestDelete={() => setPendingDelete(chat)}
                       onTogglePin={
                         props.onTogglePinChat
@@ -472,10 +487,20 @@ export function AppSidebar(props: {
                         onCancelRename={() => setRenamingId(null)}
                         onCommitRename={(title) => {
                           setRenamingId(null);
-                          if (title && title !== chat.title) {
+                          if (!title) {
+                            props.onResetChatTitle?.(chat.id);
+                            return;
+                          }
+                          if (title !== chat.title) {
                             props.onRenameChat(chat.id, title);
                           }
                         }}
+                        onResetTitle={
+                          props.onResetChatTitle
+                            ? () => props.onResetChatTitle?.(chat.id)
+                            : undefined
+                        }
+                        hasCustomTitle={Boolean(chat.root.title?.trim())}
                         onRequestDelete={() => setPendingDelete(chat)}
                         onTogglePin={
                           props.onTogglePinChat
@@ -788,7 +813,7 @@ function NavButton({
   );
 }
 
-function ChatRow({
+export function ChatRow({
   chat,
   active,
   pinned,
@@ -797,6 +822,8 @@ function ChatRow({
   onStartRename,
   onCancelRename,
   onCommitRename,
+  onResetTitle,
+  hasCustomTitle,
   onRequestDelete,
   onTogglePin,
   onCancel,
@@ -809,6 +836,8 @@ function ChatRow({
   onStartRename: () => void;
   onCancelRename: () => void;
   onCommitRename: (title: string) => void;
+  onResetTitle?: () => void;
+  hasCustomTitle?: boolean;
   onRequestDelete: () => void;
   onTogglePin?: () => void;
   onCancel?: (id: string) => void;
@@ -816,6 +845,11 @@ function ChatRow({
   const t = useT();
   const status = chat.latest.status;
   const needsInput = Boolean(chat.needsInput);
+  const roster = rosterRowView({
+    latestGoal: chat.latest.goal,
+    status,
+    needsInput,
+  });
   const busy =
     isActiveTaskStatus(status) || needsInput;
 
@@ -838,6 +872,8 @@ function ChatRow({
           : "hover:bg-white/[0.035]",
       )}
       data-needs-input={needsInput ? "true" : undefined}
+      data-testid="chat-row"
+      data-roster-activity={roster.activity}
     >
       <button
         type="button"
@@ -874,11 +910,12 @@ function ChatRow({
               {chat.title}
             </TooltipContent>
           </Tooltip>
-          <span className="mt-0.5 block text-2xs text-muted-foreground">
-            {taskStatusLabel(needsInput ? "waiting_user" : status)}
-            {chat.turns.length > 1
-              ? ` · ${t("nav.runsCount", { count: chat.turns.length })}`
-              : ""}
+          <span
+            className="mt-0.5 block truncate text-2xs text-muted-foreground"
+            data-testid="chat-row-summary"
+          >
+            {roster.lastTurnSummary ??
+              t(rosterActivityLabelKey(roster.activity))}
             {chat.updatedAt ? ` · ${relativeTime(chat.updatedAt)}` : ""}
           </span>
         </span>
@@ -928,6 +965,15 @@ function ChatRow({
               <Pencil className="h-4 w-4" />
               {t("nav.rename")}
             </DropdownMenuItem>
+            {hasCustomTitle && onResetTitle && (
+              <DropdownMenuItem
+                data-testid="chat-row-reset-title"
+                onSelect={() => onResetTitle()}
+              >
+                <RotateCcw className="h-4 w-4" />
+                {t("nav.resetTitle")}
+              </DropdownMenuItem>
+            )}
             {onTogglePin && (
               <DropdownMenuItem onSelect={() => onTogglePin()}>
                 <Pin className="h-4 w-4" />

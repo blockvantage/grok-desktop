@@ -38,7 +38,8 @@
     "withUnread": "{label}, {count} ungelesen",
     "pin": "Anheften",
     "unpin": "Lösen",
-    "needsReview": "Zur Prüfung"
+    "needsReview": "Zur Prüfung",
+    "resetTitle": "Automatischen Titel verwenden"
   },
   "topbar": {
     "searchPlaceholder": "Suchen…",
@@ -140,6 +141,8 @@
     "manage": "Verwalten",
     "activity": "Aktivität",
     "continueLast": "Letzten Chat fortsetzen",
+    "continueFromElsewhere": "Woanders weitermachen",
+    "continueFromElsewhereDesc": "Letzte Chats aus Claude Code, Codex oder Cursor. Öffnet einen neuen Grok-Chat — importiert das alte Protokoll nicht.",
     "briefingTitle": "Auf deinem Schreibtisch",
     "playbooksTitle": "Deine Playbooks",
     "playbooksEmpty": "Schließe eine Aufgabe ab und speichere sie als Playbook für Ein-Klick-Wiederholungen.",
@@ -1064,7 +1067,23 @@
     "stop": "Stoppen",
     "shortcuts": "Tastenkürzel",
     "admin": "Setup & Konto",
-    "chatActions": "In diesem Chat"
+    "chatActions": "In diesem Chat",
+    "conversations": "Unterhaltungen",
+    "stillIndexing": "Unterhaltungen werden noch indexiert…"
+  },
+  "roster": {
+    "activity": {
+      "working": "Läuft",
+      "idle": "Bereit",
+      "needs_input": "Braucht dich",
+      "dormant": "Gestoppt",
+      "completed": "Fertig"
+    }
+  },
+  "foreign": {
+    "claude": "Claude Code",
+    "codex": "Codex",
+    "cursor": "Cursor"
   },
   "empty": {
     "title": "Noch nichts hier",

@@ -38,7 +38,8 @@
     "withUnread": "{label}, {count} unread",
     "pin": "Pin",
     "unpin": "Unpin",
-    "needsReview": "Needs review"
+    "needsReview": "Needs review",
+    "resetTitle": "Use automatic title"
   },
   "topbar": {
     "searchPlaceholder": "Search…",
@@ -140,6 +141,8 @@
     "manage": "Manage",
     "activity": "Activity",
     "continueLast": "Continue last chat",
+    "continueFromElsewhere": "Continue from elsewhere",
+    "continueFromElsewhereDesc": "Recent chats from Claude Code, Codex, or Cursor. Opens a new Grok chat — it does not import the old transcript.",
     "briefingTitle": "On your desk",
     "playbooksTitle": "Your playbooks",
     "playbooksEmpty": "Finish a task and save it as a playbook for one-click reruns.",
@@ -1108,7 +1111,23 @@
     "stop": "Stop",
     "shortcuts": "Keyboard shortcuts",
     "admin": "Setup & account",
-    "chatActions": "In this chat"
+    "chatActions": "In this chat",
+    "conversations": "Conversations",
+    "stillIndexing": "Still indexing conversations…"
+  },
+  "roster": {
+    "activity": {
+      "working": "Working",
+      "idle": "Idle",
+      "needs_input": "Needs you",
+      "dormant": "Stopped",
+      "completed": "Done"
+    }
+  },
+  "foreign": {
+    "claude": "Claude Code",
+    "codex": "Codex",
+    "cursor": "Cursor"
   },
   "shortcuts": {
     "title": "Keyboard shortcuts",
