@@ -1,18 +1,18 @@
 # Phase 4 exit gates (2026-08-28)
 
-Rebuilt after 4.3 (`pnpm --filter @grokdesk/desktop build`), then ran the program gates **twice** against that `out/` tree (Playwright used the existing `out/main`, not a second `e2e:chat` rebuild). Host: Node 22.23.2, darwin arm64, `grok 1.0.5`.
+Post-skeptic rebuild (ACP media window, live PNG, `waiting_approval` resume). Host: Node 22.23.2, darwin arm64, `grok 1.0.5`. Pass 1 ran full `pnpm test` (includes live ACP fixture) then `e2e:chat` (rebuild). Pass 2 reused that `out/` tree.
 
 ## Pass 1 and pass 2 (same observables)
 
 | Gate | Pass 1 | Pass 2 |
 |---|---|---|
 | `pnpm typecheck` | 0 | 0 |
-| `pnpm test` | 0 (desktop 1913 tests) | 0 (desktop 1913 tests) |
-| `pnpm --filter @grokdesk/desktop release-qa` | 0 (78 tests) | 0 |
-| `pnpm --filter @grokdesk/desktop bundle-budget` | 0 — JS **2,102,309** ≤ 2.2 MB target | 0 — same bytes |
-| chat e2e (delivery/recovery/approvals/experience) | **11 passed** | **11 passed** |
+| `pnpm test` | 0 (desktop **1913**, gateway **919**, live-cli PNG) | — (live-cli already spent credits on pass 1) |
+| `pnpm --filter @grokdesk/desktop release-qa` | 0 (78 tests) | 0 (78 tests) |
+| `pnpm --filter @grokdesk/desktop bundle-budget` | 0 — JS **2,102,309** (`index-C2CHC-HD.js`) | 0 — same bytes |
+| `e2e:chat` (17 tests incl. 6 flagship) | **17 passed** (rebuild + Playwright) | **17 passed** (existing `out/`) |
 
-Logs: implementer scratch `gates/pass-1/` and `gates/pass-2/`. Bundle entry `assets/index-D_f-IL5P.js`.
+Logs: implementer scratch `gates/pass-1/` and `gates/pass-2/`. Live PNG: `docs/evidence/phase4-exit/live-cli-ok.txt`.
 
 ## Unsigned installers (prepare, not GitHub-publish)
 
@@ -25,15 +25,8 @@ Checksums: `docs/evidence/phase4-exit/SHA256SUMS.txt`. Windows x64 and mac Intel
 
 After pack, `better-sqlite3` was restored to Node ABI 127 (`prebuild-install --runtime node --target 22.23.2`) so gateway tests run again.
 
-## Live CLI ACP + flagship journeys (same day)
+## Live CLI ACP + flagship journeys
 
-`grok 1.0.5` on PATH. `packages/gateway/src/services/acp-live-cli.fixture.test.ts` spawned `grok agent stdio` with isolated `GROK_HOME` (user `hooks/evil.sh` not copied), Desk MCP/skills on `session/new`, and `session/prompt` as ContentBlock[]. A successful prompt without workspace media **fails** the fixture (spawn-env units are the bar only when the CLI cannot run). After answering `session/request_permission` with ACP `{ outcome: { outcome: "selected", optionId } }`, `images/live-cli.png` landed in the workspace (`docs/evidence/phase4-exit/live-cli-ok.txt`).
+`grok 1.0.5` on PATH. Isolated `GROK_HOME` (user hooks not copied), Desk MCP/skills on `session/new`, ContentBlock `session/prompt`. Permission replies use ACP `{ outcome: { outcome: "selected", optionId } }`. Successful prompt without workspace media **fails**. Pass-1 `pnpm test` re-ran the fixture: `workspacePng=true` (`live-cli-ok.txt`).
 
-DoD #4 journeys: `apps/desktop/e2e/flagship-journeys.spec.ts` (fake provider). `e2e:chat` is 17 tests.
-
-| Gate | Pass 1 | Pass 2 |
-|---|---|---|
-| live-cli fixture | 0 (`images/live-cli.png` on disk) | — |
-| `pnpm --filter @grokdesk/desktop e2e:chat` | **17 passed** (rebuild + Playwright) | **17 passed** (existing `out/`) |
-
-Logs: implementer scratch `gates/e2e-chat-1.log`, `gates/e2e-chat-2.log`, `gates/live-cli-fixture.log`.
+DoD #4: `apps/desktop/e2e/flagship-journeys.spec.ts` — six fake-provider journeys inside `e2e:chat` (17 tests), both passes green.

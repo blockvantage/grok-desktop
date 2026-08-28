@@ -24,7 +24,7 @@ The program below is five phases. Phase 0 is bug-fix honesty; Phase 1 is protoco
 
 ## Phase 0 — Make the default path true (P0 correctness, ~1 week)
 
-### 0.1 ACP environment parity (the big one) ✅ (2026-08-27; unit + live-CLI presence probe)
+### 0.1 ACP environment parity (the big one) ✅ (2026-08-28; live `images/live-cli.png` + unit promotion window)
 The ACP factory must provide the same controlled environment as headless.
 - `packages/gateway/src/services/acp-transport-factory.ts`: stop using deprecated `findGrokBinary()` + `envWithGrokPath(process.env)`. Use `resolveManagedGrokBinary` (same discipline as headless) and set `GROK_HOME` to the isolated home unless `inheritUserConfig` is true — mirroring `packages/engine-grok/src/session.ts:406`.
 - `packages/provider-grok/src/acp-session.ts` `start()`: pass Desk's `mcpServers` param on `session/new` (the param exists in `acp-jsonrpc.ts:322-328` and is never used). Source it from `desk-mcp-planes.ts` output.
@@ -33,36 +33,36 @@ The ACP factory must provide the same controlled environment as headless.
 - Prompt shaping: apply `buildRunPrompt`/`classifyRunIntent` (currently `engine-grok/session.ts`-only) on the ACP path too.
 - **Accept:** a run on the default path demonstrably (a) does not read the user's `~/.grok` hooks/plugins when isolation is on, (b) sees Desk's MCP servers and skills, (c) lands generated media in the workspace. Add a live-CLI integration fixture; update the protection-chip test so `isolateGrokHome` in the chip is derived from the actual spawn env (extend `projectAcpProtection` to take the real env).
 
-### 0.2 Queued follow-ups must carry the user's settings
+### 0.2 Queued follow-ups must carry the user's settings ✅ (2026-08-27)
 - `packages/gateway/src/services/outbox-drain.ts`: follow-up task input hardcodes `model: "grok-4.5", effort: "normal", approvalMode: "balanced", workspaceRoots: [], skills: [], mcpServerIds: []`. Persist the conversation's effective settings on the outbox row (or read the root task) and reuse them. The approval-mode downgrade is a policy bug: a strict-mode user's queued message currently runs balanced.
 - `createFollowUp` in `packages/gateway/src/index.ts` always returns `kind: "fresh"` — wire continuation via the persisted `providerSessionId` (see 1.3).
 - **Accept:** unit test — queue a message with model X / strict / skills S while a run is live; drained task carries X/strict/S. E2E: settings visible on the drained turn.
 
-### 0.3 Real session continuity on ACP
+### 0.3 Real session continuity on ACP ✅ (2026-08-28; `waiting_approval` + provider session requeues)
 - `packages/provider-grok/src/provider.ts:159-200` fakes resume by overwriting `providerSessionId` on a fresh `session/new`. Replace with feature-detected `session/resume` (capability `sessionCapabilities.resume` from `initialize`) falling back to `session/load`, then fresh-with-context as last resort — and *say which happened* in a `run_progress` event.
 - Honor `session/load`'s `_meta["x.ai/runningPromptId"]` and the `TurnCompleted` update so a reattaching client can finalize a turn it didn't watch.
 - Call `session/close` on conversation close / app quit (idempotent upstream).
 - **Accept:** kill the app mid-run, relaunch → conversation resumes (or finalizes from `TurnCompleted`) instead of `interrupted_on_restart` failure. Crash-recovery (`crash-recovery.ts`) tries resume before marking failed.
 
-### 0.4 Fix drag & drop (silent data loss)
+### 0.4 Fix drag & drop (silent data loss) ✅ (2026-08-27)
 - `apps/desktop/src/renderer/lib/follow-up-submit.ts:38` reads `File.path`, removed in Electron 32; app is on 43. Expose `webUtils.getPathForFile` via `src/preload/index.ts` and use it in `filePathsFromDropFiles`. Both drop sites affected (`task-workspace-view.tsx:2504`, `home-view.tsx:1156`).
 - **Accept:** real Playwright e2e that drops a file and asserts the attachment chip appears.
 
-### 0.5 "Revert file" must revert or must not exist
+### 0.5 "Revert file" must revert or must not exist ✅ (2026-08-27)
 - `task-workspace-view.tsx:2152-2183` — `onUndoFile` only mutates the local view and opens the file manager. Either implement per-file restore via file snapshots (coworker plan Phase E: `file_snapshots` table + `workspace.revertFile`) or rename the action to "Reveal" and keep only "Undo turn". Note upstream `/rewind` is now **conversation-only** — copy must say "rewind conversation", never imply file restore it doesn't do.
 - **Accept:** clicking the action does exactly what its label says; regression test.
 
-### 0.6 Native dialogs → owned AlertDialog
+### 0.6 Native dialogs → owned AlertDialog ✅ (2026-08-27)
 - Replace 5 `window.confirm()` sites (`App.tsx:1414,1417,2479`; `task-workspace-view.tsx:1843,2102`) with the owned AlertDialog; the undo-turn dialog renders its file list as a real list.
 
-### 0.7 Version-assumption sweep
+### 0.7 Version-assumption sweep ✅ (2026-08-27)
 - Unpin `x-grok-client-version: "0.2.93"` (`billing-client.ts:197`, `stt-client.ts:240`) — report the actual managed CLI version.
 - Deduplicate the three drifting `clientInfo {name:"grok-desk", version:"0.1.2"}` literals (`acp-jsonrpc.ts:308`, `acp-session.ts:322`, `acp-transport.ts:240`) into one shared constant sourced from the app version; stamp `clientIdentifier`/`clientType`/`clientVersion` session `_meta` per upstream.
 - Re-verify the logged-out heuristic in `auth-bridge.ts:155` against 1.0.x output.
 - Fix stale docstrings that contradict behavior: `agent-provider-engine.ts` header ("default is headless" — false), `capabilities.ts:19` ("not yet implemented" on the live capability object).
 - Manage the runtime: Desk's managed CLI should track latest (1.0.10+) with a minimum-version gate; surface "runtime updated" in Settings.
 
-### 0.8 Small leaks and dead guards
+### 0.8 Small leaks and dead guards ✅ (2026-08-27)
 - `packages/agent-runtime/src/permission-bridge.ts`: module-global waiter `Map` with no TTL — add timeout/cleanup so a missed exit path can't wedge a CLI permission request forever.
 - Delete dead code: `probeAcpAvailable` / `AcpStdioSession` (gated on unused `GROKDESK_ACP=1`), no-op `assertSafeAgentProviderDefault`, deprecated binary-discovery trio once 0.1 lands; renderer dead stream path (`task-workspace-view.tsx:955` pins `density="chat"` — the legacy `StreamItemList` branch and `@tanstack/react-virtual` are unreachable), `subagent-hud.tsx` deprecated re-export.
 
@@ -129,9 +129,9 @@ Upstream `ToolKind` is now rich enough to drive renderers without name matching:
 - Light theme + system-follow (app is dark-only; DESIGN.md tokens make this tractable — define the light palette on the token layer, keep dark as the crafted default).
 - Slash surface expansion in `packages/shared/src/command-registry.ts` (today: brief/research/image/video/schedule only). Add product-language commands mapped to real RPCs: "Summarize so far" (`compact`), "Undo last turn" (rewind), "Remember this" (memory), "Watch this until…" (monitor, Phase 3), "Deep research" (workflows, Phase 3). Non-coders get these as palette/menu actions, not just slash.
 
-### 2.7 Test engineering for the chat surface (enables everything above) ✅ (2026-08-27; e2e:chat 11×2, visual-qa fail-closed)
+### 2.7 Test engineering for the chat surface (enables everything above) ✅ (2026-08-28; e2e:chat 17×2 incl. flagship, visual-qa fail-closed)
 - Switch component tests to jsdom + Testing Library (today `vitest.config.ts` is `environment: "node"`; 16 files assert on `renderToStaticMarkup` strings — zero interaction coverage on approve/send-now/edit-turn/slash menu). **Started 2026-08-27:** jsdom is limited to `*.interaction.test.tsx`.
-- Convert the three grep-only "e2e" specs (`chat-delivery`, `chat-recovery`, `chat-approvals`) into real Playwright journeys on the fake provider: queue+interject, retry-on-failed, missing-attachment repick, drag-drop, undo turn, compact. ✅ (2026-08-27; `pnpm --filter @grokdesk/desktop e2e:chat` 11 passed ×2)
+- Convert the three grep-only "e2e" specs (`chat-delivery`, `chat-recovery`, `chat-approvals`) into real Playwright journeys on the fake provider: queue+interject, retry-on-failed, missing-attachment repick, drag-drop, undo turn, compact. ✅ (2026-08-28; `pnpm --filter @grokdesk/desktop e2e:chat` **17 passed ×2**, including `flagship-journeys.spec.ts`)
 - Un-soft-skip `visual-qa` (it currently exits 0 with "1 skipped"); run full `pnpm test` in the release gate.
 
 ---
