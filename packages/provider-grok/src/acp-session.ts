@@ -27,10 +27,18 @@ import {
 } from "./acp-policy-broker.js";
 import { randomUUID } from "node:crypto";
 import {
+  CLIENT_HOOK_EVENT_METHOD,
+  CLIENT_HOOK_RUN_METHOD,
+  decideClientHook,
   decodeInteractionResolved,
   decodePendingInteraction,
   decodeTurnCompleted,
+  formatHookRunResult,
+  parseHookRunParams,
+  policySnapshotFromEffective,
+  sessionNewClientHooksMeta,
   toAcpMcpServers,
+  type ClientHookDecision,
   type DeskMcpServerLike,
 } from "@grokdesk/shared";
 import { grokAcpClientInfo } from "./client-info.js";
@@ -171,6 +179,8 @@ export class AcpMediatedSession implements AgentSession {
   runningPromptId: string | null = null;
   /** Last permission decisions (for tests / diagnostics). */
   readonly authorizationLog: PermissionBrokerResult[] = [];
+  /** Last client-hook verdicts (PreToolUse deny is the only block). */
+  readonly hookLog: ClientHookDecision[] = [];
 
   constructor(private opts: AcpSessionOptions) {
     this.binding = opts.binding;
@@ -210,6 +220,15 @@ export class AcpMediatedSession implements AgentSession {
             return;
           }
           void this.handlePermissionRequest(p, respond, reject);
+          return;
+        }
+        if (method === CLIENT_HOOK_RUN_METHOD) {
+          this.handleHookRun(params, respond);
+          return;
+        }
+        if (method === CLIENT_HOOK_EVENT_METHOD) {
+          // Observe-only (Stop and other fire-and-forget events).
+          respond({ ok: true });
           return;
         }
         reject(-32601, `Unhandled server method: ${method}`);
@@ -293,6 +312,27 @@ export class AcpMediatedSession implements AgentSession {
       respond({ outcome });
     } catch (e) {
       reject(-32000, e instanceof Error ? e.message : String(e));
+    }
+  }
+
+  /**
+   * Reverse RPC x.ai/hooks/run. Only an explicit policy deny blocks.
+   * Crash / parse issues fail open (allow) so the agent is not stuck.
+   */
+  private handleHookRun(
+    params: unknown,
+    respond: (result: unknown) => void,
+  ): void {
+    try {
+      const input = parseHookRunParams(params);
+      const snapshot = policySnapshotFromEffective(this.opts.policy);
+      const decision = decideClientHook(input, snapshot);
+      this.hookLog.push(decision);
+      respond(formatHookRunResult(decision, input.hookEventName));
+    } catch {
+      const fallback: ClientHookDecision = { decision: "allow" };
+      this.hookLog.push(fallback);
+      respond(formatHookRunResult(fallback, "unknown"));
     }
   }
 
@@ -382,9 +422,11 @@ export class AcpMediatedSession implements AgentSession {
     const mcpServers = toAcpMcpServers(
       this.opts.mcpServers as DeskMcpServerLike[] | undefined,
     );
+    const hooksMeta = sessionNewClientHooksMeta(this.initResult?._meta);
     const session = await this.client.newSession({
       cwd: cwd ?? process.cwd(),
       ...(mcpServers.length > 0 ? { mcpServers } : {}),
+      ...(hooksMeta ? { _meta: hooksMeta } : {}),
     });
     this.sessionId = session.sessionId;
     (this.binding as { providerSessionId: string }).providerSessionId =

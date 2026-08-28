@@ -39,6 +39,7 @@ export * from "./monitor-event.js";
 export * from "./loop-schedule.js";
 export * from "./scheduled-task-event.js";
 export * from "./permission-grants.js";
+export * from "./client-hooks.js";
 export * from "./recurrence.js";
 export * from "./role-packs.js";
 export * from "./connector-presets.js";

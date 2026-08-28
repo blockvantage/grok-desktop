@@ -421,6 +421,8 @@ export type FakeAcpAgentState = {
   pendingPermissionIds: Set<string>;
   /** Methods received from the client (for extension tests). */
   requests: Array<{ method: string; params?: unknown }>;
+  /** PreToolUse hook outcomes. Unknown / error fail open as allow. */
+  hookOutcomes: Array<"allow" | "deny">;
 };
 
 export function attachFakeAcpAgent(
@@ -452,6 +454,18 @@ export function attachFakeAcpAgent(
     };
     emitMonitorEvent?: Record<string, unknown>;
     emitScheduledTask?: Record<string, unknown>;
+    /**
+     * Advertise initialize._meta["x.ai/hooks"] so Desk registers groups
+     * on session/new. `true` enables blocking PreToolUse.
+     */
+    advertiseHooks?:
+      | boolean
+      | { blockingEvents?: boolean; decisions?: boolean; stopSignals?: boolean };
+    /** Reverse-RPC x.ai/hooks/run before the prompt tool / permission path. */
+    requireHook?: boolean;
+    hookEventName?: string;
+    hookToolName?: string;
+    hookToolInput?: Record<string, unknown>;
     /** Per-method responder; throw {code:-32601} to simulate method-not-found. */
     respond?: (method: string, params?: unknown) => unknown;
   },
@@ -462,7 +476,33 @@ export function attachFakeAcpAgent(
     toolsExecuted: [],
     pendingPermissionIds: new Set(),
     requests: [],
+    hookOutcomes: [],
   };
+  /** pending RPC id of hook run → waiters (fail-open on error/unknown). */
+  const hookWaiters = new Map<
+    string,
+    { continue: (decision: "allow" | "deny") => void }
+  >();
+
+  const interpretFakeHookResult = (
+    result: unknown,
+    isError: boolean,
+  ): "allow" | "deny" => {
+    if (isError) return "allow";
+    if (!result || typeof result !== "object" || Array.isArray(result)) {
+      return "allow";
+    }
+    const obj = result as Record<string, unknown>;
+    const nested =
+      obj.hookSpecificOutput &&
+      typeof obj.hookSpecificOutput === "object" &&
+      !Array.isArray(obj.hookSpecificOutput)
+        ? (obj.hookSpecificOutput as Record<string, unknown>)
+        : obj;
+    const raw = nested.decision ?? nested.permissionDecision;
+    return raw === "deny" ? "deny" : "allow";
+  };
+
   /** pending RPC id of permission request → waiters */
   const permWaiters = new Map<
     string,
@@ -483,7 +523,7 @@ export function attachFakeAcpAgent(
       return;
     }
 
-    // Client response to our permission request
+    // Client response to our permission request or hook run
     if (
       "id" in msg &&
       msg.id != null &&
@@ -491,6 +531,18 @@ export function attachFakeAcpAgent(
       ("result" in msg || "error" in msg)
     ) {
       const key = String(msg.id);
+      const hookWaiter = hookWaiters.get(key);
+      if (hookWaiter) {
+        hookWaiters.delete(key);
+        const isError = "error" in msg && Boolean(msg.error);
+        const decision = interpretFakeHookResult(
+          "result" in msg ? msg.result : undefined,
+          isError,
+        );
+        state.hookOutcomes.push(decision);
+        hookWaiter.continue(decision);
+        return;
+      }
       const waiter = permWaiters.get(key);
       if (waiter) {
         permWaiters.delete(key);
@@ -583,7 +635,18 @@ export function attachFakeAcpAgent(
     }
 
     switch (req.method) {
-      case "initialize":
+      case "initialize": {
+        const hooksOpt = opts?.advertiseHooks;
+        const hooksMeta =
+          hooksOpt === true
+            ? { blockingEvents: true, decisions: true, stopSignals: true }
+            : hooksOpt && typeof hooksOpt === "object"
+              ? {
+                  blockingEvents: hooksOpt.blockingEvents === true,
+                  decisions: hooksOpt.decisions === true,
+                  stopSignals: hooksOpt.stopSignals === true,
+                }
+              : null;
         reply({
           protocolVersion: 1,
           serverInfo: { name: "fake-acp", version: "0.0.1" },
@@ -596,8 +659,12 @@ export function attachFakeAcpAgent(
             load: true,
             close: true,
           },
+          ...(hooksMeta
+            ? { _meta: { "x.ai/hooks": hooksMeta } }
+            : {}),
         });
         break;
+      }
       case "session/new": {
         sessions += 1;
         reply({ sessionId: `fake-sess-${sessions}` });
@@ -620,6 +687,83 @@ export function attachFakeAcpAgent(
       case "session/prompt": {
         const params = req.params as { sessionId?: string };
         const sessionId = params?.sessionId ?? "unknown";
+        const kind = opts?.permissionKind ?? "shell";
+        const title = opts?.permissionTitle ?? "Run shell";
+        if (opts?.requireHook) {
+          const hookReqId = 8000 + sessions;
+          const key = String(hookReqId);
+          hookWaiters.set(key, {
+            continue: (decision) => {
+              if (decision === "deny") {
+                reply({
+                  stopReason: "end_turn",
+                  toolExecuted: false,
+                  hookDenied: true,
+                });
+                return;
+              }
+              if (opts?.requirePermission) {
+                const permReqId = 9000 + sessions;
+                const permKey = String(permReqId);
+                state.pendingPermissionIds.add(permKey);
+                permWaiters.set(permKey, {
+                  resolve: () => {},
+                  promptReply: reply,
+                  sessionId,
+                  kind,
+                  title,
+                });
+                transport.writeLine(
+                  encodeJsonRpc({
+                    jsonrpc: "2.0",
+                    id: permReqId,
+                    method: "session/request_permission",
+                    params: {
+                      sessionId,
+                      requestId: `perm-${sessions}`,
+                      toolCallId: `tool-${sessions}`,
+                      title,
+                      kind,
+                    },
+                  }),
+                );
+                return;
+              }
+              state.toolsExecuted.push({ kind, title, sessionId });
+              transport.writeLine(
+                encodeJsonRpc({
+                  jsonrpc: "2.0",
+                  method: "session/update",
+                  params: {
+                    sessionId,
+                    update: {
+                      sessionUpdate: "tool_call",
+                      toolCallId: `tool-${sessionId}`,
+                      title,
+                      kind,
+                      status: "completed",
+                    },
+                  },
+                }),
+              );
+              reply({ stopReason: "end_turn", toolExecuted: true });
+            },
+          });
+          transport.writeLine(
+            encodeJsonRpc({
+              jsonrpc: "2.0",
+              id: hookReqId,
+              method: "x.ai/hooks/run",
+              params: {
+                sessionId,
+                hookEventName: opts.hookEventName ?? "PreToolUse",
+                toolName: opts.hookToolName ?? "Bash",
+                toolInput: opts.hookToolInput ?? { command: "ls" },
+              },
+            }),
+          );
+          break;
+        }
         if (opts?.requirePermission) {
           const kind = opts.permissionKind ?? "shell";
           const title = opts.permissionTitle ?? "Run shell";
@@ -795,6 +939,7 @@ export function attachFakeAcpAgent(
     dispose: () => {
       unsub();
       permWaiters.clear();
+      hookWaiters.clear();
     },
     state,
   };

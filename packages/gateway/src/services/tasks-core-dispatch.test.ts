@@ -110,7 +110,9 @@ describe("dispatchTasksCoreMethod", () => {
         deps,
       ),
     ).toEqual({ ok: true });
-    expect(deps.approve).toHaveBeenCalledWith("a1", "reject");
+    expect(deps.approve).toHaveBeenCalledWith("a1", "reject", {
+      remember: false,
+    });
     expect(
       await dispatchTasksCoreMethod("tasks.resumeAll", {}, deps),
     ).toEqual({ ok: true });
