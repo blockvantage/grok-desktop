@@ -291,6 +291,7 @@ import {
 import { ContextMeter } from "@/components/context-meter";
 import { SessionStatusHeader } from "@/components/session-status-header";
 import { WorkflowRunPanel } from "@/components/conversation/workflow-run-panel";
+import { WatchUntilPanel } from "@/components/conversation/watch-until-panel";
 import { ProtectionChip } from "@/components/protection-chip";
 import { DegradedModeLabel } from "@/components/degraded-mode-label";
 import { ReviewChangesStrip } from "@/components/review-changes-strip";
@@ -319,6 +320,8 @@ import {
 } from "@/lib/api";
 import {
   foldWorkflowRun,
+  foldWatchUntil,
+  watchUntilStopPrompt,
   latestSessionStatusFromEvents,
   mapTurnToRewindPoint,
   MEDIA_DURATION_DEFAULT,
@@ -576,6 +579,18 @@ export function TaskWorkspaceView(props: {
     () =>
       foldWorkflowRun(
         props.events.map((e) => ({ kind: e.kind, payload: e.payload })),
+      ),
+    [props.events],
+  );
+  const watchUntil = useMemo(
+    () =>
+      foldWatchUntil(
+        props.events.map((e) => ({
+          kind: e.kind,
+          title:
+            typeof e.payload?.title === "string" ? e.payload.title : undefined,
+          payload: e.payload,
+        })),
       ),
     [props.events],
   );
@@ -1906,6 +1921,19 @@ export function TaskWorkspaceView(props: {
                   >
                     {goalProgress.line}
                   </p>
+                ) : null}
+                {watchUntil ? (
+                  <WatchUntilPanel
+                    view={watchUntil}
+                    onStop={() => {
+                      const prompt = watchUntilStopPrompt(watchUntil);
+                      if (isLive) {
+                        void taskInterject(task.id, prompt);
+                        return;
+                      }
+                      void Promise.resolve(props.onFollowUp?.(prompt));
+                    }}
+                  />
                 ) : null}
                 {workflowRun ? (
                   <WorkflowRunPanel

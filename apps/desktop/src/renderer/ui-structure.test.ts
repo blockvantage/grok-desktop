@@ -663,6 +663,11 @@ describe("Wave I/T parity structure", () => {
     expect(home34).toMatch(/home-foreign-sessions/);
     expect(home34).toMatch(/sessions\.foreignList/);
     expect(home34).toMatch(/foreignContinuePrompt/);
+    expect(home34).toMatch(/home-overnight-digest|parseLoopDraft/);
+    expect(exists("components/conversation/watch-until-panel.tsx")).toBe(true);
+    expect(read("components/views/task-workspace-view.tsx")).toMatch(
+      /watch-until-panel|WatchUntilPanel/,
+    );
   });
 
   it("phase-2 continued: palette ranking, artifacts single search, app wiring", () => {

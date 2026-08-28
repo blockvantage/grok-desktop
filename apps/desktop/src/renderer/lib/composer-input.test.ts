@@ -232,6 +232,7 @@ describe("slash commands", () => {
     );
     expect(SLASH_COMMANDS.some((c) => c.token === "remember")).toBe(true);
     expect(SLASH_COMMANDS.find((c) => c.id === "monitor")?.token).toBe("watch");
+    expect(SLASH_COMMANDS.find((c) => c.id === "loop")?.token).toBe("loop");
     expect(SLASH_COMMANDS.find((c) => c.id === "deep-research")?.effort).toBe(
       "heavy",
     );

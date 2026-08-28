@@ -45,6 +45,15 @@ describe("ACP forward-compat decode", () => {
     expect(
       decodeSessionUpdate({ sessionUpdate: "MemoryRecalled" }).kind,
     ).toBe("memory_recalled");
+    expect(
+      decodeSessionUpdate({ sessionUpdate: "MonitorEvent" }).kind,
+    ).toBe("monitor_event");
+    expect(
+      decodeSessionUpdate({ sessionUpdate: "ScheduledTaskCreated" }).kind,
+    ).toBe("scheduled_task_created");
+    expect(
+      decodeSessionUpdate({ sessionUpdate: "scheduled_task_deleted" }).kind,
+    ).toBe("scheduled_task_deleted");
     expect(decodeSessionUpdate(null).kind).toBe("unknown");
   });
 

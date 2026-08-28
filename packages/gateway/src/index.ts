@@ -67,6 +67,8 @@ import { TaskCreateAcceptanceService } from "./services/task-create-acceptance.j
 import { OperationReceiptService } from "./services/operation-receipts.js";
 import { ConversationService } from "./services/conversations.js";
 import { reconcileAssistantTurn } from "./services/assistant-turn-reconciliation.js";
+import { recordScheduleOutcome } from "./services/schedule-outcomes.js";
+import { reconcileScheduledTaskEvent } from "./services/scheduled-task-reconcile.js";
 import { ConversationOutboxRepository } from "./services/conversation-outbox.js";
 import { OutboxDrainCoordinator } from "./services/outbox-drain.js";
 import { DeclaredArtifactService } from "./services/declared-artifacts.js";
@@ -307,6 +309,16 @@ export class Gateway {
         } catch {
           // ignore duplicate persistence errors
         }
+      },
+      onTaskTerminal: (task) => {
+        if (!this.inbox) return;
+        const rule = task.scheduleRuleId
+          ? this.scheduler?.get(task.scheduleRuleId)
+          : null;
+        recordScheduleOutcome(this.inbox, {
+          task,
+          scheduleName: rule?.name ?? null,
+        });
       },
     });
     cleanupEmptyOrphanWorkspaces({
@@ -558,6 +570,13 @@ export class Gateway {
           events: this.tasks.listAllEvents(taskId),
           appendTurn: (turn) => this.conversations.appendTurn(turn),
         });
+      },
+      onScheduledTask: (payload) => {
+        try {
+          reconcileScheduledTaskEvent(this.scheduler, payload);
+        } catch {
+          /* fail-open: Desk calendar stays the source of truth */
+        }
       },
     });
 

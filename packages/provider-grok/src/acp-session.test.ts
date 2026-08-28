@@ -196,6 +196,44 @@ describe("ACP mediated session (SEC-01 policy authorizer)", () => {
     });
   });
 
+  it("maps MonitorEvent and ScheduledTaskCreated to runtime events", async () => {
+    const duplex = new MemoryLineDuplex();
+    const fake = attachFakeAcpAgent(duplex.b, {
+      emitMonitorEvent: {
+        monitorId: "m1",
+        description: "CI green",
+        line: "queued",
+        status: "running",
+      },
+      emitScheduledTask: {
+        id: "st-1",
+        prompt: "Check deploy",
+        interval: "30m",
+      },
+    });
+    cleanups.push(fake.dispose);
+    const session = new AcpMediatedSession({
+      transport: duplex.a,
+      policy: balancedPolicy,
+      binding: createAcpBinding("grok-4.5"),
+    });
+    cleanups.push(() => session.cancel("test"));
+    await session.start("/w");
+    const events: RuntimeEvent[] = [];
+    await session.runTurn({ goal: "hi" }, async (ev) => {
+      events.push(ev);
+      return "continue";
+    });
+    expect(events.find((e) => e.type === "monitor_event")).toMatchObject({
+      type: "monitor_event",
+      payload: { monitorId: "m1", description: "CI green" },
+    });
+    expect(events.find((e) => e.type === "scheduled_task")).toMatchObject({
+      type: "scheduled_task",
+      payload: { id: "st-1", prompt: "Check deploy" },
+    });
+  });
+
   it("searchSessions decodes FTS hits and excludes headless by default", async () => {
     const duplex = new MemoryLineDuplex();
     const fake = attachFakeAcpAgent(duplex.b, {

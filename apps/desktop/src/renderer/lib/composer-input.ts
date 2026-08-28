@@ -229,6 +229,16 @@ export const SLASH_COMMANDS: SlashCommand[] = [
     registryId: "core.monitor",
   },
   {
+    id: "loop",
+    token: "loop",
+    labelKey: "slash.loop",
+    descKey: "slash.loopDesc",
+    kind: "fill",
+    isTemplate: true,
+    goalKey: "slash.loopGoal",
+    registryId: "core.loop",
+  },
+  {
     id: "deep-research",
     token: "deep-research",
     labelKey: "slash.deepResearch",

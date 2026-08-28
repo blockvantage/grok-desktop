@@ -602,6 +602,28 @@ export class AcpMediatedSession implements AgentSession {
       }
       return;
     }
+    if (decoded.kind === "monitor_event") {
+      if (sink) {
+        void sink({
+          type: "monitor_event",
+          payload: decoded.raw,
+        });
+      }
+      return;
+    }
+    if (
+      decoded.kind === "scheduled_task_created" ||
+      decoded.kind === "scheduled_task_fired" ||
+      decoded.kind === "scheduled_task_deleted"
+    ) {
+      if (sink) {
+        void sink({
+          type: "scheduled_task",
+          payload: { ...decoded.raw, sessionUpdate: decoded.kind },
+        });
+      }
+      return;
+    }
     if (
       decoded.kind === "memory_updated" ||
       decoded.kind === "memory_recalled"

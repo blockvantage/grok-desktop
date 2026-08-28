@@ -2155,6 +2155,7 @@ export function App() {
             tasks={tasks}
             memories={memories}
             schedules={schedules}
+            inbox={inbox.items}
             artifacts={artifacts}
             auth={effectiveAuth}
             onOpenTask={openTaskWorkspace}

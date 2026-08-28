@@ -277,6 +277,27 @@ describe("parseStreamingJsonLine", () => {
     ]);
   });
 
+  it("maps MonitorEvent envelopes to monitor_event", () => {
+    expect(
+      parseStreamingJsonLine(
+        JSON.stringify({
+          type: "MonitorEvent",
+          monitorId: "m1",
+          description: "CI",
+        }),
+      ),
+    ).toEqual([
+      {
+        type: "monitor_event",
+        payload: {
+          type: "MonitorEvent",
+          monitorId: "m1",
+          description: "CI",
+        },
+      },
+    ]);
+  });
+
   it("maps MemoryRecalled envelopes to memory_update events", () => {
     expect(
       parseStreamingJsonLine(

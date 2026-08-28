@@ -154,7 +154,7 @@ Upstream `ToolKind` is now rich enough to drive renderers without name matching:
 - Sidebar upgraded with roster semantics: `x.ai/sessions/list` + `sessions/changed`, two-line rows with `lastTurnSummary`, activity states (`working / idle / needs_input / dormant / completed`), pin + rename (with `resetToAuto` unpin), delete with confirmation.
 - "Continue from elsewhere": foreign-session import (Claude Code / Codex / Cursor) via the `xai-grok-foreign-sessions` data (read-only, metadata-only; not exposed over ACP — read from disk with the same caps). Strong onboarding magnet.
 
-### 3.5 Watch-until & schedules refresh
+### 3.5 Watch-until & schedules refresh ✅ (2026-08-27; unit + IPC/ACP)
 - Monitor tool + `MonitorEvent` → "Watch this until…" task mode (parity C6); `/loop`-style recurring in-conversation checks bridged to Desk's scheduler (C7); `ScheduledTask{Created,Fired,Deleted}` events reconcile the Schedules view with engine-created schedules. Morning-brief strip (coworker B1–B3) turns overnight schedule outcomes into a Home digest.
 
 ### 3.6 Onboarding & explainability for non-coders

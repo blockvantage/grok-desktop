@@ -1071,6 +1071,22 @@
     "conversations": "对话",
     "stillIndexing": "仍在为对话建立索引…"
   },
+  "watch": {
+    "title": "持续关注直到…",
+    "stop": "停止关注",
+    "status": {
+      "running": "关注中",
+      "done": "条件已满足",
+      "failed": "关注出错",
+      "cancelled": "已停止关注",
+      "other": "关注中"
+    }
+  },
+  "loop": {
+    "confirmTitle": "{every}检查一次？",
+    "create": "创建日程",
+    "runOnce": "只运行一次"
+  },
   "roster": {
     "activity": {
       "working": "进行中",
@@ -1477,6 +1493,9 @@
     "monitor": "一直看到…",
     "monitorDesc": "长时间关注某件事",
     "monitorGoal": "一直看到条件满足，然后告诉我发生了什么变化。",
+    "loop": "按计划检查",
+    "loopDesc": "在 Desk 日程里重复检查",
+    "loopGoal": "every 30m 检查这个",
     "deepResearch": "深度研究",
     "deepResearchDesc": "分阶段推进的研究团队",
     "deepResearchGoal": "针对这个主题启动深度研究流程。分成阶段、注明来源，并把笔记保存到 ./artifacts。",

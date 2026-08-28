@@ -450,6 +450,8 @@ export function attachFakeAcpAgent(
       title?: string;
       content?: string;
     };
+    emitMonitorEvent?: Record<string, unknown>;
+    emitScheduledTask?: Record<string, unknown>;
     /** Per-method responder; throw {code:-32601} to simulate method-not-found. */
     respond?: (method: string, params?: unknown) => unknown;
   },
@@ -726,6 +728,36 @@ export function attachFakeAcpAgent(
                     sessionUpdate: mem.sessionUpdate ?? "MemoryUpdated",
                     ...(mem.title ? { title: mem.title } : {}),
                     ...(mem.content ? { content: mem.content } : {}),
+                  },
+                },
+              }),
+            );
+          }
+          if (opts?.emitMonitorEvent) {
+            transport.writeLine(
+              encodeJsonRpc({
+                jsonrpc: "2.0",
+                method: "session/update",
+                params: {
+                  sessionId,
+                  update: {
+                    sessionUpdate: "MonitorEvent",
+                    ...opts.emitMonitorEvent,
+                  },
+                },
+              }),
+            );
+          }
+          if (opts?.emitScheduledTask) {
+            transport.writeLine(
+              encodeJsonRpc({
+                jsonrpc: "2.0",
+                method: "session/update",
+                params: {
+                  sessionId,
+                  update: {
+                    sessionUpdate: "ScheduledTaskCreated",
+                    ...opts.emitScheduledTask,
                   },
                 },
               }),

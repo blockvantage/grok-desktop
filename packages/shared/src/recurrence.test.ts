@@ -10,6 +10,7 @@ describe("recurrence", () => {
   it("maps NL to cron", () => {
     expect(naturalLanguageToCron("every monday 9am")).toBe("0 9 * * 1");
     expect(naturalLanguageToCron("daily at 9am")).toBe("0 9 * * *");
+    expect(naturalLanguageToCron("every 30m")).toBe("*/30 * * * *");
     expect(naturalLanguageToCron("nonsense")).toBeNull();
   });
 

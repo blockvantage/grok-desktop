@@ -53,6 +53,9 @@ export class ProactivityService {
     // Retention: drop old read/dismissed inbox rows on every tick.
     this.inbox.prune();
     const quiet = this.settings.getQuietHours();
+    // Quiet hours suppress proactive suggestions and OS-facing nudges.
+    // schedule_done / unfinished outcomes are written from task terminal
+    // (recordScheduleOutcome), not from this tick — they still land at night.
     if (isInQuietHours(now, quiet)) return 0;
     let n = 0;
     const tasks = this.tasks.list();

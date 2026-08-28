@@ -88,6 +88,28 @@ function normalizeJsonEvent(
   }
 
   if (
+    type === "monitor_event" ||
+    type === "monitorevent" ||
+    type === "monitor_started" ||
+    type === "monitorstarted"
+  ) {
+    return [{ type: "monitor_event", payload: obj }];
+  }
+
+  if (
+    type === "scheduled_task" ||
+    type === "scheduledtask" ||
+    type === "scheduled_task_created" ||
+    type === "scheduledtaskcreated" ||
+    type === "scheduled_task_fired" ||
+    type === "scheduledtaskfired" ||
+    type === "scheduled_task_deleted" ||
+    type === "scheduledtaskdeleted"
+  ) {
+    return [{ type: "scheduled_task", payload: obj }];
+  }
+
+  if (
     type === "goal_update" ||
     type === "goal_updated" ||
     type === "goalupdated"

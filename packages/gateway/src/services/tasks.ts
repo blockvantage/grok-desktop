@@ -79,6 +79,8 @@ export type TaskServiceHooks = {
    * method monkey-patch). Used for declared-artifact persistence etc.
    */
   onEventAppended?: (event: TaskEvent) => void;
+  /** Terminal status writes (done/failed/cancelled) — schedule outcomes. */
+  onTaskTerminal?: (task: Task) => void;
 };
 
 /** Ephemeral create-time fields not stored as DB columns (LANG-1 / CMD-4). */
@@ -457,6 +459,13 @@ export class TaskService {
     if (opts?.emitHooks !== false) this.hooks.onTasksChanged?.();
     const task = this.get(taskId);
     if (!task) throw new Error(`Task not found: ${taskId}`);
+    if (
+      status === "done" ||
+      status === "failed" ||
+      status === "cancelled"
+    ) {
+      this.hooks.onTaskTerminal?.(task);
+    }
     return task;
   }
 
@@ -489,7 +498,14 @@ export class TaskService {
       { emitHooks: opts?.emitHooks },
     );
     if (opts?.emitHooks !== false) this.hooks.onTasksChanged?.();
-    return this.get(taskId);
+    const task = this.get(taskId);
+    if (
+      task &&
+      (status === "done" || status === "failed" || status === "cancelled")
+    ) {
+      this.hooks.onTaskTerminal?.(task);
+    }
+    return task;
   }
 
   /** Emit notifications after a status transition committed in an outer txn. */

@@ -21,6 +21,10 @@ export type SessionUpdateKind =
   | "workflow_updated"
   | "memory_updated"
   | "memory_recalled"
+  | "monitor_event"
+  | "scheduled_task_created"
+  | "scheduled_task_fired"
+  | "scheduled_task_deleted"
   | "unknown";
 
 const KNOWN_UPDATES = new Set<SessionUpdateKind>([
@@ -42,6 +46,10 @@ const KNOWN_UPDATES = new Set<SessionUpdateKind>([
   "workflow_updated",
   "memory_updated",
   "memory_recalled",
+  "monitor_event",
+  "scheduled_task_created",
+  "scheduled_task_fired",
+  "scheduled_task_deleted",
 ]);
 
 const KNOWN_TOOL_KINDS = new Set([
@@ -97,7 +105,15 @@ export function decodeSessionUpdate(update: unknown): {
                               ? "memory_updated"
                               : rawToken === "MemoryRecalled"
                                 ? "memory_recalled"
-                                : rawToken;
+                                : rawToken === "MonitorEvent"
+                                  ? "monitor_event"
+                                  : rawToken === "ScheduledTaskCreated"
+                                    ? "scheduled_task_created"
+                                    : rawToken === "ScheduledTaskFired"
+                                      ? "scheduled_task_fired"
+                                      : rawToken === "ScheduledTaskDeleted"
+                                        ? "scheduled_task_deleted"
+                                        : rawToken;
   const kind = KNOWN_UPDATES.has(token as SessionUpdateKind)
     ? (token as SessionUpdateKind)
     : "unknown";

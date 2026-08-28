@@ -205,6 +205,94 @@ export class SchedulerService {
     this.db.prepare(`DELETE FROM schedule_rules WHERE id = ?`).run(id);
   }
 
+  get(id: string): ScheduleRule | null {
+    const row = this.db
+      .prepare(`SELECT * FROM schedule_rules WHERE id = ?`)
+      .get(id) as Record<string, unknown> | undefined;
+    return row ? rowToRule(row) : null;
+  }
+
+  /**
+   * Upsert an engine-created scheduled task into Desk's scheduler of record.
+   * Uses a stable id so Created/Deleted reconcile without a schema bump.
+   */
+  upsertEngineRule(input: {
+    id: string;
+    name: string;
+    goalTemplate: string;
+    cron: string;
+    timezone?: string;
+  }): ScheduleRule {
+    try {
+      nextRunAt(input.cron, input.timezone ?? "UTC");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      throw new Error(`Invalid schedule cron or timezone: ${msg}`);
+    }
+    const existing = this.get(input.id);
+    const now = new Date().toISOString();
+    const timezone = input.timezone ?? existing?.timezone ?? "UTC";
+    const workspaceRoots =
+      existing?.workspaceRoots?.length
+        ? existing.workspaceRoots
+        : [this.ensureScheduledWorkspace()];
+    if (existing) {
+      this.db
+        .prepare(
+          `UPDATE schedule_rules
+           SET name = ?, goal_template = ?, cron = ?, timezone = ?, enabled = 1, updated_at = ?
+           WHERE id = ?`,
+        )
+        .run(
+          input.name,
+          input.goalTemplate,
+          input.cron,
+          timezone,
+          now,
+          input.id,
+        );
+      return this.get(input.id)!;
+    }
+    const rule: ScheduleRule = {
+      id: input.id,
+      name: input.name,
+      goalTemplate: input.goalTemplate,
+      cron: input.cron,
+      timezone,
+      enabled: true,
+      quietHoursRespect: true,
+      approvalMode: "balanced",
+      model: "grok-4.5",
+      effort: "normal",
+      workspaceRoots,
+      rolePack: null,
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.db
+      .prepare(
+        `INSERT INTO schedule_rules (
+          id, name, goal_template, cron, timezone, enabled, quiet_hours_respect,
+          approval_mode, model, effort, workspace_roots_json, role_pack, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, 1, 1, ?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .run(
+        rule.id,
+        rule.name,
+        rule.goalTemplate,
+        rule.cron,
+        rule.timezone,
+        rule.approvalMode,
+        rule.model,
+        rule.effort,
+        JSON.stringify(rule.workspaceRoots),
+        rule.rolePack,
+        rule.createdAt,
+        rule.updatedAt,
+      );
+    return rule;
+  }
+
   /**
    * Evaluate schedules; returns task ids created.
    * Invokes onTasksCreated (wired to runner.pumpQueue) so work actually starts.

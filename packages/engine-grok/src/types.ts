@@ -109,6 +109,14 @@ export type NormalizedEngineEvent =
       title?: string;
       content?: string;
     }
+  | {
+      type: "monitor_event";
+      payload: Record<string, unknown>;
+    }
+  | {
+      type: "scheduled_task";
+      payload: Record<string, unknown>;
+    }
   /**
    * Engine session identity for resume + optional spawn protection snapshot (T3).
    * Never user-visible as conversation transcript.

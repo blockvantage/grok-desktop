@@ -1071,6 +1071,22 @@
     "conversations": "Conversas",
     "stillIndexing": "Ainda a indexar conversas…"
   },
+  "watch": {
+    "title": "Vigiar até…",
+    "stop": "Parar de vigiar",
+    "status": {
+      "running": "A vigiar",
+      "done": "Condição cumprida",
+      "failed": "A vigilância falhou",
+      "cancelled": "Vigilância parada",
+      "other": "A vigiar"
+    }
+  },
+  "loop": {
+    "confirmTitle": "Verificar {every}?",
+    "create": "Criar agenda",
+    "runOnce": "Executar uma vez"
+  },
   "roster": {
     "activity": {
       "working": "Em andamento",
@@ -1477,6 +1493,9 @@
     "monitor": "Vigiar isto até…",
     "monitorDesc": "Acompanhar algo ao longo do tempo",
     "monitorGoal": "Vigia isto até a condição ser cumprida e diz-me o que mudou.",
+    "loop": "Verificar em horário",
+    "loopDesc": "Verificação repetida nas agendas do Desk",
+    "loopGoal": "every 30m verifica isto",
     "deepResearch": "Pesquisa profunda",
     "deepResearchDesc": "Uma equipa a investigar por fases",
     "deepResearchGoal": "Lança um fluxo de pesquisa profunda sobre este tema. Divide em fases, cita fontes e guarda notas em ./artifacts.",

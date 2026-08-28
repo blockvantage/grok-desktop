@@ -1115,6 +1115,22 @@
     "conversations": "Conversations",
     "stillIndexing": "Still indexing conversations…"
   },
+  "watch": {
+    "title": "Watch until…",
+    "stop": "Stop watching",
+    "status": {
+      "running": "Watching",
+      "done": "Condition met",
+      "failed": "Watch stopped with an error",
+      "cancelled": "Watch stopped",
+      "other": "Watching"
+    }
+  },
+  "loop": {
+    "confirmTitle": "Check {every}?",
+    "create": "Create schedule",
+    "runOnce": "Run once"
+  },
   "roster": {
     "activity": {
       "working": "Working",
@@ -1568,6 +1584,9 @@
     "monitor": "Watch this until…",
     "monitorDesc": "Keep an eye on something over time",
     "monitorGoal": "Watch this until the condition is met, then tell me what changed.",
+    "loop": "Check on a schedule",
+    "loopDesc": "Repeating check in Desk schedules, not a second calendar",
+    "loopGoal": "every 30m check this",
     "deepResearch": "Deep research",
     "deepResearchDesc": "A research team working in phases",
     "deepResearchGoal": "Run a deep research workflow on this topic. Break it into phases, cite sources, and save notes under ./artifacts.",

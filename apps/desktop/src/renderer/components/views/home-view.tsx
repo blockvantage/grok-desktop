@@ -29,8 +29,10 @@ import {
   MEDIA_DURATION_DEFAULT,
   foreignContinuePrompt,
   mediaKindFromTokens,
+  parseLoopDraft,
   stillImagePathFromAttachments,
   type ForeignSessionSummary,
+  type LoopDraft,
   type MediaStudioOptions,
 } from "@grokdesk/shared";
 import { DictationButton } from "@/components/dictation-button";
@@ -119,6 +121,7 @@ import {
 } from "@/lib/chat-title";
 import { intentChipMotionClass } from "@/lib/motion-system";
 import { pickFiles, rpc, writeTempAttachment } from "@/lib/api";
+import { scheduleCreateParams } from "@/lib/schedule-create-params";
 import {
   isActiveTaskStatus,
   type Artifact,
@@ -188,6 +191,8 @@ export function HomeView(props: {
   tasks: Task[];
   memories: MemoryItem[];
   schedules: ScheduleRule[];
+  /** Full inbox (schedule_done overnight brief). */
+  inbox?: InboxItem[];
   artifacts: Artifact[];
   auth: (AuthState & { models?: string[] }) | null;
   /**
@@ -253,6 +258,7 @@ export function HomeView(props: {
   const [foreignSessions, setForeignSessions] = useState<
     ForeignSessionSummary[]
   >([]);
+  const [pendingLoop, setPendingLoop] = useState<LoopDraft | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -650,6 +656,11 @@ export function HomeView(props: {
   const coworker = useMemo(() => {
     const doneCount = props.tasks.filter((t) => t.status === "done").length;
     const working = props.tasks.filter((t) => isActiveTaskStatus(t.status));
+    const bySchedule = new Map(props.schedules.map((s) => [s.id, s.name]));
+    const inboxRows = [
+      ...(props.inbox ?? []),
+      ...(props.needsYouItems ?? []),
+    ];
     return buildCoworkerHomeModel({
       tasks: props.tasks.map((t) => ({
         id: t.id,
@@ -664,12 +675,23 @@ export function HomeView(props: {
         enabled: Boolean(s.enabled),
         nextRunAt: (s as { nextRunAt?: string | null }).nextRunAt ?? null,
       })),
-      inbox: (props.needsYouItems ?? []).map((i) => ({
+      inbox: inboxRows.map((i) => ({
         id: i.id,
         kind: i.kind,
         title: i.title,
         read: i.read,
+        taskId: i.taskId,
       })),
+      scheduleRuns: props.tasks
+        .filter((t) => t.scheduleRuleId && t.completedAt)
+        .map((t) => ({
+          scheduleId: t.scheduleRuleId!,
+          scheduleName: bySchedule.get(t.scheduleRuleId!) ?? t.title ?? "Scheduled",
+          taskId: t.id,
+          status: t.status,
+          finishedAt: t.completedAt!,
+          goal: t.goal,
+        })),
       usage: {
         hasUsedQueue: false,
         scheduleCount: props.schedules.filter((s) => s.enabled).length,
@@ -683,7 +705,30 @@ export function HomeView(props: {
         doneCount,
       },
     });
-  }, [props.tasks, props.schedules, props.needsYouItems, props.memories]);
+  }, [
+    props.tasks,
+    props.schedules,
+    props.needsYouItems,
+    props.inbox,
+    props.memories,
+  ]);
+  const loopDraft = parseLoopDraft(props.goal);
+
+  const startHomeRun = useCallback(
+    (
+      goal?: string,
+      attachments?: TaskAttachment[],
+      mediaStudioArg?: MediaStudioOptions | null,
+    ) => {
+      const draft = parseLoopDraft(goal ?? props.goal);
+      if (draft) {
+        setPendingLoop(draft);
+        return;
+      }
+      props.onRun(goal, attachments, mediaStudioArg);
+    },
+    [props],
+  );
 
   const focusComposer = useCallback(() => {
     requestAnimationFrame(() => {
@@ -1384,7 +1429,7 @@ export function HomeView(props: {
                         (!props.goal.trim() && !activeIntent)
                       )
                         return;
-                      props.onRun(
+                      startHomeRun(
                         undefined,
                         toTaskAttachments(
                           props.attachments as ClientAttachment[],
@@ -1577,7 +1622,7 @@ export function HomeView(props: {
                       (!props.goal.trim() && !activeIntent)
                     }
                     onClick={() =>
-                      props.onRun(
+                      startHomeRun(
                         undefined,
                         toTaskAttachments(
                           props.attachments as ClientAttachment[],
@@ -1609,6 +1654,91 @@ export function HomeView(props: {
                 <p className="mt-2 text-center text-2xs text-muted-foreground">
                   {t("home.composerHint")}
                 </p>
+                {(pendingLoop || loopDraft) && (
+                  <div
+                    className="mt-3 rounded-xl border border-hairline bg-muted/30 px-3 py-2.5"
+                    data-testid="loop-schedule-confirm"
+                  >
+                    <p className="text-sm text-foreground">
+                      {t("loop.confirmTitle", {
+                        every: (pendingLoop ?? loopDraft)!.intervalLabel,
+                      })}
+                    </p>
+                    <p className="mt-0.5 text-2xs text-muted-foreground">
+                      {(pendingLoop ?? loopDraft)!.prompt}
+                    </p>
+                    <div className="mt-2 flex gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="h-7 px-2 text-2xs"
+                        data-testid="loop-schedule-create"
+                        onClick={() => {
+                          const draft = pendingLoop ?? loopDraft;
+                          if (!draft) return;
+                          const timezone =
+                            Intl.DateTimeFormat().resolvedOptions().timeZone ||
+                            "UTC";
+                          void (async () => {
+                            let root = props.root.trim();
+                            if (!root) {
+                              const temp = await rpc<string>(
+                                "workspace.ensureTemp",
+                                { label: "scheduled" },
+                              );
+                              root =
+                                typeof temp === "string"
+                                  ? temp
+                                  : String(
+                                      (temp as { path?: string } | null)?.path ??
+                                        "",
+                                    );
+                            }
+                            if (!root) return;
+                            await rpc(
+                              "schedule.create",
+                              scheduleCreateParams({
+                                form: {
+                                  name: draft.name,
+                                  goal: draft.prompt,
+                                  cron: draft.cron,
+                                  model: props.model,
+                                },
+                                root,
+                                timezone,
+                              }),
+                            );
+                            setPendingLoop(null);
+                            props.onGoal("");
+                            props.onOpenScheduled();
+                          })().catch((e: unknown) => {
+                            toast({
+                              description:
+                                e instanceof Error ? e.message : String(e),
+                              variant: "destructive",
+                            });
+                          });
+                        }}
+                      >
+                        {t("loop.create")}
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 px-2 text-2xs"
+                        data-testid="loop-schedule-once"
+                        onClick={() => {
+                          const draft = pendingLoop ?? loopDraft;
+                          setPendingLoop(null);
+                          props.onRun(draft?.prompt ?? props.goal);
+                        }}
+                      >
+                        {t("loop.runOnce")}
+                      </Button>
+                    </div>
+                  </div>
+                )}
                 {mediaKind ? (
                   <MediaStudioControls
                     kind={mediaKind}
@@ -1716,6 +1846,37 @@ export function HomeView(props: {
                     </button>
                   );
                 })}
+              </div>
+            </section>
+          )}
+
+          {coworker.showScheduleDigest && (
+            <section className="mt-7" data-testid="home-overnight-digest">
+              <SectionHeading
+                title={t("home.scheduleDigestTitle")}
+                description={coworker.scheduleDigest.headline}
+              />
+              <div className="surface-quiet overflow-hidden shadow-[0_1px_0_0_rgba(255,255,255,0.03)_inset]">
+                {coworker.scheduleDigest.lines.map((line, i) => (
+                  <button
+                    key={`${line.scheduleId}-${line.taskId ?? i}`}
+                    type="button"
+                    data-testid="home-overnight-line"
+                    onClick={() => {
+                      if (line.taskId) props.onOpenTask(line.taskId);
+                      else props.onOpenScheduled();
+                    }}
+                    className={cn(
+                      "flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-white/[0.035]",
+                      i > 0 && "border-t border-white/[0.04]",
+                    )}
+                  >
+                    <span className="min-w-0 flex-1 truncate text-sm text-foreground/90">
+                      {line.summary}
+                    </span>
+                    <ArrowRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                  </button>
+                ))}
               </div>
             </section>
           )}

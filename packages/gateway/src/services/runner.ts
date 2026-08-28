@@ -248,6 +248,8 @@ export class TaskRunner {
   private onRunSettled: (() => void) | null = null;
   /** Persist the terminal assistant response before publishing done status. */
   private reconcileAssistantTurn: ((taskId: string) => void) | null = null;
+  private onScheduledTask: ((payload: Record<string, unknown>) => void) | null =
+    null;
 
   constructor(
     private tasks: TaskService,
@@ -272,11 +274,13 @@ export class TaskRunner {
       /** After a run settles — e.g. schedule outbox drain. */
       onRunSettled?: () => void;
       reconcileAssistantTurn?: (taskId: string) => void;
+      onScheduledTask?: (payload: Record<string, unknown>) => void;
     },
   ) {
     this.maxConcurrent = clampMaxConcurrent(opts?.maxConcurrent ?? 3);
     this.onRunSettled = opts?.onRunSettled ?? null;
     this.reconcileAssistantTurn = opts?.reconcileAssistantTurn ?? null;
+    this.onScheduledTask = opts?.onScheduledTask ?? null;
     this.hostBridge = opts?.hostBridge ?? new NullHostBridge();
     this.desktopMachineProvider = opts?.desktopMachineProvider ?? null;
     this.inheritUserGrokProvider = opts?.inheritUserGrokProvider ?? null;
@@ -1597,6 +1601,21 @@ export class TaskRunner {
           ...(event.title ? { memoryTitle: event.title } : {}),
           ...(event.content ? { content: event.content } : {}),
         });
+        return "continue";
+
+      case "monitor_event":
+        this.tasks.appendEvent(taskId, "step", {
+          title: "monitor_event",
+          ...event.payload,
+        });
+        return "continue";
+
+      case "scheduled_task":
+        this.tasks.appendEvent(taskId, "step", {
+          title: "scheduled_task",
+          ...event.payload,
+        });
+        this.onScheduledTask?.(event.payload);
         return "continue";
 
       case "session_meta":

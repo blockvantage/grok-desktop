@@ -221,6 +221,17 @@ export function registerCoreCommands(reg: CommandRegistry): void {
   });
 
   reg.register({
+    id: "core.loop",
+    source: "core",
+    kind: "template",
+    title: "Check this on a schedule",
+    description: "Bridge a repeating in-chat check into Desk schedules",
+    template: "every 30m {{input}}",
+    confirmation: "preview",
+    isAvailable: always,
+  });
+
+  reg.register({
     id: "core.deepResearch",
     source: "core",
     kind: "template",

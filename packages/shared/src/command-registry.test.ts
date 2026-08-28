@@ -39,6 +39,7 @@ describe("CommandRegistry (Phase 5 foundations)", () => {
     expect(reg.get("core.rewind")?.kind).toBe("action");
     expect(reg.get("core.remember")?.kind).toBe("action");
     expect(reg.get("core.monitor")?.kind).toBe("template");
+    expect(reg.get("core.loop")?.kind).toBe("template");
     expect(reg.get("core.deepResearch")?.kind).toBe("template");
     expect(reg.get("core.deepResearch")?.template).toContain("{{input}}");
   });

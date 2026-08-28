@@ -179,6 +179,24 @@ describe("runtimeEventToNormalized", () => {
     });
     expect(
       runtimeEventToNormalized({
+        type: "monitor_event",
+        payload: { monitorId: "m1" },
+      }),
+    ).toEqual({
+      type: "monitor_event",
+      payload: { monitorId: "m1" },
+    });
+    expect(
+      runtimeEventToNormalized({
+        type: "scheduled_task",
+        payload: { id: "st-1", sessionUpdate: "scheduled_task_created" },
+      }),
+    ).toEqual({
+      type: "scheduled_task",
+      payload: { id: "st-1", sessionUpdate: "scheduled_task_created" },
+    });
+    expect(
+      runtimeEventToNormalized({
         type: "usage",
         usage: { inputTokens: 10, outputTokens: 5 },
       }),

@@ -24,10 +24,23 @@ export type BriefingInboxItem = {
   kind: string;
   title: string;
   read?: boolean | null;
+  taskId?: string | null;
 };
 
+function itemTitle(item: BriefingInboxItem): string {
+  return item.title ?? "";
+}
+
 export type BriefingLine = {
-  kind: "needs_you" | "failed" | "working" | "schedule" | "suggestion" | "clear";
+  kind:
+    | "needs_you"
+    | "failed"
+    | "working"
+    | "schedule"
+    | "suggestion"
+    | "overnight_done"
+    | "overnight_waiting"
+    | "clear";
   text: string;
   taskId?: string;
   scheduleId?: string;
@@ -59,9 +72,35 @@ export function buildMorningBriefing(input: {
   const limit = input.limit ?? 5;
   const lines: BriefingLine[] = [];
 
+  const overnightDone = input.inbox.filter(
+    (i) => !i.read && i.kind === "schedule_done",
+  );
+  for (const item of overnightDone.slice(0, 2)) {
+    lines.push({
+      kind: "overnight_done",
+      text: item.title || "A scheduled run finished overnight",
+      taskId: item.taskId ?? undefined,
+    });
+  }
+  const overnightWaiting = input.inbox.filter(
+    (i) =>
+      !i.read &&
+      i.kind === "unfinished" &&
+      /scheduled|overnight|night shift/i.test(itemTitle(i)),
+  );
+  for (const item of overnightWaiting.slice(0, 1)) {
+    lines.push({
+      kind: "overnight_waiting",
+      text: item.title || "A scheduled run needs you",
+    });
+  }
+
   const unreadNeeds = input.inbox.filter(
     (i) =>
-      !i.read && (i.kind === "approval" || i.kind === "unfinished"),
+      !i.read &&
+      (i.kind === "approval" ||
+        (i.kind === "unfinished" &&
+          !/scheduled|overnight|night shift/i.test(itemTitle(i)))),
   );
   for (const item of unreadNeeds.slice(0, 2)) {
     lines.push({

@@ -28,6 +28,19 @@ export function naturalLanguageToCron(input: string): string | null {
   if (s === "every hour") {
     return "0 * * * *";
   }
+  // Duration tokens (30m / 2h) — same map as /loop.
+  const duration = s.replace(/^every\s+/, "");
+  if (/^\d+\s*(m|min|mins|minutes|h|hr|hrs|hours|d|day|days)$/.test(duration)) {
+    const n = Number(/^(\d+)/.exec(duration)?.[1] ?? 0);
+    const unit = duration.replace(/^\d+\s*/, "")[0];
+    if (n > 0 && unit === "m" && n < 60) {
+      return n === 1 ? "* * * * *" : `*/${n} * * * *`;
+    }
+    if (n > 0 && unit === "h" && n < 24) {
+      return n === 1 ? "0 * * * *" : `0 */${n} * * *`;
+    }
+    if (n > 0 && unit === "d") return n === 1 ? "0 9 * * *" : `0 9 */${n} * *`;
+  }
   // Already looks like cron (5 fields)
   if (/^(\S+\s+){4}\S+$/.test(s)) return s;
   return null;

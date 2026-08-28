@@ -64,6 +64,14 @@ export type RuntimeEvent =
       content?: string;
     }
   | {
+      type: "monitor_event";
+      payload: Record<string, unknown>;
+    }
+  | {
+      type: "scheduled_task";
+      payload: Record<string, unknown>;
+    }
+  | {
       type: "plan";
       content: string;
       status: "drafting" | "awaiting_approval";

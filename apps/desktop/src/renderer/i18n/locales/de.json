@@ -1071,6 +1071,22 @@
     "conversations": "Unterhaltungen",
     "stillIndexing": "Unterhaltungen werden noch indexiert…"
   },
+  "watch": {
+    "title": "Beobachten bis…",
+    "stop": "Beobachtung stoppen",
+    "status": {
+      "running": "Beobachtet",
+      "done": "Bedingung erfüllt",
+      "failed": "Beobachtung fehlgeschlagen",
+      "cancelled": "Beobachtung gestoppt",
+      "other": "Beobachtet"
+    }
+  },
+  "loop": {
+    "confirmTitle": "{every} prüfen?",
+    "create": "Zeitplan anlegen",
+    "runOnce": "Einmal ausführen"
+  },
   "roster": {
     "activity": {
       "working": "Läuft",
@@ -1477,6 +1493,9 @@
     "monitor": "Beobachten bis…",
     "monitorDesc": "Etwas über die Zeit im Blick behalten",
     "monitorGoal": "Beobachte das, bis die Bedingung erfüllt ist, und sag mir, was sich geändert hat.",
+    "loop": "Nach Zeitplan prüfen",
+    "loopDesc": "Wiederholte Prüfung in Desk-Zeitplänen",
+    "loopGoal": "every 30m dies prüfen",
     "deepResearch": "Tiefe Recherche",
     "deepResearchDesc": "Ein Rechercheteam in Phasen",
     "deepResearchGoal": "Starte einen tiefen Recherche-Workflow zu diesem Thema. Teile in Phasen, zitiere Quellen und speichere Notizen unter ./artifacts.",

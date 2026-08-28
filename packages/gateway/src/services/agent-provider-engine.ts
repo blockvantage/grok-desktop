@@ -138,6 +138,16 @@ export function runtimeEventToNormalized(
         title: event.title,
         content: event.content,
       };
+    case "monitor_event":
+      return {
+        type: "monitor_event",
+        payload: event.payload,
+      };
+    case "scheduled_task":
+      return {
+        type: "scheduled_task",
+        payload: event.payload,
+      };
     case "worker_started":
       return {
         type: "worker_started",

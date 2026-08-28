@@ -49,6 +49,26 @@ describe("morning-briefing", () => {
     expect(briefingSubtitle(briefing).length).toBeGreaterThan(5);
   });
 
+  it("surfaces schedule_done inbox as overnight line in morning hours", () => {
+    const brief = buildMorningBriefing({
+      tasks: [],
+      schedules: [],
+      inbox: [
+        {
+          id: "i1",
+          kind: "schedule_done",
+          title: "Night shift finished",
+          read: false,
+          taskId: "t-night",
+        },
+      ],
+      now: new Date("2026-08-04T08:00:00"),
+    });
+    expect(brief.lines.some((l) => l.kind === "overnight_done")).toBe(true);
+    expect(brief.actionable).toBe(true);
+    expect(brief.lines[0]?.taskId).toBe("t-night");
+  });
+
   it("reports clear desk when nothing is pending", () => {
     const briefing = buildMorningBriefing({
       now: new Date("2026-07-15T15:00:00"),

@@ -9,6 +9,7 @@ import { SettingsService } from "./settings.js";
 import { MemoryService } from "./memory.js";
 import { SchedulerService } from "./scheduler.js";
 import { ProactivityService } from "./proactivity.js";
+import { recordScheduleOutcome } from "./schedule-outcomes.js";
 
 describe("ProactivityService", () => {
   let dir: string;
@@ -69,6 +70,33 @@ describe("ProactivityService", () => {
 
     // Dedupe within 24h
     expect(proactivity.tick(noon)).toBe(0);
+  });
+
+  it("quiet hours skip suggestion ticks but schedule outcomes still insert", () => {
+    settings.set({
+      quietHours: { start: "22:00", end: "08:00" },
+    });
+    const night = new Date("2026-07-10T23:30:00");
+    const t1 = tasks.create({
+      goal: "Needs approval",
+      workspaceRoots: [ws],
+    });
+    tasks.setStatus(t1.id, "waiting_approval");
+    expect(proactivity.tick(night)).toBe(0);
+
+    const scheduled = tasks.create({
+      goal: "Night brief",
+      workspaceRoots: [ws],
+      scheduleRuleId: "s-night",
+    });
+    tasks.setStatus(scheduled.id, "done");
+    recordScheduleOutcome(inbox, {
+      task: tasks.get(scheduled.id)!,
+      scheduleName: "Night shift",
+    });
+    expect(
+      inbox.list().some((i) => i.kind === "schedule_done" && i.taskId === scheduled.id),
+    ).toBe(true);
   });
 
   it("emits memory-aware automation suggestions as inbox suggestion items", () => {

@@ -1071,6 +1071,22 @@
     "conversations": "Discussions",
     "stillIndexing": "Indexation des discussions…"
   },
+  "watch": {
+    "title": "Surveiller jusqu’à…",
+    "stop": "Arrêter la surveillance",
+    "status": {
+      "running": "Surveillance",
+      "done": "Condition remplie",
+      "failed": "La surveillance a échoué",
+      "cancelled": "Surveillance arrêtée",
+      "other": "Surveillance"
+    }
+  },
+  "loop": {
+    "confirmTitle": "Vérifier {every} ?",
+    "create": "Créer une planification",
+    "runOnce": "Exécuter une fois"
+  },
   "roster": {
     "activity": {
       "working": "En cours",
@@ -1477,6 +1493,9 @@
     "monitor": "Surveiller jusqu’à…",
     "monitorDesc": "Garder un œil sur quelque chose dans le temps",
     "monitorGoal": "Surveille ceci jusqu’à ce que la condition soit remplie, puis dis-moi ce qui a changé.",
+    "loop": "Vérifier selon un rythme",
+    "loopDesc": "Contrôle répétitif dans les planifications Desk",
+    "loopGoal": "every 30m vérifier ceci",
     "deepResearch": "Recherche approfondie",
     "deepResearchDesc": "Une équipe de recherche en plusieurs phases",
     "deepResearchGoal": "Lance un flux de recherche approfondie sur ce sujet. Découpe en phases, cite les sources et enregistre des notes sous ./artifacts.",

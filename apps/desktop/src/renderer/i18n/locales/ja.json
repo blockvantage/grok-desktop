@@ -1071,6 +1071,22 @@
     "conversations": "会話",
     "stillIndexing": "会話をインデックスしています…"
   },
+  "watch": {
+    "title": "条件まで監視",
+    "stop": "監視を止める",
+    "status": {
+      "running": "監視中",
+      "done": "条件を満たした",
+      "failed": "監視が失敗した",
+      "cancelled": "監視を停止した",
+      "other": "監視中"
+    }
+  },
+  "loop": {
+    "confirmTitle": "{every} 確認しますか？",
+    "create": "スケジュールを作成",
+    "runOnce": "一度だけ実行"
+  },
   "roster": {
     "activity": {
       "working": "作業中",
@@ -1477,6 +1493,9 @@
     "monitor": "次まで監視…",
     "monitorDesc": "条件を満たすまで見続ける",
     "monitorGoal": "条件を満たすまでこれを監視し、何が変わったか教えて。",
+    "loop": "定期チェック",
+    "loopDesc": "Desk のスケジュールで繰り返す確認",
+    "loopGoal": "every 30m これを確認",
     "deepResearch": "深い調査",
     "deepResearchDesc": "段階的に進む調査チーム",
     "deepResearchGoal": "このトピックで深い調査ワークフローを実行して。段階に分け、出典を示し、メモを ./artifacts に保存して。",
