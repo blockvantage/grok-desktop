@@ -1730,6 +1730,8 @@
     "researchDesc": "Tiefenrecherche mit Quellen · hoher Aufwand",
     "image": "Bild erstellen",
     "imageDesc": "Visuelles unter ./artifacts erzeugen",
+    "video": "Video erstellen",
+    "videoDesc": "Kurzer Clip mit Länge, Seitenverhältnis und Stimme",
     "organize": "Dateien ordnen",
     "organizeDesc": "Ordner strukturieren und Änderungen zusammenfassen",
     "schedule": "Arbeit planen",
@@ -1780,5 +1782,24 @@
     "budgetLine": "{used} aktiv · {reserved} gehalten · {remaining} übrig",
     "researchDeeply": "Tief recherchieren",
     "researchDeeplyDesc": "Ein Team recherchiert in Phasen und zeigt den Fortschritt live"
+  },
+  "mediaStudio": {
+    "createImage": "Ein Bild erstellen",
+    "createVideo": "Ein Video erstellen",
+    "videoLabel": "Video",
+    "imageLabel": "Bild",
+    "duration": "Länge",
+    "durationSec": "{n}s",
+    "aspect": "Format",
+    "aspectAuto": "Auto",
+    "voiceLabel": "Stimme",
+    "voiceNone": "Keine Stimme",
+    "stillAttached": "Standbild: {name}",
+    "voices": {
+      "ara": "Ara",
+      "eve": "Eve",
+      "leo": "Leo",
+      "rex": "Rex"
+    }
   }
 }

@@ -2,11 +2,15 @@
  * Pure helpers for optimistic task create UI (Phase 6 extract from App.tsx).
  * Keeps goal/validation/policy defaults out of the React component body.
  */
-import type {
-  ApprovalMode,
-  EffortLevel,
-  Task,
-  TaskAttachment,
+import {
+  mediaKindFromTokens,
+  stillImagePathFromAttachments,
+  weaveMediaStudioGoal,
+  type ApprovalMode,
+  type EffortLevel,
+  type MediaStudioOptions,
+  type Task,
+  type TaskAttachment,
 } from "@grokdesk/shared";
 import { getActiveLocale, t } from "@/i18n/active";
 import { expandSlashGoal } from "./composer-input";
@@ -35,6 +39,8 @@ export type CreateTaskFormState = {
    * dumped into the textarea. Takes precedence over slash expansion.
    */
   intentId?: ComposerIntentId | string | null;
+  /** Phase 3.2 video/image studio (duration, aspect, voice, still). */
+  mediaStudio?: MediaStudioOptions | null;
 };
 
 /** Build RPC params for tasks.create from composer state. */
@@ -62,11 +68,21 @@ export function buildCreateTaskParams(
     intentId: form.intentId,
     translate: t,
   });
+  const goal = applyMediaStudioToExpandedGoal(expanded.goal, {
+    tokens: [
+      expanded.command?.id,
+      expanded.command?.token,
+      expanded.intent?.id,
+      expanded.intent?.slashToken,
+    ],
+    studio: form.mediaStudio,
+    attachments: form.attachments,
+  });
   const workspaceRoots = form.root.trim() ? [form.root.trim()] : [];
   const hasSource =
     expanded.command != null || expanded.intent != null;
   return {
-    goal: expanded.goal,
+    goal,
     workspaceRoots,
     model: form.model,
     effort: form.effort,
@@ -175,6 +191,7 @@ export function buildFollowUpTaskParams(input: {
   attachments?: TaskAttachment[];
   clientMutationId?: string;
   revisionOfTaskId?: string;
+  mediaStudio?: MediaStudioOptions | null;
 }): {
   goal: string;
   workspaceRoots: string[];
@@ -193,8 +210,13 @@ export function buildFollowUpTaskParams(input: {
 } {
   const raw = input.goalText.trim();
   const expanded = expandSlashGoal(raw, t);
+  const goal = weaveFollowUpComposerGoal({
+    goalText: raw,
+    mediaStudio: input.mediaStudio,
+    attachments: input.attachments,
+  });
   return {
-    goal: expanded.goal,
+    goal,
     workspaceRoots: resolveFollowUpWorkspaceRoots(
       input.base,
       input.composerRoot,
@@ -218,6 +240,48 @@ export function buildFollowUpTaskParams(input: {
       ? { revisionOfTaskId: input.revisionOfTaskId }
       : {}),
   };
+}
+
+/**
+ * Weave duration/aspect/voice/still onto a follow-up composer string.
+ * Slash text stays intact (queue rows stay compact); kind comes from the
+ * armed /image or /video token, never from leftover studio state.
+ */
+export function weaveFollowUpComposerGoal(input: {
+  goalText: string;
+  mediaStudio?: MediaStudioOptions | null;
+  attachments?: TaskAttachment[];
+}): string {
+  const raw = input.goalText.trim();
+  if (!raw) return raw;
+  const expanded = expandSlashGoal(raw, t);
+  return applyMediaStudioToExpandedGoal(raw, {
+    tokens: [expanded.command?.id, expanded.command?.token],
+    studio: input.mediaStudio,
+    attachments: input.attachments,
+  });
+}
+
+function applyMediaStudioToExpandedGoal(
+  base: string,
+  input: {
+    tokens: Array<string | null | undefined>;
+    studio?: MediaStudioOptions | null;
+    attachments?: TaskAttachment[];
+  },
+): string {
+  const mediaKind = mediaKindFromTokens(...input.tokens);
+  if (!mediaKind) return base;
+  const still =
+    input.studio?.stillImagePath ??
+    stillImagePathFromAttachments(input.attachments);
+  return weaveMediaStudioGoal(base, {
+    kind: mediaKind,
+    aspectRatio: input.studio?.aspectRatio,
+    durationSec: input.studio?.durationSec,
+    voice: input.studio?.voice,
+    stillImagePath: still,
+  });
 }
 
 /** True when the workspace task is a real gateway task (not optimistic placeholder). */

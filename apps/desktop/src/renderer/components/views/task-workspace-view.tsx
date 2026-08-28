@@ -107,6 +107,7 @@ import {
   isOptimisticTaskId,
   resolveFollowUpSubmit,
 } from "@/lib/follow-up-submit";
+import { weaveFollowUpComposerGoal } from "@/lib/create-task-optimistic";
 import { filterFollowUpActions } from "@/lib/follow-up-actions-filter";
 import {
   blocksFromCollapsed,
@@ -281,6 +282,7 @@ import { humanizeError } from "@/lib/errors";
 import { relativeTime, shortPath, formatDateTime } from "@/lib/format";
 import { approvalLabel, effortLabel } from "@/lib/labels";
 import { ComposerRunOptions } from "@/components/composer-run-options";
+import { MediaStudioControls } from "@/components/media-studio-controls";
 import { RolePackPicker } from "@/components/role-pack-picker";
 import {
   nextReplyWillUseParams,
@@ -319,8 +321,12 @@ import {
   foldWorkflowRun,
   latestSessionStatusFromEvents,
   mapTurnToRewindPoint,
+  MEDIA_DURATION_DEFAULT,
+  mediaKindFromTokens,
   projectSessionStatusHeader,
+  stillImagePathFromAttachments,
   workflowControlPrompt,
+  type MediaStudioOptions,
 } from "@grokdesk/shared";
 import { collapseEventsToBlocks, extractResultSummary } from "@/lib/stream-view";
 import { questionChipsForTerminalTurn } from "@/lib/user-question";
@@ -424,6 +430,10 @@ export function TaskWorkspaceView(props: {
   const { task } = props;
   const [takeawaysDismissed, setTakeawaysDismissed] = useState(false);
   const [followUp, setFollowUp] = useState("");
+  const [mediaStudio, setMediaStudio] = useState<MediaStudioOptions>({
+    kind: "video",
+    durationSec: MEDIA_DURATION_DEFAULT,
+  });
   /** One-shot adjacent composer error (Task 13); not a toast spam path. */
   const [composerEnqueueError, setComposerEnqueueError] = useState<string | null>(
     null,
@@ -1479,6 +1489,11 @@ export function TaskWorkspaceView(props: {
 
   // CMD-1/3: recognition-driven effort (not menu selection).
   const armed = useMemo(() => armedSlashCommand(followUp), [followUp]);
+  const mediaKind = mediaKindFromTokens(
+    armed?.command.id,
+    armed?.command.token,
+  );
+  const mediaStill = stillImagePathFromAttachments(followAttachments);
   const armedEffortRef = useRef<ArmedEffortState>({
     saved: null,
     applied: null,
@@ -2553,11 +2568,22 @@ export function TaskWorkspaceView(props: {
                   setTimeout(() => setVoiceSending(false), 600);
                 }
                 const atts = toTaskAttachments(followAttachments);
+                const queuedGoal = weaveFollowUpComposerGoal({
+                  goalText: g,
+                  mediaStudio: mediaKind
+                    ? {
+                        ...mediaStudio,
+                        kind: mediaKind,
+                        stillImagePath: mediaStill,
+                      }
+                    : null,
+                  attachments: atts,
+                });
                 // All follow-ups go through the gateway outbox (including idle
                 // path). Gateway may drain immediately; never clear composer
                 // until durable enqueue acceptance.
-                const retainedDraft = g;
-                void enqueueAsync(g, attachmentPathsForQueue(atts)).then(
+                const retainedDraft = queuedGoal;
+                void enqueueAsync(queuedGoal, attachmentPathsForQueue(atts)).then(
                   (outcome) => {
                     if (outcome.outcome === "accepted") {
                       setComposerEnqueueError(null);
@@ -3021,6 +3047,18 @@ export function TaskWorkspaceView(props: {
                   </TooltipContent>
                 </Tooltip>
               </div>
+              {mediaKind ? (
+                <MediaStudioControls
+                  kind={mediaKind}
+                  value={{ ...mediaStudio, kind: mediaKind }}
+                  onChange={setMediaStudio}
+                  stillImageName={
+                    mediaStill
+                      ? mediaStill.split(/[/\\]/).pop() ?? mediaStill
+                      : null
+                  }
+                />
+              ) : null}
             </form>
             {dictation.state === "listening" && (
               <p className="mx-auto mt-1 max-w-[46rem] text-2xs text-muted-foreground">

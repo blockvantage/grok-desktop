@@ -608,12 +608,25 @@ describe("Wave I/T parity structure", () => {
     expect(home).toMatch(/composer-intent-chips|home-workflow-intents/);
     expect(home).toMatch(/home-research-deeply/);
     expect(home).toMatch(/\/deep-research /);
+    expect(home).toMatch(/home-create-image/);
+    expect(home).toMatch(/home-create-video/);
+    expect(home).toMatch(/MediaStudioControls/);
+    expect(home).toMatch(/\/image /);
+    expect(home).toMatch(/\/video /);
+
+    expect(exists("components/media-studio-controls.tsx")).toBe(true);
+    expect(intents).toMatch(/id: "video"/);
     expect(home).toMatch(/intent-chip-/);
     expect(home).toMatch(/onComposerIntent|composerIntentId/);
     expect(home).toMatch(/clearComposerIntent|selectComposerIntent/);
 
     const create = read("lib/create-task-optimistic.ts");
     expect(create).toMatch(/expandComposerGoal|intentId/);
+    expect(create).toMatch(/weaveMediaStudioGoal|weaveFollowUpComposerGoal/);
+
+    const workspace = read("components/views/task-workspace-view.tsx");
+    expect(workspace).toMatch(/weaveFollowUpComposerGoal/);
+    expect(workspace).toMatch(/media-studio-controls|MediaStudioControls/);
 
     const memory = read("components/views/memory-view.tsx");
     expect(memory).toMatch(/memory-suggestions/);
@@ -624,6 +637,7 @@ describe("Wave I/T parity structure", () => {
     expect(appPhase3).toMatch(/createSuggestionFromTakeaways/);
     expect(appPhase3).toMatch(/approveMemorySuggestion/);
     expect(appPhase3).toMatch(/composerIntentId|setComposerIntentId/);
+    expect(appPhase3).toMatch(/mediaStudio/);
   });
 
   it("phase-2 continued: palette ranking, artifacts single search, app wiring", () => {

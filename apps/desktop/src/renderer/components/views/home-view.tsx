@@ -5,6 +5,7 @@ import {
   FileText,
   FolderOpen,
   FolderKanban,
+  Film,
   ImageIcon,
   Loader2,
   Paperclip,
@@ -16,6 +17,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { ComposerRunOptions } from "@/components/composer-run-options";
+import { MediaStudioControls } from "@/components/media-studio-controls";
 import { HomeRailCard } from "./home-rail-card";
 import {
   pathsFromDropFiles,
@@ -23,6 +25,12 @@ import {
   resolveHomeActiveRoot,
 } from "@/lib/home-composer-helpers";
 import { isManagedWorkspacePath } from "@/lib/managed-workspace";
+import {
+  MEDIA_DURATION_DEFAULT,
+  mediaKindFromTokens,
+  stillImagePathFromAttachments,
+  type MediaStudioOptions,
+} from "@grokdesk/shared";
 import { DictationButton } from "@/components/dictation-button";
 import { useDictation } from "@/hooks/use-dictation";
 import { useElapsedSeconds } from "@/hooks/use-elapsed";
@@ -170,7 +178,11 @@ export function HomeView(props: {
    */
   draftRestoredNotice?: boolean;
   onDismissDraftRestored?: () => void;
-  onRun: (goal?: string, attachments?: TaskAttachment[]) => void;
+  onRun: (
+    goal?: string,
+    attachments?: TaskAttachment[],
+    mediaStudio?: MediaStudioOptions | null,
+  ) => void;
   tasks: Task[];
   memories: MemoryItem[];
   schedules: ScheduleRule[];
@@ -232,6 +244,10 @@ export function HomeView(props: {
   const [intentModeState, setIntentModeState] = useState<ComposerModeState>(
     emptyComposerModeState,
   );
+  const [mediaStudio, setMediaStudio] = useState<MediaStudioOptions>({
+    kind: "video",
+    durationSec: MEDIA_DURATION_DEFAULT,
+  });
 
   useEffect(() => {
     if (props.focusComposerToken == null) return;
@@ -503,6 +519,8 @@ export function HomeView(props: {
         return FolderKanban;
       case "image":
         return ImageIcon;
+      case "video":
+        return Film;
       case "search":
         return Search;
       case "calendar":
@@ -515,6 +533,12 @@ export function HomeView(props: {
 
   // CMD-1/3: recognition-driven effort (not menu selection).
   const armed = useMemo(() => armedSlashCommand(props.goal), [props.goal]);
+  const mediaKind = mediaKindFromTokens(
+    armed?.command.id,
+    armed?.command.token,
+    props.composerIntentId,
+  );
+  const mediaStill = stillImagePathFromAttachments(props.attachments);
   const armedEffortRef = useRef<ArmedEffortState>({
     saved: null,
     applied: null,
@@ -1345,6 +1369,13 @@ export function HomeView(props: {
                         toTaskAttachments(
                           props.attachments as ClientAttachment[],
                         ),
+                        mediaKind
+                          ? {
+                              ...mediaStudio,
+                              kind: mediaKind,
+                              stillImagePath: mediaStill,
+                            }
+                          : null,
                       );
                     }
                     // Shift+Enter: default newline behavior (do not preventDefault).
@@ -1531,6 +1562,13 @@ export function HomeView(props: {
                         toTaskAttachments(
                           props.attachments as ClientAttachment[],
                         ),
+                        mediaKind
+                          ? {
+                              ...mediaStudio,
+                              kind: mediaKind,
+                              stillImagePath: mediaStill,
+                            }
+                          : null,
                       )
                     }
                     className="h-9 shrink-0 gap-1.5 rounded-full px-4"
@@ -1551,11 +1589,21 @@ export function HomeView(props: {
                 <p className="mt-2 text-center text-2xs text-muted-foreground">
                   {t("home.composerHint")}
                 </p>
+                {mediaKind ? (
+                  <MediaStudioControls
+                    kind={mediaKind}
+                    value={{ ...mediaStudio, kind: mediaKind }}
+                    onChange={setMediaStudio}
+                    stillImageName={
+                      mediaStill ? mediaStill.split(/[/\\]/).pop() ?? mediaStill : null
+                    }
+                  />
+                ) : null}
               </div>
             </div>
           </TooltipProvider>
 
-          <div className="mt-4 flex justify-center">
+          <div className="mt-4 flex flex-wrap justify-center gap-2">
             <button
               type="button"
               data-testid="home-research-deeply"
@@ -1566,6 +1614,35 @@ export function HomeView(props: {
               }}
             >
               {t("workflow.researchDeeply")}
+            </button>
+            <button
+              type="button"
+              data-testid="home-create-image"
+              className="rounded-full border border-hairline bg-muted/40 px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-muted/60"
+              onClick={() => {
+                setMediaStudio({ kind: "image" });
+                props.onGoal("/image ");
+                props.onComposerIntent?.("image");
+                focusComposer();
+              }}
+            >
+              {t("mediaStudio.createImage")}
+            </button>
+            <button
+              type="button"
+              data-testid="home-create-video"
+              className="rounded-full border border-hairline bg-muted/40 px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-muted/60"
+              onClick={() => {
+                setMediaStudio({
+                  kind: "video",
+                  durationSec: MEDIA_DURATION_DEFAULT,
+                });
+                props.onGoal("/video ");
+                props.onComposerIntent?.("video");
+                focusComposer();
+              }}
+            >
+              {t("mediaStudio.createVideo")}
             </button>
           </div>
 

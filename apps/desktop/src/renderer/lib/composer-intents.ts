@@ -15,11 +15,12 @@ import {
   SLASH_COMMANDS,
 } from "./composer-input";
 
-/** The six Phase 3 workflows users can start without slash syntax. */
+/** Phase 3 workflows users can start without slash syntax. */
 export type ComposerIntentId =
   | "brief"
   | "research"
   | "image"
+  | "video"
   | "organize"
   | "schedule"
   | "summarize";
@@ -38,7 +39,7 @@ export type ComposerIntentDef = {
    */
   slashToken?: string;
   /** Lucide-style icon key for Home chips */
-  icon: "pen" | "search" | "image" | "folder" | "calendar" | "sparkles";
+  icon: "pen" | "search" | "image" | "video" | "folder" | "calendar" | "sparkles";
   /** Auto-apply effort when arming (restored on clear if user did not override). */
   effort?: EffortLevel;
   /** Preferred role pack id when user has no explicit pack. */
@@ -84,6 +85,16 @@ export const COMPOSER_INTENT_CATALOG: ComposerIntentDef[] = [
     goalKey: "slash.imageGoal",
     slashToken: "image",
     icon: "image",
+    preferRolePack: "marketing",
+    sendAction: "create_task",
+  },
+  {
+    id: "video",
+    labelKey: "intent.video",
+    descKey: "intent.videoDesc",
+    goalKey: "slash.videoGoal",
+    slashToken: "video",
+    icon: "video",
     preferRolePack: "marketing",
     sendAction: "create_task",
   },

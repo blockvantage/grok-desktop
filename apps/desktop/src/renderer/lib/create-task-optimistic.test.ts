@@ -7,6 +7,7 @@ import {
   mergeCreatedTask,
   dropOptimisticTasks,
   resolveFollowUpWorkspaceRoots,
+  weaveFollowUpComposerGoal,
 } from "./create-task-optimistic";
 import type { Task } from "@grokdesk/shared";
 
@@ -111,6 +112,69 @@ describe("create-task-optimistic", () => {
     expect(buildCreateTaskParams(form)).not.toHaveProperty("planFirst");
   });
 
+  it("weaves video studio duration, 4:3, voice, still, and workspace videos/", () => {
+    const p = buildCreateTaskParams({
+      ...form,
+      goal: "/video launch teaser",
+      mediaStudio: {
+        kind: "video",
+        durationSec: 10,
+        aspectRatio: "4:3",
+        voice: "eve",
+      },
+      attachments: [
+        {
+          id: "att-1",
+          name: "poster.png",
+          sourcePath: "/ws/poster.png",
+          kind: "image",
+        },
+      ],
+    });
+    expect(p.goal).toContain("Duration: 10 seconds");
+    expect(p.goal).toContain("Aspect ratio: 4:3");
+    expect(p.goal).toContain('preset voice "eve"');
+    expect(p.goal).toContain("/ws/poster.png");
+    expect(p.goal).toMatch(/workspace videos\//);
+    expect(p.goal).toMatch(/Artifacts/);
+  });
+
+  it("weaves image aspect and workspace images/ on /image", () => {
+    const p = buildCreateTaskParams({
+      ...form,
+      goal: "/image product shot",
+      mediaStudio: { kind: "image", aspectRatio: "3:4" },
+    });
+    expect(p.goal).toContain("Aspect ratio: 3:4");
+    expect(p.goal).toMatch(/workspace images\//);
+    expect(p.goal).not.toContain("Duration:");
+  });
+
+  it("does not weave leftover video studio onto a plain brief", () => {
+    const p = buildCreateTaskParams({
+      ...form,
+      goal: "hello",
+      mediaStudio: {
+        kind: "video",
+        durationSec: 10,
+        aspectRatio: "4:3",
+      },
+    });
+    expect(p.goal).toBe("hello");
+    expect(p.goal).not.toContain("Duration:");
+  });
+
+  it("weaves workspace images/ when the image intent is armed", () => {
+    const p = buildCreateTaskParams({
+      ...form,
+      goal: "product shot",
+      intentId: "image",
+      mediaStudio: { kind: "image", aspectRatio: "1:1" },
+    });
+    expect(p.goal).toContain("Aspect ratio: 1:1");
+    expect(p.goal).toMatch(/workspace images\//);
+  });
+
   it("includes the stable mutation id allocated with the optimistic task", () => {
     expect(buildCreateTaskParams(form, "optimistic-create-1")).toMatchObject({
       clientMutationId: "optimistic-create-1",
@@ -187,6 +251,46 @@ describe("create-task-optimistic", () => {
     // Live form effort wins over parent so mid-conversation changes apply.
     expect(params.effort).toBe("heavy");
     expect(params.effortExplicit).toBe(true);
+  });
+
+  it("weaves video studio onto a follow-up /video turn", () => {
+    const base = buildOptimisticTask({
+      ...form,
+      id: "parent-1",
+      nowIso: "2026-01-01T00:00:00.000Z",
+    });
+    const params = buildFollowUpTaskParams({
+      goalText: "/video hero clip",
+      base,
+      composerRoot: "/ws",
+      fallbackModel: "grok-4.5",
+      fallbackEffort: "normal",
+      fallbackApprovalMode: "balanced",
+      mediaStudio: { kind: "video", durationSec: 8, aspectRatio: "3:4" },
+    });
+    expect(params.goal).toContain("/video hero clip");
+    expect(params.goal).toContain("Duration: 8 seconds");
+    expect(params.goal).toContain("Aspect ratio: 3:4");
+    expect(params.goal).toMatch(/workspace videos\//);
+  });
+
+  it("weaves default duration onto /video even without studio form state", () => {
+    const p = buildCreateTaskParams({ ...form, goal: "/video teaser" });
+    expect(p.goal).toContain("Duration: 6 seconds");
+    expect(p.goal).toMatch(/workspace videos\//);
+  });
+
+  it("weaves live follow-up /video while leaving plain text alone", () => {
+    expect(weaveFollowUpComposerGoal({ goalText: "next step" })).toBe(
+      "next step",
+    );
+    const woven = weaveFollowUpComposerGoal({
+      goalText: "/video hero clip",
+      mediaStudio: { kind: "video", durationSec: 8, aspectRatio: "3:4" },
+    });
+    expect(woven).toContain("/video hero clip");
+    expect(woven).toContain("Duration: 8 seconds");
+    expect(woven).toMatch(/workspace videos\//);
   });
 
   it("includes follow-up mutation and revision ids only when supplied", () => {

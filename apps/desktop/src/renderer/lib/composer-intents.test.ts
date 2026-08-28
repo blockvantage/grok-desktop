@@ -22,6 +22,8 @@ const en: Record<string, string> = {
     "Organize files in this folder into a clear structure and summarize what you did",
   "slash.imageGoal":
     "Generate a polished product image for this project and save it under ./artifacts with a short caption file",
+  "slash.videoGoal":
+    "Generate a short polished teaser video for this project and save it under ./artifacts as an mp4",
   "intent.scheduleGoal":
     "Set up a recurring schedule for this work. Propose a clear name, cadence, and goal template the user can confirm.",
   "intent.summarizeGoal":
@@ -40,10 +42,21 @@ function translate(key: string, params?: Record<string, string>): string {
 }
 
 describe("composer-intents catalog", () => {
-  it("exposes the six Phase 3 workflows", () => {
+  it("exposes the seven Phase 3 workflows including video", () => {
     const ids = COMPOSER_INTENT_CATALOG.map((d) => d.id).sort();
     expect(ids).toEqual(
-      ["brief", "image", "organize", "research", "schedule", "summarize"].sort(),
+      [
+        "brief",
+        "image",
+        "organize",
+        "research",
+        "schedule",
+        "summarize",
+        "video",
+      ].sort(),
+    );
+    expect(COMPOSER_INTENT_CATALOG.find((d) => d.id === "video")?.icon).toBe(
+      "video",
     );
   });
 
@@ -62,6 +75,7 @@ describe("intent expansion vs slash equivalence", () => {
     "brief",
     "research",
     "image",
+    "video",
     "organize",
   ];
 
@@ -73,7 +87,7 @@ describe("intent expansion vs slash equivalence", () => {
       expect(intentGoal).toBe(slashGoal);
       expect(intentGoal).toContain("Topic: launch Q3");
       // No slash token left in expanded goal
-      expect(intentGoal).not.toMatch(/^\/(brief|research|image|organize)/);
+      expect(intentGoal).not.toMatch(/^\/(brief|research|image|video|organize)/);
     });
 
     it(`${id}: chip path and slash path expand to the same goal (no args)`, () => {

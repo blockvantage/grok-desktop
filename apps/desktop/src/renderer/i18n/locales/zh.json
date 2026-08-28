@@ -1730,6 +1730,8 @@
     "researchDesc": "带来源的深度调研 · 高工作量",
     "image": "创建图像",
     "imageDesc": "在 ./artifacts 下生成视觉稿",
+    "video": "创建视频",
+    "videoDesc": "可设置时长、比例和配音的短片",
     "organize": "整理文件",
     "organizeDesc": "整理此文件夹并总结变更",
     "schedule": "安排工作",
@@ -1780,5 +1782,24 @@
     "budgetLine": "占用 {used} · 预留 {reserved} · 剩余 {remaining}",
     "researchDeeply": "深入研究",
     "researchDeeplyDesc": "一支团队分阶段研究，并实时显示进度"
+  },
+  "mediaStudio": {
+    "createImage": "创建一张图片",
+    "createVideo": "创建一段视频",
+    "videoLabel": "视频",
+    "imageLabel": "图片",
+    "duration": "时长",
+    "durationSec": "{n}秒",
+    "aspect": "比例",
+    "aspectAuto": "自动",
+    "voiceLabel": "配音",
+    "voiceNone": "无配音",
+    "stillAttached": "静帧：{name}",
+    "voices": {
+      "ara": "Ara",
+      "eve": "Eve",
+      "leo": "Leo",
+      "rex": "Rex"
+    }
   }
 }

@@ -1730,6 +1730,8 @@
     "researchDesc": "Pesquisa profunda com fontes · esforço alto",
     "image": "Criar imagem",
     "imageDesc": "Gerar um visual em ./artifacts",
+    "video": "Criar vídeo",
+    "videoDesc": "Clipe curto com duração, proporção e voz",
     "organize": "Organizar arquivos",
     "organizeDesc": "Estruturar esta pasta e resumir mudanças",
     "schedule": "Agendar trabalho",
@@ -1780,5 +1782,24 @@
     "budgetLine": "{used} ocupados · {reserved} reservados · {remaining} restantes",
     "researchDeeply": "Investigar a fundo",
     "researchDeeplyDesc": "Uma equipa investiga por fases e mostra o progresso ao vivo"
+  },
+  "mediaStudio": {
+    "createImage": "Criar uma imagem",
+    "createVideo": "Criar um vídeo",
+    "videoLabel": "Vídeo",
+    "imageLabel": "Imagem",
+    "duration": "Duração",
+    "durationSec": "{n}s",
+    "aspect": "Proporção",
+    "aspectAuto": "Auto",
+    "voiceLabel": "Voz",
+    "voiceNone": "Sem voz",
+    "stillAttached": "Imagem: {name}",
+    "voices": {
+      "ara": "Ara",
+      "eve": "Eve",
+      "leo": "Leo",
+      "rex": "Rex"
+    }
   }
 }

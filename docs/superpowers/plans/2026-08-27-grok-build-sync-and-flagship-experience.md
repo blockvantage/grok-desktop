@@ -142,7 +142,7 @@ Upstream `ToolKind` is now rich enough to drive renderers without name matching:
 - Wire `/deep-research` and `/workflow` (agent-side builtins, gated by `WorkflowLaunches`/`WorkflowManagement`) with a run panel driven entirely by `WorkflowUpdated`: objective, phases with the active one highlighted, per-agent rows, budget gauge (`agents_used/reserved/remaining`), pause/resume/stop. The payload already carries everything — this is a rendering task, and it is the single most "wow" non-coder feature available.
 - Home gets a "Research deeply" recipe tile that maps to it.
 
-### 3.2 Media studio
+### 3.2 Media studio ✅ (2026-08-27; Home tiles + composer weave + workspace follow-up)
 - Surface upstream video-gen upgrades: preset voices, single-image input, 1–15s durations, 4:3/3:4 aspect ratios; call-count limits are handled upstream. Image/video generation gets a first-class Home tile and composer affordance ("Create an image/video…"), with results auto-saved to the workspace + Artifacts (Phase 0.1 media parity makes this reliable on the default path).
 
 ### 3.3 Memory that compounds (the 4×-deferred recap)

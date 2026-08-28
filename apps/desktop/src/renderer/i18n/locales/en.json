@@ -353,6 +353,8 @@
     "researchDesc": "Deep research with sources · heavy effort",
     "image": "Create image",
     "imageDesc": "Generate a visual under ./artifacts",
+    "video": "Create video",
+    "videoDesc": "Short clip with length, aspect, and voice",
     "organize": "Organize files",
     "organizeDesc": "Structure this folder and summarize changes",
     "schedule": "Schedule work",
@@ -1132,6 +1134,25 @@
     "budgetLine": "{used} busy · {reserved} held · {remaining} left",
     "researchDeeply": "Research deeply",
     "researchDeeplyDesc": "A team researches in phases and shows live progress"
+  },
+  "mediaStudio": {
+    "createImage": "Create an image",
+    "createVideo": "Create a video",
+    "videoLabel": "Video",
+    "imageLabel": "Image",
+    "duration": "Length",
+    "durationSec": "{n}s",
+    "aspect": "Aspect",
+    "aspectAuto": "Auto",
+    "voiceLabel": "Voice",
+    "voiceNone": "No voice",
+    "stillAttached": "Still: {name}",
+    "voices": {
+      "ara": "Ara",
+      "eve": "Eve",
+      "leo": "Leo",
+      "rex": "Rex"
+    }
   },
   "mermaid": {
     "title": "Diagram",

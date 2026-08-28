@@ -50,6 +50,7 @@ describe("follow-up outbox routing (AC1)", () => {
     expect(ws).toMatch(/onRecoveryAction/);
     expect(ws).toMatch(/props\.onFollowUp/);
     expect(ws).toMatch(/enqueueAsync/);
+    expect(ws).toMatch(/weaveFollowUpComposerGoal/);
   });
 
   it("composer and chip entry points share buildOutboxFollowUpParams", () => {

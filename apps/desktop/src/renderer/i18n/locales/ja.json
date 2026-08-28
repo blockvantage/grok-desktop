@@ -1730,6 +1730,8 @@
     "researchDesc": "出典付きの深い調査 · 高負荷",
     "image": "画像を作成",
     "imageDesc": "./artifacts にビジュアルを生成",
+    "video": "動画を作成",
+    "videoDesc": "長さ・比率・音声を指定した短いクリップ",
     "organize": "ファイル整理",
     "organizeDesc": "フォルダを整理し変更を要約",
     "schedule": "作業をスケジュール",
@@ -1780,5 +1782,24 @@
     "budgetLine": "稼働 {used} · 予約 {reserved} · 残り {remaining}",
     "researchDeeply": "深く調べる",
     "researchDeeplyDesc": "チームが段階的に調べ、進み具合をその場で見せます"
+  },
+  "mediaStudio": {
+    "createImage": "画像を作る",
+    "createVideo": "動画を作る",
+    "videoLabel": "動画",
+    "imageLabel": "画像",
+    "duration": "長さ",
+    "durationSec": "{n}秒",
+    "aspect": "比率",
+    "aspectAuto": "自動",
+    "voiceLabel": "音声",
+    "voiceNone": "音声なし",
+    "stillAttached": "静止画: {name}",
+    "voices": {
+      "ara": "Ara",
+      "eve": "Eve",
+      "leo": "Leo",
+      "rex": "Rex"
+    }
   }
 }

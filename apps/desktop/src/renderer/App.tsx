@@ -1228,6 +1228,7 @@ export function App() {
   async function createTask(
     overrideGoal?: string,
     attachments?: import("@grokdesk/shared").TaskAttachment[],
+    mediaStudio?: import("@grokdesk/shared").MediaStudioOptions | null,
   ) {
     // Task 12: do not start a duplicate root while a pending submit reconciles.
     if (shouldBlockNewRootSubmit(readPendingMutation())) {
@@ -1285,6 +1286,7 @@ export function App() {
           ),
       }),
       intentId: composerIntentId,
+      mediaStudio: mediaStudio ?? null,
     };
 
     const createParams = buildCreateTaskParams(form as never);
@@ -2117,7 +2119,7 @@ export function App() {
             onAttachments={setHomeAttachments}
             draftRestoredNotice={draftRestoredNotice}
             onDismissDraftRestored={() => setDraftRestoredNotice(false)}
-            onRun={(g, atts) => void createTask(g, atts)}
+            onRun={(g, atts, media) => void createTask(g, atts, media)}
             tasks={tasks}
             memories={memories}
             schedules={schedules}
