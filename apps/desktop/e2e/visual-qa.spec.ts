@@ -13,7 +13,7 @@
  *   GROKDESK_VISUAL_USER_DATA=/path/to/GrokDesk userData
  *   GROKDESK_NODE_PATH=/path/to/system/node  (gateway native ABI)
  *
- * Soft-skips cleanly when out/main is missing or Electron cannot launch.
+ * Fails (does not skip) when out/main is missing or Electron cannot launch.
  *
  * Known environment blockers (historical):
  * - Electron firstWindow never opens without a built out/main
@@ -111,8 +111,9 @@ test.describe("visual QA gate", () => {
         path.join(outDir, "visual-qa.json"),
         JSON.stringify(report, null, 2),
       );
-      test.skip(true, report.skipReason);
-      return;
+      throw new Error(
+        `visual-qa requires a built app (pnpm --filter @grokdesk/desktop build): ${report.skipReason}`,
+      );
     }
 
     const userData =
@@ -145,8 +146,7 @@ test.describe("visual QA gate", () => {
         path.join(outDir, "visual-qa.json"),
         JSON.stringify(report, null, 2),
       );
-      test.skip(true, report.skipReason);
-      return;
+      throw new Error(`visual-qa failed to launch Electron: ${report.skipReason}`);
     }
 
     try {
@@ -156,7 +156,7 @@ test.describe("visual QA gate", () => {
         await page.waitForLoadState("domcontentloaded");
       } catch (e) {
         // Hang class: Electron process up but firstWindow never opens
-        // (gateway child ABI, blank window, or fixture lifecycle). Soft-skip.
+        // (gateway child ABI, blank window, or fixture lifecycle). Fail closed.
         report.skipReason = `firstWindow timeout/hang: ${
           e instanceof Error ? e.message : String(e)
         }`;
@@ -172,8 +172,7 @@ test.describe("visual QA gate", () => {
         } catch {
           /* ignore */
         }
-        test.skip(true, report.skipReason);
-        return;
+        throw new Error(`visual-qa firstWindow failed: ${report.skipReason}`);
       }
 
       page.on("console", (msg) => {

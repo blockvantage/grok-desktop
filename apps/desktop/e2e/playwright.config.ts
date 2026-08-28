@@ -8,9 +8,8 @@ import { defineConfig } from "@playwright/test";
  *   - GROKDESK_PROVIDER_ENGINE=1 + GROKDESK_PROVIDER_ID=fake
  *   - GROKDESK_E2E=1 enables privileged crash/fault IPC (main only)
  *
- * Soft-skip matrix (local only):
- *   smoke / account / browser / visual-qa — need built out/main
- * CI e2e:chat must build first and fail (not soft-skip) when Electron cannot launch.
+ * visual-qa and e2e:chat fail (not skip) when out/main is missing or Electron
+ * cannot launch. smoke / account / browser may still skip locally.
  *
  * Run:
  *   export GROKDESK_NODE_PATH="$(which node)"
