@@ -31,6 +31,8 @@ export * from "./waiting-on-you.js";
 export * from "./goal-update.js";
 export * from "./workflow-update.js";
 export * from "./media-studio.js";
+export * from "./weekly-recap.js";
+export * from "./memory-update.js";
 export * from "./recurrence.js";
 export * from "./role-packs.js";
 export * from "./connector-presets.js";

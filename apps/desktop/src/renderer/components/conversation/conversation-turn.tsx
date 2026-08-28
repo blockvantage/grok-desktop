@@ -3,6 +3,7 @@ import {
   ArrowUp,
   Check,
   ChevronRight,
+  Bookmark,
   Copy,
   FileText,
   Loader2,
@@ -115,6 +116,7 @@ export function ConversationTurn({
   answerBusy = false,
   onRecoveryAction,
   onUndoTurn,
+  onRememberAnswer,
   activityCaption = null,
   regenerating = false,
 }: {
@@ -140,6 +142,8 @@ export function ConversationTurn({
   onRecoveryAction?: (action: RecoveryAction, turnId: string) => void;
   /** Capability-gated undo-last-turn (ACP rewind). Hidden when undefined. */
   onUndoTurn?: (turn: ConversationTurnView) => void | Promise<void>;
+  /** One-tap Remember this for the answer (Desk memory.upsert). */
+  onRememberAnswer?: (turn: ConversationTurnView, text: string) => void | Promise<void>;
   /** PROG-3: latest run_progress / liveSummary for the active turn. */
   activityCaption?: string | null;
   /** CHAT-6: freeze the user bubble while a revision is regenerating. */
@@ -177,6 +181,7 @@ export function ConversationTurn({
     useState<ApprovalDecision | null>(null);
   const [undoBusy, setUndoBusy] = useState(false);
   const [answerCopied, setAnswerCopied] = useState(false);
+  const [remembered, setRemembered] = useState(false);
   const [retryBusy, setRetryBusy] = useState(false);
   const [editDraft, setEditDraft] = useState<string | null>(null);
   const [saveBusy, setSaveBusy] = useState(false);
@@ -556,6 +561,53 @@ export function ConversationTurn({
         </div>
       ) : null}
 
+      {turn.recalledMemory && turn.recalledMemory.length > 0 ? (
+        <div
+          className="rounded-lg border border-white/[0.07] bg-white/[0.03] px-3 py-2 text-sm"
+          data-testid="memory-recall-card"
+          role="note"
+        >
+          <p className="text-2xs font-medium uppercase tracking-wide text-muted-foreground">
+            {t("memory.verifyContext")}
+          </p>
+          <p className="mt-0.5 text-2xs text-muted-foreground">
+            {t("memory.verifyHint")}
+          </p>
+          <ul className="mt-1.5 space-y-1">
+            {turn.recalledMemory.map((item, i) => (
+              <li key={`${item.title ?? "m"}-${i}`} className="text-xs leading-relaxed">
+                {item.content || item.title}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {turn.suggestedMemory &&
+      turn.suggestedMemory.length > 0 &&
+      onRememberAnswer
+        ? turn.suggestedMemory.map((item, i) => {
+            const text = item.content || item.title || "";
+            if (!text) return null;
+            return (
+              <div
+                key={`sug-${i}`}
+                className="flex flex-wrap items-start justify-between gap-2 rounded-lg border border-primary/20 bg-primary/[0.05] px-3 py-2"
+                data-testid="memory-engine-suggestion"
+              >
+                <p className="min-w-0 flex-1 text-xs leading-relaxed">{text}</p>
+                <button
+                  type="button"
+                  className="shrink-0 rounded-md px-1.5 py-0.5 text-2xs text-muted-foreground hover:bg-white/[0.06] hover:text-foreground"
+                  onClick={() => void onRememberAnswer(turn, text)}
+                >
+                  {t("memory.rememberThis")}
+                </button>
+              </div>
+            );
+          })
+        : null}
+
       {turn.compaction ? (
         <div
           className="rounded-lg border border-white/[0.07] bg-white/[0.03] px-3 py-2 text-sm text-muted-foreground"
@@ -689,6 +741,24 @@ export function ConversationTurn({
                       {t("turn.copy")}
                     </>
                   )}
+                </button>
+              ) : null}
+              {answerMarkdown && onRememberAnswer ? (
+                <button
+                  type="button"
+                  data-testid="remember-answer"
+                  className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-2xs text-muted-foreground transition-colors hover:bg-white/[0.06] hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  aria-label={t("memory.rememberThis")}
+                  onClick={() => {
+                    void Promise.resolve(
+                      onRememberAnswer(turn, answerMarkdown),
+                    ).then(() => setRemembered(true));
+                  }}
+                >
+                  <Bookmark className="h-3 w-3" strokeWidth={1.75} aria-hidden="true" />
+                  {remembered
+                    ? t("memory.saved")
+                    : t("memory.rememberThis")}
                 </button>
               ) : null}
               {canRetry ? (

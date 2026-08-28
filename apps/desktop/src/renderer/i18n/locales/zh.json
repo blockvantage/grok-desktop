@@ -344,7 +344,13 @@
     "suggestionSensitive": "可能含敏感内容 — 批准前请检查。",
     "suggestionApproved": "已保存到记忆",
     "suggestionDismissed": "已忽略建议",
-    "emptyWithSuggestions": "尚无已存记忆 — 审阅上方建议或手动添加。"
+    "emptyWithSuggestions": "尚无已存记忆 — 审阅上方建议或手动添加。",
+    "rememberThis": "记住这个",
+    "saved": "已保存到记忆",
+    "saveFailed": "无法保存这条记忆",
+    "learnThisWeek": "从本周学习",
+    "verifyContext": "核对这条被召回的记忆",
+    "verifyHint": "引擎召回了这条内容。请确认它仍然正确。"
   },
   "workspace": {
     "followUp": "为此工作区补充指示…",
@@ -1269,8 +1275,10 @@
       "schedule_done": "计划完成",
       "suggestion": "建议",
       "reauth": "重新登录",
-      "engine": "引擎"
+      "engine": "引擎",
+      "recap": "本周回顾"
     },
+    "rememberLine": "记住",
     "emptyTitle": "全部处理完毕",
     "emptyDesc": "批准、建议和提醒会出现在这里。"
   },

@@ -401,6 +401,11 @@ export function TaskWorkspaceView(props: {
   onSignIn?: () => void;
   onOpenSettings?: () => void;
   onRememberTakeaways?: (taskId: string) => void;
+  onRememberText?: (input: {
+    taskId: string;
+    text: string;
+    goal?: string;
+  }) => void | Promise<void>;
   onImagineFromTask?: (taskId: string, goal: string) => void;
   /** Jump to schedules with a pre-filled goal template. */
   onScheduleFromTask?: (goal: string) => void;
@@ -2224,6 +2229,16 @@ export function TaskWorkspaceView(props: {
                 }
               }}
               onUndoTurn={undoConversationTurn}
+              onRememberAnswer={
+                props.onRememberText
+                  ? (turn, text) =>
+                      props.onRememberText?.({
+                        taskId: turn.taskId,
+                        text,
+                        goal: turn.userMessage,
+                      })
+                  : undefined
+              }
             />
           </div>
         </ScrollArea>

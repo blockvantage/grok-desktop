@@ -1590,6 +1590,15 @@ export class TaskRunner {
         });
         return "continue";
 
+      case "memory_update":
+        this.tasks.appendEvent(taskId, "step", {
+          title: "memory_update",
+          action: event.action,
+          ...(event.title ? { memoryTitle: event.title } : {}),
+          ...(event.content ? { content: event.content } : {}),
+        });
+        return "continue";
+
       case "session_meta":
         // Persist for resume only — never as conversation/task transcript.
         if (attemptId && this.runAttempts && event.providerSessionId) {

@@ -618,6 +618,12 @@ describe("Wave I/T parity structure", () => {
     expect(intents).toMatch(/id: "video"/);
     expect(home).toMatch(/intent-chip-/);
     expect(home).toMatch(/onComposerIntent|composerIntentId/);
+    expect(exists("components/views/memory-view.tsx")).toBe(true);
+    const memoryView = read("components/views/memory-view.tsx");
+    expect(memoryView).toMatch(/weekly-recap-card/);
+    expect(read("components/conversation/conversation-turn.tsx")).toMatch(
+      /remember-answer/,
+    );
     expect(home).toMatch(/clearComposerIntent|selectComposerIntent/);
 
     const create = read("lib/create-task-optimistic.ts");
@@ -634,8 +640,10 @@ describe("Wave I/T parity structure", () => {
     expect(memory).toMatch(/onDismissSuggestion/);
 
     const appPhase3 = read("App.tsx");
-    expect(appPhase3).toMatch(/createSuggestionFromTakeaways/);
+    expect(appPhase3).toMatch(/createSuggestionFromTakeaways|onRememberText/);
     expect(appPhase3).toMatch(/approveMemorySuggestion/);
+    expect(appPhase3).toMatch(/weeklyRecap|buildWeeklyRecap/);
+    expect(appPhase3).toMatch(/memory\.upsert/);
     expect(appPhase3).toMatch(/composerIntentId|setComposerIntentId/);
     expect(appPhase3).toMatch(/mediaStudio/);
   });

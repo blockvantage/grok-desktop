@@ -344,7 +344,13 @@
     "suggestionSensitive": "May contain sensitive content — review before approving.",
     "suggestionApproved": "Saved to memory",
     "suggestionDismissed": "Suggestion dismissed",
-    "emptyWithSuggestions": "Nothing saved yet — review suggestions above, or add memory manually."
+    "emptyWithSuggestions": "Nothing saved yet — review suggestions above, or add memory manually.",
+    "rememberThis": "Remember this",
+    "saved": "Saved to memory",
+    "saveFailed": "Couldn’t save that memory",
+    "learnThisWeek": "Learn from this week",
+    "verifyContext": "Check this remembered context",
+    "verifyHint": "The engine recalled this. Confirm it still looks right."
   },
   "intent": {
     "brief": "Brief",
@@ -1369,8 +1375,10 @@
       "schedule_done": "Schedule done",
       "suggestion": "Suggestion",
       "reauth": "Sign-in",
-      "engine": "Engine"
+      "engine": "Engine",
+      "recap": "Weekly recap"
     },
+    "rememberLine": "Remember",
     "emptyTitle": "You're caught up",
     "emptyDesc": "Approvals, suggestions, and nudges will land here."
   },

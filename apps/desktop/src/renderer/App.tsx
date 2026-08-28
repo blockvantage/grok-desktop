@@ -32,6 +32,7 @@ import { useAppSync } from "@/hooks/use-app-sync";
 import { useTaskSubmission } from "@/hooks/use-task-submission";
 import {
   buildTakeawaysContent,
+  buildWeeklyRecap,
   isActiveTaskStatus,
   projectWaitingOnYou,
   waitingOnYouTaskIds,
@@ -224,7 +225,6 @@ import {
 import type { ComposerIntentId } from "@/lib/composer-intents";
 import {
   approveMemorySuggestion,
-  createSuggestionFromTakeaways,
   dismissMemorySuggestion,
   editMemorySuggestion,
   loadMemorySuggestionStore,
@@ -1210,6 +1210,27 @@ export function App() {
   const waitingOnYou = useMemo(
     () => projectWaitingOnYou({ tasks }),
     [tasks],
+  );
+  const weeklyRecap = useMemo(
+    () =>
+      buildWeeklyRecap({
+        now: new Date(),
+        memoryItems: memories.map((m) => ({
+          id: m.id,
+          title: m.title,
+          content: m.content,
+          updatedAt: m.updatedAt,
+          kind: m.kind,
+        })),
+        completedTaskSummaries: tasks
+          .filter((t) => t.status === "done" && t.completedAt)
+          .map((t) => ({
+            id: t.id,
+            goal: t.goal,
+            doneAt: t.completedAt as string,
+          })),
+      }),
+    [memories, tasks],
   );
   const waitingOnYouTaskIdList = useMemo(
     () => waitingOnYouTaskIds(waitingOnYou),
@@ -2370,31 +2391,35 @@ export function App() {
                     })),
                     buildContent: buildTakeawaysContent,
                   });
-                  // Phase 3: draft a reviewable suggestion; do not auto-commit
-                  // durable memory from takeaways (user must approve in Memory).
-                  const drafted = createSuggestionFromTakeaways(
-                    loadMemorySuggestionStore(),
-                    {
-                      taskId: tsk.id,
-                      goal: tsk.goal,
-                      title: tsk.title,
-                      content: upsert.content,
-                    },
-                  );
-                  setMemorySuggestionStore(drafted.store);
-                  saveMemorySuggestionStore(drafted.store);
-                  if (drafted.suggestion) {
+                  try {
+                    await rpc("memory.upsert", upsert);
+                    toast({ description: t("memory.saved") });
+                  } catch {
                     toast({
-                      description: t("memory.suggestionsDesc"),
+                      description: t("memory.saveFailed"),
+                      variant: "destructive",
                     });
-                    withViewTransition(() => setNav("memory"));
-                  } else {
-                    // Fallback: user explicitly asked to remember; still require
-                    // Memory review path when content is too thin for a draft.
-                    toast({ description: t("workspace.takeawaysSaved") });
                   }
                   void refreshSide();
                 })();
+              }}
+              onRememberText={async ({ taskId, text, goal }) => {
+                const titleGoal = (goal || "").replace(/\s+/g, " ").trim().slice(0, 80);
+                try {
+                  await rpc("memory.upsert", {
+                    kind: "episodic",
+                    title: titleGoal ? `Takeaway: ${titleGoal}` : "Takeaway",
+                    content: text.slice(0, 8000),
+                    provenance: `task:${taskId}`,
+                  });
+                  toast({ description: t("memory.saved") });
+                  void refreshSide();
+                } catch {
+                  toast({
+                    description: t("memory.saveFailed"),
+                    variant: "destructive",
+                  });
+                }
               }}
               onImagineFromTask={(_taskId, goal) => {
                 const next = imagineFromTaskNavState(goal);
@@ -2476,6 +2501,24 @@ export function App() {
             <MemoryView
               memories={filterMemoriesBySearch(memories, search)}
               suggestions={pendingMemorySuggestions(memorySuggestionStore)}
+              weeklyRecap={weeklyRecap}
+              onRememberRecapLine={async (line) => {
+                try {
+                  await rpc("memory.upsert", {
+                    kind: "episodic",
+                    title: line.slice(0, 80),
+                    content: line,
+                    provenance: "recap",
+                  });
+                  toast({ description: t("memory.saved") });
+                  await refreshSide();
+                } catch {
+                  toast({
+                    description: t("memory.saveFailed"),
+                    variant: "destructive",
+                  });
+                }
+              }}
               onSave={async (input) => {
                 await rpc("memory.upsert", input);
                 await refreshSide();
@@ -2658,6 +2701,25 @@ export function App() {
               label: t("slash.remember"),
               keywords: ["memory", "remember", "takeaways"],
               onSelect: () => {
+                if (selectedId) {
+                  const tsk = tasks.find((x) => x.id === selectedId);
+                  if (tsk) {
+                    void rpc("memory.upsert", {
+                      kind: "episodic",
+                      title: `Takeaway: ${(tsk.title || tsk.goal).slice(0, 80)}`,
+                      content: tsk.goal,
+                      provenance: `task:${tsk.id}`,
+                    }).then(
+                      () => toast({ description: t("memory.saved") }),
+                      () =>
+                        toast({
+                          description: t("memory.saveFailed"),
+                          variant: "destructive",
+                        }),
+                    );
+                    return;
+                  }
+                }
                 withViewTransition(() => setNav("memory"));
               },
             },
@@ -2743,6 +2805,23 @@ export function App() {
           setInboxOpen(false);
         }}
         onRefreshSide={() => void refreshSide()}
+        onRememberRecapLine={async (line) => {
+          try {
+            await rpc("memory.upsert", {
+              kind: "episodic",
+              title: line.slice(0, 80),
+              content: line,
+              provenance: "recap",
+            });
+            toast({ description: t("memory.saved") });
+            void refreshSide();
+          } catch {
+            toast({
+              description: t("memory.saveFailed"),
+              variant: "destructive",
+            });
+          }
+        }}
       />
       </Suspense>
 

@@ -277,6 +277,23 @@ describe("parseStreamingJsonLine", () => {
     ]);
   });
 
+  it("maps MemoryRecalled envelopes to memory_update events", () => {
+    expect(
+      parseStreamingJsonLine(
+        JSON.stringify({
+          type: "MemoryRecalled",
+          content: "Be concise",
+        }),
+      ),
+    ).toEqual([
+      {
+        type: "memory_update",
+        action: "recalled",
+        content: "Be concise",
+      },
+    ]);
+  });
+
   it("maps GoalUpdated envelopes to goal_update events", () => {
     expect(
       parseStreamingJsonLine(

@@ -43,6 +43,7 @@ export function takeawaysMemoryUpsert(input: {
   kind: "episodic";
   title: string;
   content: string;
+  provenance: string;
 } {
   const content = input.buildContent({
     taskId: input.task.id,
@@ -54,5 +55,6 @@ export function takeawaysMemoryUpsert(input: {
     kind: "episodic",
     title: `Takeaways: ${label}`,
     content,
+    provenance: `task:${input.task.id}`,
   };
 }

@@ -19,6 +19,8 @@ export type SessionUpdateKind =
   | "auto_compact_failed"
   | "goal_updated"
   | "workflow_updated"
+  | "memory_updated"
+  | "memory_recalled"
   | "unknown";
 
 const KNOWN_UPDATES = new Set<SessionUpdateKind>([
@@ -38,6 +40,8 @@ const KNOWN_UPDATES = new Set<SessionUpdateKind>([
   "auto_compact_failed",
   "goal_updated",
   "workflow_updated",
+  "memory_updated",
+  "memory_recalled",
 ]);
 
 const KNOWN_TOOL_KINDS = new Set([
@@ -89,7 +93,11 @@ export function decodeSessionUpdate(update: unknown): {
                           ? "goal_updated"
                           : rawToken === "WorkflowUpdated"
                             ? "workflow_updated"
-                            : rawToken;
+                            : rawToken === "MemoryUpdated"
+                              ? "memory_updated"
+                              : rawToken === "MemoryRecalled"
+                                ? "memory_recalled"
+                                : rawToken;
   const kind = KNOWN_UPDATES.has(token as SessionUpdateKind)
     ? (token as SessionUpdateKind)
     : "unknown";

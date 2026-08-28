@@ -344,7 +344,13 @@
     "suggestionSensitive": "Kann sensible Inhalte enthalten — vor dem Genehmigen prüfen.",
     "suggestionApproved": "Im Speicher gespeichert",
     "suggestionDismissed": "Vorschlag verworfen",
-    "emptyWithSuggestions": "Noch nichts gespeichert — Vorschläge oben prüfen oder manuell hinzufügen."
+    "emptyWithSuggestions": "Noch nichts gespeichert — Vorschläge oben prüfen oder manuell hinzufügen.",
+    "rememberThis": "Merken",
+    "saved": "Im Speicher gespeichert",
+    "saveFailed": "Konnte die Erinnerung nicht speichern",
+    "learnThisWeek": "Aus dieser Woche lernen",
+    "verifyContext": "Erinnerung prüfen",
+    "verifyHint": "Die Engine hat das abgerufen. Prüfe, ob es noch stimmt."
   },
   "workspace": {
     "followUp": "Nachfrage für diesen Arbeitsbereich…",
@@ -1269,8 +1275,10 @@
       "schedule_done": "Zeitplan fertig",
       "suggestion": "Vorschlag",
       "reauth": "Anmeldung",
-      "engine": "Engine"
+      "engine": "Engine",
+      "recap": "Wochenrückblick"
     },
+    "rememberLine": "Merken",
     "emptyTitle": "Alles erledigt",
     "emptyDesc": "Freigaben, Vorschläge und Hinweise landen hier."
   },

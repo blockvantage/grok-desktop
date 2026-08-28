@@ -131,6 +131,13 @@ export function runtimeEventToNormalized(
         type: "workflow_update",
         payload: event.payload,
       };
+    case "memory_update":
+      return {
+        type: "memory_update",
+        action: event.action,
+        title: event.title,
+        content: event.content,
+      };
     case "worker_started":
       return {
         type: "worker_started",

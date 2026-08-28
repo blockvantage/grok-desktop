@@ -49,6 +49,8 @@ export const APP_SETTINGS_SETTABLE_KEYS = [
   "inheritUserGrok",
   /** T5: absolute paths trusted for project tools (soft folder trust). */
   "trustedFolders",
+  /** Phase 3.3: weekly recap inbox item (default on). */
+  "weeklyRecapEnabled",
 ] as const;
 
 export type SettableSettingsKey = (typeof APP_SETTINGS_SETTABLE_KEYS)[number];
@@ -101,6 +103,7 @@ export const partialAppSettingsSchema = z
       )
       .max(64)
       .optional(),
+    weeklyRecapEnabled: z.boolean().optional(),
   })
   .partial();
 

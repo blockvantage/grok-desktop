@@ -168,6 +168,48 @@ describe("ACP mediated session (SEC-01 policy authorizer)", () => {
     });
   });
 
+  it("maps MemoryRecalled session updates to memory_update runtime events", async () => {
+    const duplex = new MemoryLineDuplex();
+    const fake = attachFakeAcpAgent(duplex.b, {
+      emitMemoryUpdated: {
+        sessionUpdate: "MemoryRecalled",
+        content: "User prefers short briefs",
+      },
+    });
+    cleanups.push(fake.dispose);
+    const session = new AcpMediatedSession({
+      transport: duplex.a,
+      policy: balancedPolicy,
+      binding: createAcpBinding("grok-4.5"),
+    });
+    cleanups.push(() => session.cancel("test"));
+    await session.start("/w");
+    const events: RuntimeEvent[] = [];
+    await session.runTurn({ goal: "hi" }, async (ev) => {
+      events.push(ev);
+      return "continue";
+    });
+    expect(events.find((e) => e.type === "memory_update")).toEqual({
+      type: "memory_update",
+      action: "recalled",
+      content: "User prefers short briefs",
+    });
+  });
+
+  it("flushMemory degrades when the CLI has no x.ai/memory/flush", async () => {
+    const duplex = new MemoryLineDuplex();
+    const fake = attachFakeAcpAgent(duplex.b);
+    cleanups.push(fake.dispose);
+    const session = new AcpMediatedSession({
+      transport: duplex.a,
+      policy: balancedPolicy,
+      binding: createAcpBinding("grok-4.5"),
+    });
+    cleanups.push(() => session.cancel("test"));
+    await session.start("/w");
+    expect(await session.flushMemory()).toBe(false);
+  });
+
   it("maps PendingInteraction questions onto permission_request for the park path", async () => {
     const duplex = new MemoryLineDuplex();
     const fake = attachFakeAcpAgent(duplex.b, {

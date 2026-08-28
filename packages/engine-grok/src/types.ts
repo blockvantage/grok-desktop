@@ -103,6 +103,12 @@ export type NormalizedEngineEvent =
       type: "workflow_update";
       payload: Record<string, unknown>;
     }
+  | {
+      type: "memory_update";
+      action: "recalled" | "updated" | "other";
+      title?: string;
+      content?: string;
+    }
   /**
    * Engine session identity for resume + optional spawn protection snapshot (T3).
    * Never user-visible as conversation transcript.

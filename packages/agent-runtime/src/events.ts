@@ -58,6 +58,12 @@ export type RuntimeEvent =
       payload: Record<string, unknown>;
     }
   | {
+      type: "memory_update";
+      action: "recalled" | "updated" | "other";
+      title?: string;
+      content?: string;
+    }
+  | {
       type: "plan";
       content: string;
       status: "drafting" | "awaiting_approval";

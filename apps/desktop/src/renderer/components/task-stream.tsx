@@ -197,6 +197,10 @@ export const TaskStream = forwardRef<
     approvalBusy?: ApprovalBusyState;
     onRecoveryAction?: (action: RecoveryAction, turnId: string) => void;
     onUndoTurn?: (turn: ConversationTurnView) => void | Promise<void>;
+    onRememberAnswer?: (
+      turn: ConversationTurnView,
+      text: string,
+    ) => void | Promise<void>;
     /**
      * CHAT-4: first unseen event seq when reopening a task. Render a "New"
      * separator above the first item at/after this seq. Null = no boundary.
@@ -231,6 +235,7 @@ export const TaskStream = forwardRef<
     approvalBusy = {},
     onRecoveryAction,
     onUndoTurn,
+    onRememberAnswer,
     unreadBoundarySeq = null,
     firstUnreadTurnId = null,
   },
@@ -581,6 +586,7 @@ export const TaskStream = forwardRef<
           followUpBusy={followUpBusy}
           onRecoveryAction={onRecoveryAction}
           onUndoTurn={onUndoTurn}
+          onRememberAnswer={onRememberAnswer}
         />
       </div>
     );
@@ -694,6 +700,10 @@ const CanonicalConversation = forwardRef<
     followUpBusy?: boolean;
     onRecoveryAction?: (action: RecoveryAction, turnId: string) => void;
     onUndoTurn?: (turn: ConversationTurnView) => void | Promise<void>;
+    onRememberAnswer?: (
+      turn: ConversationTurnView,
+      text: string,
+    ) => void | Promise<void>;
   }
 >(function CanonicalConversation(props, ref) {
   const parentRef = useRef<HTMLDivElement>(null);
@@ -804,6 +814,7 @@ const CanonicalConversation = forwardRef<
           answerBusy={props.followUpBusy}
           onRecoveryAction={props.onRecoveryAction}
           onUndoTurn={props.onUndoTurn}
+          onRememberAnswer={props.onRememberAnswer}
           activityCaption={isLatest ? props.liveCaption : null}
         />
       </div>

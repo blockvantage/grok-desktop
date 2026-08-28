@@ -42,6 +42,7 @@ describe("takeawaysMemoryUpsert", () => {
       kind: "episodic",
       title: "Takeaways: Ship",
       content: "t1:Ship it",
+      provenance: "task:t1",
     });
   });
 

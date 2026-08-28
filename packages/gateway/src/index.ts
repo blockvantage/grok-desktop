@@ -339,6 +339,7 @@ export class Gateway {
       this.tasks,
       this.inbox,
       this.settings,
+      this.db,
     );
     this.proactivity.setIntelligenceSources({
       memory: this.memory,

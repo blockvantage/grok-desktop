@@ -86,7 +86,7 @@ export class InboxService {
     body: string;
     taskId?: string | null;
   }): InboxItem | null {
-    if (input.kind === "suggestion") {
+    if (input.kind === "suggestion" || input.kind === "recap") {
       const existing = this.db
         .prepare(
           `SELECT id FROM inbox_items WHERE kind = ? AND IFNULL(task_id,'') = IFNULL(?, '') LIMIT 1`,

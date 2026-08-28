@@ -344,7 +344,13 @@
     "suggestionSensitive": "Peut contenir des données sensibles — vérifiez avant d'approuver.",
     "suggestionApproved": "Enregistré en mémoire",
     "suggestionDismissed": "Suggestion ignorée",
-    "emptyWithSuggestions": "Rien d'enregistré — revoyez les suggestions ci-dessus ou ajoutez manuellement."
+    "emptyWithSuggestions": "Rien d'enregistré — revoyez les suggestions ci-dessus ou ajoutez manuellement.",
+    "rememberThis": "S’en souvenir",
+    "saved": "Enregistré en mémoire",
+    "saveFailed": "Impossible d’enregistrer ce souvenir",
+    "learnThisWeek": "Retenir de cette semaine",
+    "verifyContext": "Vérifier ce contexte rappelé",
+    "verifyHint": "Le moteur a rappelé ceci. Confirmez qu’il est encore juste."
   },
   "workspace": {
     "followUp": "Ajouter une suite pour cet espace…",
@@ -1269,8 +1275,10 @@
       "schedule_done": "Planification terminée",
       "suggestion": "Proposition",
       "reauth": "Connexion",
-      "engine": "Moteur"
+      "engine": "Moteur",
+      "recap": "Récap de la semaine"
     },
+    "rememberLine": "Retenir",
     "emptyTitle": "Vous êtes à jour",
     "emptyDesc": "Approbations, suggestions et rappels arrivent ici."
   },

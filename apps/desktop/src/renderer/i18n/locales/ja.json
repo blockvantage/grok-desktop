@@ -344,7 +344,13 @@
     "suggestionSensitive": "機微な内容を含む可能性 — 承認前に確認してください。",
     "suggestionApproved": "メモリに保存しました",
     "suggestionDismissed": "提案を却下しました",
-    "emptyWithSuggestions": "まだ保存なし — 上の提案を確認するか、手動で追加。"
+    "emptyWithSuggestions": "まだ保存なし — 上の提案を確認するか、手動で追加。",
+    "rememberThis": "これを覚える",
+    "saved": "メモリに保存しました",
+    "saveFailed": "メモリを保存できませんでした",
+    "learnThisWeek": "今週から学ぶ",
+    "verifyContext": "思い出された内容を確認",
+    "verifyHint": "エンジンがこれを思い出しました。今も正しいか確認してください。"
   },
   "workspace": {
     "followUp": "このワークスペースへの追加指示…",
@@ -1269,8 +1275,10 @@
       "schedule_done": "スケジュール完了",
       "suggestion": "提案",
       "reauth": "再ログイン",
-      "engine": "エンジン"
+      "engine": "エンジン",
+      "recap": "今週の振り返り"
     },
+    "rememberLine": "覚える",
     "emptyTitle": "すべて対応済みです",
     "emptyDesc": "承認、提案、通知はここに届きます。"
   },

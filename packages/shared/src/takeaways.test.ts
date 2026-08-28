@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { buildTakeawaysContent } from "./takeaways.js";
+import {
+  buildTakeawayMemoryItem,
+  buildTakeawaysContent,
+} from "./takeaways.js";
 
 describe("buildTakeawaysContent", () => {
   it("uses last substantial assistant message", () => {
@@ -38,5 +41,27 @@ describe("buildTakeawaysContent", () => {
     });
     expect(content).toContain("Organize downloads");
     expect(content).toContain("No assistant answer");
+  });
+
+  it("builds a remember payload with provenance", () => {
+    const item = buildTakeawayMemoryItem({
+      taskId: "t9",
+      goal: "Draft a brief",
+      events: [
+        {
+          kind: "message",
+          payload: {
+            role: "assistant",
+            channel: "text",
+            text: "Here is a full marketing brief with three channels and next steps for launch.",
+          },
+        },
+      ],
+    });
+    expect(item.kind).toBe("episodic");
+    expect(item.provenance).toBe("task:t9");
+    expect(item.title).toBe("Takeaway: Draft a brief");
+    expect(item.content).toContain("Here is a full marketing brief");
+    expect(item.content.length).toBeLessThanOrEqual(2200);
   });
 });

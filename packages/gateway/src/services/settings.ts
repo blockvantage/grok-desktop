@@ -79,6 +79,8 @@ export interface AppSettings {
   inheritUserGrok: boolean;
   /** T5: workspace folders trusted for project tools. */
   trustedFolders: string[];
+  /** Phase 3.3: emit a weekly recap inbox item (default on). */
+  weeklyRecapEnabled: boolean;
 }
 
 const DEFAULTS: AppSettings = {
@@ -95,6 +97,7 @@ const DEFAULTS: AppSettings = {
   onboardingCompleted: false,
   inheritUserGrok: false,
   trustedFolders: [],
+  weeklyRecapEnabled: true,
 };
 
 /** Drop corrupt/hostile MCP rows on settings load (same bounds as settings.set). */
@@ -205,6 +208,10 @@ export class SettingsService {
               (p): p is string => typeof p === "string" && p.trim().length > 0,
             )
           : undefined,
+        weeklyRecapEnabled:
+          typeof parsed.weeklyRecapEnabled === "boolean"
+            ? parsed.weeklyRecapEnabled
+            : undefined,
       };
       return {
         ...DEFAULTS,
@@ -227,6 +234,10 @@ export class SettingsService {
             ? rest.inheritUserGrok
             : DEFAULTS.inheritUserGrok,
         trustedFolders: rest.trustedFolders ?? DEFAULTS.trustedFolders,
+        weeklyRecapEnabled:
+          typeof rest.weeklyRecapEnabled === "boolean"
+            ? rest.weeklyRecapEnabled
+            : DEFAULTS.weeklyRecapEnabled,
       };
     } catch {
       return {
@@ -293,6 +304,8 @@ export class SettingsService {
         parsed.value.inheritUserGrok ?? current.inheritUserGrok,
       trustedFolders:
         parsed.value.trustedFolders ?? current.trustedFolders,
+      weeklyRecapEnabled:
+        parsed.value.weeklyRecapEnabled ?? current.weeklyRecapEnabled,
       // Never accept license from set()
       license: current.license,
     };

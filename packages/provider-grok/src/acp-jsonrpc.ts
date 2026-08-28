@@ -444,6 +444,12 @@ export function attachFakeAcpAgent(
     };
     /** Emit a WorkflowUpdated session/update before completing the prompt. */
     emitWorkflowUpdated?: Record<string, unknown>;
+    /** Emit MemoryUpdated / MemoryRecalled session/update before completing. */
+    emitMemoryUpdated?: {
+      sessionUpdate?: "MemoryUpdated" | "MemoryRecalled";
+      title?: string;
+      content?: string;
+    };
     /** Per-method responder; throw {code:-32601} to simulate method-not-found. */
     respond?: (method: string, params?: unknown) => unknown;
   },
@@ -708,6 +714,23 @@ export function attachFakeAcpAgent(
               }),
             );
           }
+          if (opts?.emitMemoryUpdated) {
+            const mem = opts.emitMemoryUpdated;
+            transport.writeLine(
+              encodeJsonRpc({
+                jsonrpc: "2.0",
+                method: "session/update",
+                params: {
+                  sessionId,
+                  update: {
+                    sessionUpdate: mem.sessionUpdate ?? "MemoryUpdated",
+                    ...(mem.title ? { title: mem.title } : {}),
+                    ...(mem.content ? { content: mem.content } : {}),
+                  },
+                },
+              }),
+            );
+          }
           reply({ stopReason: "end_turn", toolExecuted: false });
         }
         break;
@@ -722,6 +745,8 @@ export function attachFakeAcpAgent(
       case "x.ai/rewind/points":
       case "x.ai/rewind/execute":
       case "x.ai/toggle_plan_mode":
+      case "x.ai/memory/flush":
+      case "x.ai/memory/rewrite":
         // Default: method not found so callers test degrade paths unless
         // opts.respond handles them.
         replyErr(-32601, `Method not found: ${req.method}`);

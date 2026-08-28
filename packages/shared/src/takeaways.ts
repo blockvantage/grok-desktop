@@ -39,3 +39,29 @@ export function buildTakeawaysContent(opts: {
     body,
   ].join("\n");
 }
+
+/**
+ * One-tap Remember this payload. Desk store is the write path;
+ * provenance keeps the source task auditable.
+ */
+export function buildTakeawayMemoryItem(opts: {
+  taskId: string;
+  goal: string;
+  events: TakeawayEvent[];
+  kind?: "standing" | "project" | "preference" | "episodic";
+  maxChars?: number;
+}): {
+  kind: "standing" | "project" | "preference" | "episodic";
+  title: string;
+  content: string;
+  provenance: string;
+} {
+  const content = buildTakeawaysContent(opts);
+  const titleGoal = opts.goal.replace(/\s+/g, " ").trim().slice(0, 80);
+  return {
+    kind: opts.kind ?? "episodic",
+    title: titleGoal ? `Takeaway: ${titleGoal}` : "Takeaway",
+    content,
+    provenance: `task:${opts.taskId}`,
+  };
+}

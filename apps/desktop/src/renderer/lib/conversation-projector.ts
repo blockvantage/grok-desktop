@@ -1,9 +1,15 @@
 import type {
   Artifact,
+  MemoryUpdateView,
   Task,
   TaskAttachment,
   TaskEvent,
   TaskStatus,
+} from "@grokdesk/shared";
+import {
+  isMemoryUpdateEvent,
+  projectRecalledMemory,
+  projectUpdatedMemorySuggestions,
 } from "@grokdesk/shared";
 import type { DurableQueuedMessage } from "./message-queue-store";
 import { coalesceBrowserToolActivity } from "./browser-activity-from-events";
@@ -109,6 +115,10 @@ export type ConversationTurn = {
   citations: CitationItem[];
   /** Auto-compact housekeeping, when the engine reported it. */
   compaction?: CompactionMarker | null;
+  /** Engine-recalled memory — historical context to verify, not auto-saved. */
+  recalledMemory?: MemoryUpdateView[];
+  /** Engine-proposed memories — one-tap save; Desk store stays authoritative. */
+  suggestedMemory?: MemoryUpdateView[];
 };
 
 export type ConversationSnapshot = {
@@ -719,6 +729,7 @@ function projectTurn(
       coalesceBrowserToolActivity(events)
         .filter((event) => {
           if (isCompactionEvent(event)) return false;
+          if (isMemoryUpdateEvent(event)) return false;
           if (event.kind !== "message") return true;
           if (nonBlank(event.payload.role) === "user") return false;
           const isAssistantText =
@@ -731,6 +742,8 @@ function projectTurn(
       state,
     ),
     compaction: projectCompactionMarker(events),
+    recalledMemory: projectRecalledMemory(events),
+    suggestedMemory: projectUpdatedMemorySuggestions(events),
     artifacts,
     approval,
     // A diagnostic error does not erase a recovered/completed result. Only the

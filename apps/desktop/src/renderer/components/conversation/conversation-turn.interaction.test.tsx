@@ -62,6 +62,22 @@ describe("ConversationTurn interactions", () => {
     expect(onApprove).toHaveBeenCalled();
   });
 
+  it("remembers the answer in one tap", async () => {
+    const user = userEvent.setup();
+    const onRememberAnswer = vi.fn(async () => {});
+    const done = turn("done");
+    done.answer = {
+      eventId: "a1",
+      text: "Here is a full marketing brief with three channels.",
+      createdAt: "2026-07-15T12:00:10.000Z",
+    };
+    render(
+      <ConversationTurn turn={done} onRememberAnswer={onRememberAnswer} />,
+    );
+    await user.click(screen.getByTestId("remember-answer"));
+    expect(onRememberAnswer).toHaveBeenCalled();
+  });
+
   it("opens the edit field from Edit", async () => {
     const user = userEvent.setup();
     const onEdit = vi.fn();

@@ -39,6 +39,12 @@ describe("ACP forward-compat decode", () => {
     expect(
       decodeSessionUpdate({ sessionUpdate: "workflow_updated" }).kind,
     ).toBe("workflow_updated");
+    expect(
+      decodeSessionUpdate({ sessionUpdate: "MemoryUpdated" }).kind,
+    ).toBe("memory_updated");
+    expect(
+      decodeSessionUpdate({ sessionUpdate: "MemoryRecalled" }).kind,
+    ).toBe("memory_recalled");
     expect(decodeSessionUpdate(null).kind).toBe("unknown");
   });
 

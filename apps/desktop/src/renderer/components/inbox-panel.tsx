@@ -10,6 +10,7 @@ import {
   Trash2,
 } from "lucide-react";
 import type { EffortLevel, InboxItem, InboxKind } from "@grokdesk/shared";
+import { parseWeeklyRecapLines } from "@grokdesk/shared";
 import { rpc } from "@/lib/api";
 import {
   buildScheduleCreateFromDraft,
@@ -45,6 +46,7 @@ export function InboxPanel(props: {
   onOpenSettings: () => void;
   onScheduleCreated?: () => void;
   onRefreshSide?: () => void;
+  onRememberRecapLine?: (line: string) => void | Promise<void>;
 }) {
   const t = useT();
   const { toast } = useToast();
@@ -108,7 +110,11 @@ export function InboxPanel(props: {
 
   async function handleOpenTask(item: InboxItem) {
     if (!item.read) void props.onMarkRead(item.id);
-    if (item.taskId && !item.taskId.startsWith("suggestion:")) {
+    if (
+      item.taskId &&
+      !item.taskId.startsWith("suggestion:") &&
+      !item.taskId.startsWith("recap:")
+    ) {
       props.onOpenTask(item.taskId);
       props.onOpenChange(false);
     }
@@ -167,6 +173,11 @@ export function InboxPanel(props: {
                 onOpenTask={() => void handleOpenTask(item)}
                 onReauth={() => void handleReauth()}
                 onMarkRead={() => void handleMarkRead(item)}
+                onRememberLine={
+                  item.kind === "recap" && props.onRememberRecapLine
+                    ? (line) => void props.onRememberRecapLine?.(line)
+                    : undefined
+                }
               />
             ))}
           </div>
@@ -184,6 +195,7 @@ function InboxRow({
   onOpenTask,
   onReauth,
   onMarkRead,
+  onRememberLine,
 }: {
   item: InboxItem;
   busy: boolean;
@@ -192,12 +204,14 @@ function InboxRow({
   onOpenTask: () => void;
   onReauth: () => void;
   onMarkRead: () => void;
+  onRememberLine?: (line: string) => void;
 }) {
   const t = useT();
   const kind = item.kind;
   const canOpenTask =
     Boolean(item.taskId) &&
     !item.taskId!.startsWith("suggestion:") &&
+    !item.taskId!.startsWith("recap:") &&
     (kind === "approval" ||
       kind === "unfinished" ||
       kind === "clarification" ||
@@ -253,11 +267,35 @@ function InboxRow({
           <h3 className="mt-1.5 text-sm font-medium leading-snug">
             {item.title}
           </h3>
-          {item.body?.trim() && (
+          {kind === "recap" ? (
+            <ul className="mt-1 space-y-1.5" data-testid="inbox-recap-lines">
+              {parseWeeklyRecapLines(item.body).map((line) => (
+                <li
+                  key={line}
+                  className="flex items-start justify-between gap-2"
+                >
+                  <span className="min-w-0 flex-1 text-xs leading-relaxed text-muted-foreground/85">
+                    {line}
+                  </span>
+                  {onRememberLine ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-6 shrink-0 px-2 text-2xs"
+                      disabled={busy}
+                      onClick={() => onRememberLine(line)}
+                    >
+                      {t("inbox.rememberLine")}
+                    </Button>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          ) : item.body?.trim() ? (
             <p className="mt-1 line-clamp-4 whitespace-pre-wrap text-xs leading-relaxed text-muted-foreground/85">
               {item.body}
             </p>
-          )}
+          ) : null}
           <div className="mt-2.5 flex flex-wrap gap-1.5">
             {kind === "suggestion" && (
               <Button
@@ -334,6 +372,8 @@ function KindIcon({ kind }: { kind: InboxKind }) {
       return <KeyRound className={cls} strokeWidth={1.75} />;
     case "schedule_done":
       return <CalendarClock className={cls} strokeWidth={1.75} />;
+    case "recap":
+      return <Sparkles className={cls} strokeWidth={1.75} />;
     default:
       return <Inbox className={cls} strokeWidth={1.75} />;
   }

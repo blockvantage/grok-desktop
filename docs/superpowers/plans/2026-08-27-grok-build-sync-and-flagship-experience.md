@@ -145,7 +145,7 @@ Upstream `ToolKind` is now rich enough to drive renderers without name matching:
 ### 3.2 Media studio ✅ (2026-08-27; Home tiles + composer weave + workspace follow-up)
 - Surface upstream video-gen upgrades: preset voices, single-image input, 1–15s durations, 4:3/3:4 aspect ratios; call-count limits are handled upstream. Image/video generation gets a first-class Home tile and composer affordance ("Create an image/video…"), with results auto-saved to the workspace + Artifacts (Phase 0.1 media parity makes this reliable on the default path).
 
-### 3.3 Memory that compounds (the 4×-deferred recap)
+### 3.3 Memory that compounds (the 4×-deferred recap) ✅ (2026-08-27; one-tap remember + weekly recap + Memory* verify)
 - One-tap "Remember this" on any answer; weekly recap card ("Learn from this week") per coworker plan C1–C3 (`weekly-recap.ts`, `"recap"` InboxKind).
 - Bridge to engine memory where it helps: `x.ai/memory/flush` / `x.ai/memory/rewrite` exist over ACP; keep Desk's store authoritative, present engine memory events (`Memory*` updates) as takeaway suggestions. Present recalled memory as historical context to verify (upstream 1.0.9 language).
 

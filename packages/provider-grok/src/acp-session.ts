@@ -591,6 +591,31 @@ export class AcpMediatedSession implements AgentSession {
       }
       return;
     }
+    if (
+      decoded.kind === "memory_updated" ||
+      decoded.kind === "memory_recalled"
+    ) {
+      if (sink) {
+        const title = String(
+          decoded.raw.title ?? decoded.raw.name ?? "",
+        ).trim();
+        const content = String(
+          decoded.raw.content ??
+            decoded.raw.text ??
+            decoded.raw.body ??
+            decoded.raw.summary ??
+            "",
+        ).trim();
+        void sink({
+          type: "memory_update",
+          action:
+            decoded.kind === "memory_recalled" ? "recalled" : "updated",
+          ...(title ? { title } : {}),
+          ...(content ? { content } : {}),
+        });
+      }
+      return;
+    }
     if (decoded.kind === "unknown" || !sink) return;
 
     if (decoded.kind === "plan") {
@@ -846,6 +871,42 @@ export class AcpMediatedSession implements AgentSession {
         pointId,
         prompt_index: Number.isFinite(promptIndex) ? promptIndex : pointId,
         promptIndex: Number.isFinite(promptIndex) ? promptIndex : pointId,
+      });
+      return true;
+    } catch (e) {
+      if (isMethodNotFound(e)) return false;
+      throw e;
+    }
+  }
+
+  /**
+   * Push Desk-authoritative memory toward the engine. Fail-open when the
+   * CLI does not advertise the method.
+   */
+  async flushMemory(): Promise<boolean> {
+    if (!this.sessionId) return false;
+    try {
+      await this.client.request("x.ai/memory/flush", {
+        sessionId: this.sessionId,
+      });
+      return true;
+    } catch (e) {
+      if (isMethodNotFound(e)) return false;
+      throw e;
+    }
+  }
+
+  /** Rewrite an engine memory entry. Desk store remains the authority. */
+  async rewriteMemory(input: {
+    content: string;
+    id?: string;
+  }): Promise<boolean> {
+    if (!this.sessionId) return false;
+    try {
+      await this.client.request("x.ai/memory/rewrite", {
+        sessionId: this.sessionId,
+        ...(input.id ? { id: input.id } : {}),
+        content: input.content,
       });
       return true;
     } catch (e) {

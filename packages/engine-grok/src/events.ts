@@ -59,6 +59,35 @@ function normalizeJsonEvent(
   }
 
   if (
+    type === "memory_update" ||
+    type === "memory_updated" ||
+    type === "memoryupdated" ||
+    type === "memory_recalled" ||
+    type === "memoryrecalled" ||
+    type === "memoryflush" ||
+    type === "memory_flush"
+  ) {
+    const blob = `${type} ${String(obj.action ?? obj.sessionUpdate ?? "")}`.toLowerCase();
+    const action: "recalled" | "updated" | "other" = blob.includes("recall")
+      ? "recalled"
+      : blob.includes("update") || blob.includes("rewrite")
+        ? "updated"
+        : "other";
+    const title = String(obj.title ?? obj.name ?? "").trim();
+    const content = String(
+      obj.content ?? obj.text ?? obj.body ?? obj.summary ?? "",
+    ).trim();
+    return [
+      {
+        type: "memory_update",
+        action,
+        ...(title ? { title } : {}),
+        ...(content ? { content } : {}),
+      },
+    ];
+  }
+
+  if (
     type === "goal_update" ||
     type === "goal_updated" ||
     type === "goalupdated"

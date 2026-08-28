@@ -174,7 +174,8 @@ export type InboxKind =
   | "schedule_done"
   | "suggestion"
   | "reauth"
-  | "engine";
+  | "engine"
+  | "recap";
 
 export interface InboxItem {
   id: string;

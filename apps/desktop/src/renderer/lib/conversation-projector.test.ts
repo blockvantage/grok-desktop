@@ -1479,4 +1479,30 @@ describe("Phase 4 recovered timeline + approval parking", () => {
     });
     expect(snapshot.turns[0]?.work.map((w) => w.id)).not.toContain("c1");
   });
+
+  it("projects MemoryRecalled as verify-context, not work-log JSON", () => {
+    const t1 = task("mem-task", "done", "2026-01-01T00:00:00.000Z");
+    const snapshot = projectConversation({
+      conversationId: "conversation",
+      title: null,
+      tasks: [t1],
+      eventsByTask: {
+        [t1.id]: [
+          event("m1", t1.id, 1, "step", {
+            title: "memory_update",
+            action: "recalled",
+            content: "User prefers short briefs",
+          }),
+        ],
+      },
+    });
+    expect(snapshot.turns[0]?.recalledMemory).toEqual([
+      {
+        action: "recalled",
+        title: "User prefers short briefs",
+        content: "User prefers short briefs",
+      },
+    ]);
+    expect(snapshot.turns[0]?.work.map((w) => w.id)).not.toContain("m1");
+  });
 });

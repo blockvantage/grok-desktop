@@ -10,6 +10,8 @@ import {
   type AutomationSuggestion,
 } from "@grokdesk/shared";
 import { syncInboxFromWaitingOnYou } from "./waiting-on-you-inbox.js";
+import { emitWeeklyRecapIfDue } from "./weekly-recap.js";
+import type { Db } from "../db.js";
 
 export class ProactivityService {
   private timer: ReturnType<typeof setInterval> | null = null;
@@ -20,6 +22,7 @@ export class ProactivityService {
     private tasks: TaskService,
     private inbox: InboxService,
     private settings: SettingsService,
+    private db: Db | null = null,
   ) {}
 
   /** Optional wiring for memory-aware automation suggestions. */
@@ -69,6 +72,17 @@ export class ProactivityService {
       }
     }
     n += this.emitAutomationSuggestions();
+    if (this.db && this.memory) {
+      const recap = emitWeeklyRecapIfDue({
+        db: this.db,
+        inbox: this.inbox,
+        memory: this.memory,
+        tasks: this.tasks,
+        settings: this.settings,
+        now,
+      });
+      if (recap.emitted) n++;
+    }
     return n;
   }
 

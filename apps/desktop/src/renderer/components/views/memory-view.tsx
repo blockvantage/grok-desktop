@@ -42,7 +42,7 @@ import {
 import { EmptyState } from "@/components/empty-state";
 import { relativeTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import type { MemoryItem } from "@grokdesk/shared";
+import type { MemoryItem, WeeklyRecap } from "@grokdesk/shared";
 import type { MemorySuggestion } from "@/lib/memory-suggestions";
 import { useT } from "@/i18n";
 
@@ -83,6 +83,8 @@ export function MemoryView(props: {
     patch: { title?: string; content?: string },
   ) => void;
   onDismissSuggestion?: (id: string) => void;
+  weeklyRecap?: WeeklyRecap | null;
+  onRememberRecapLine?: (line: string) => void | Promise<void>;
 }) {
   const t = useT();
   const [kindFilter, setKindFilter] = useState("all");
@@ -124,6 +126,43 @@ export function MemoryView(props: {
               {t("memory.add")}
             </Button>
           </div>
+
+          {props.weeklyRecap && props.weeklyRecap.lines.length > 0 ? (
+            <section
+              className="space-y-2 rounded-xl border border-primary/20 bg-primary/[0.06] px-4 py-3"
+              data-testid="weekly-recap-card"
+            >
+              <h2 className="text-sm font-semibold tracking-tight">
+                {t("memory.learnThisWeek")}
+              </h2>
+              <ul className="space-y-1.5">
+                {props.weeklyRecap.lines.map((line) => (
+                  <li
+                    key={line.sourceId}
+                    className="flex items-start justify-between gap-2"
+                  >
+                    <span className="min-w-0 flex-1 text-xs leading-relaxed">
+                      {line.text}
+                    </span>
+                    {props.onRememberRecapLine ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-6 shrink-0 px-2 text-2xs"
+                        onClick={() =>
+                          void props.onRememberRecapLine?.(
+                            line.suggestedMemory ?? line.text,
+                          )
+                        }
+                      >
+                        {t("memory.rememberThis")}
+                      </Button>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
 
           {/* Phase 3: reviewable takeaway suggestions (approve / edit / dismiss) */}
           <section

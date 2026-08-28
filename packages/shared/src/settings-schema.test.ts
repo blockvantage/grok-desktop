@@ -23,6 +23,15 @@ describe("settings-schema", () => {
     if (r.ok) expect(r.value.onboardingCompleted).toBe(true);
   });
 
+  it("accepts weeklyRecapEnabled boolean", () => {
+    const on = parsePartialAppSettings({ weeklyRecapEnabled: true });
+    expect(on.ok).toBe(true);
+    if (on.ok) expect(on.value.weeklyRecapEnabled).toBe(true);
+    const off = parsePartialAppSettings({ weeklyRecapEnabled: false });
+    expect(off.ok).toBe(true);
+    if (off.ok) expect(off.value.weeklyRecapEnabled).toBe(false);
+  });
+
   it("accepts inheritUserGrok boolean (T4)", () => {
     const r = parsePartialAppSettings({ inheritUserGrok: true });
     expect(r.ok).toBe(true);
