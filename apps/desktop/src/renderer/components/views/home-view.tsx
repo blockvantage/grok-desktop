@@ -576,6 +576,12 @@ export function HomeView(props: {
       });
     } else if (cmd.action === "exportPack") {
       props.onOpenArtifacts?.();
+    } else if (
+      cmd.action === "compact" ||
+      cmd.action === "rewind" ||
+      cmd.action === "remember"
+    ) {
+      toast({ description: t("slash.needOpenChat") });
     }
   };
 

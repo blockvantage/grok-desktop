@@ -69,6 +69,13 @@ export function CommandPalette(props: {
   onOpenInbox?: () => void;
   onShowShortcuts?: () => void;
   inboxUnread?: number;
+  /** Product-language chat actions (compact / rewind / memory / research). */
+  chatCommands?: Array<{
+    id: string;
+    label: string;
+    keywords?: string[];
+    onSelect: () => void;
+  }>;
 }) {
   const t = useT();
   const { open, onOpenChange } = props;
@@ -225,6 +232,26 @@ export function CommandPalette(props: {
             />
           ))}
         </Command.Group>
+
+        {props.chatCommands && props.chatCommands.length > 0 && (
+          <Command.Group
+            heading={t("command.chatActions")}
+            className={groupHeadingClass}
+            data-palette-section="chat"
+          >
+            {props.chatCommands.map((cmd) => (
+              <PaletteItem
+                key={cmd.id}
+                value={`${cmd.label} ${cmd.id}`}
+                keywords={cmd.keywords ?? [cmd.id]}
+                onSelect={() => run(cmd.onSelect)}
+                data-palette-action={cmd.id}
+              >
+                <span className="min-w-0 flex-1 truncate">{cmd.label}</span>
+              </PaletteItem>
+            ))}
+          </Command.Group>
+        )}
 
         {runningTasks.length > 0 && (
           <Command.Group

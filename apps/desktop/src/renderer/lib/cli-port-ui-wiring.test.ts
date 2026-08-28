@@ -19,9 +19,11 @@ function read(rel: string): string {
 describe("CLI port UI wiring (structural)", () => {
   it("home composer exposes Draft a plan first toggle", () => {
     const home = read("components/views/home-view.tsx");
-    expect(home).toContain("home.planFirstToggle");
-    expect(home).toContain("data-plan-first-toggle");
+    expect(home).toContain("ComposerRunOptions");
     expect(home).toContain("onPlanFirst");
+    const options = read("components/composer-run-options.tsx");
+    expect(options).toContain("home.planFirstToggle");
+    expect(options).toContain("data-plan-first-toggle");
   });
 
   it("create-task params thread planFirst into tasks.create", () => {

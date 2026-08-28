@@ -23,6 +23,7 @@ import {
   copyDiagnostics,
   restartGateway,
   taskInterject,
+  taskCompact,
   type GatewayUiStatus,
 } from "@/lib/api";
 // Recovery is owned by useAppSync (wraps useGatewayRecovery). Keep the
@@ -1078,6 +1079,7 @@ export function App() {
         nav,
         taskSurface,
         showOnboarding,
+        live: tasks.some((task) => isActiveTaskStatus(task.status)),
       });
       switch (intent.type) {
         case "new_chat":
@@ -2629,6 +2631,65 @@ export function App() {
             })
           }
           onOpenTask={openTaskWorkspace}
+          chatCommands={[
+            {
+              id: "compact",
+              label: t("slash.compact"),
+              keywords: ["summarize", "compact", "tidy"],
+              onSelect: () => {
+                if (!selectedId) {
+                  toast({ description: t("slash.needOpenChat") });
+                  return;
+                }
+                void taskCompact(selectedId).then((r) => {
+                  if (!r.ok) {
+                    toast({
+                      description: t("workspace.summarizeUnavailable"),
+                      variant: "destructive",
+                    });
+                  }
+                });
+              },
+            },
+            {
+              id: "remember",
+              label: t("slash.remember"),
+              keywords: ["memory", "remember", "takeaways"],
+              onSelect: () => {
+                withViewTransition(() => setNav("memory"));
+              },
+            },
+            {
+              id: "deep-research",
+              label: t("slash.deepResearch"),
+              keywords: ["research", "workflow", "deep"],
+              onSelect: () => {
+                withViewTransition(() => {
+                  const next = newChatNavState();
+                  setNav(next.nav);
+                  setSelectedId(next.selectedId);
+                  setTaskSurface(next.taskSurface);
+                  setGoal("/deep-research ");
+                  setFocusComposerToken((n) => n + 1);
+                });
+              },
+            },
+            {
+              id: "monitor",
+              label: t("slash.monitor"),
+              keywords: ["watch", "monitor", "until"],
+              onSelect: () => {
+                withViewTransition(() => {
+                  const next = newChatNavState();
+                  setNav(next.nav);
+                  setSelectedId(next.selectedId);
+                  setTaskSurface(next.taskSurface);
+                  setGoal("/watch ");
+                  setFocusComposerToken((n) => n + 1);
+                });
+              },
+            },
+          ]}
           onStopTask={(id) => void cancelTask(id)}
           onSignIn={() => void signIn()}
           onRunSetupAgain={() => {

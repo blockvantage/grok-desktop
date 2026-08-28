@@ -25,5 +25,14 @@ describe("slash-follow", () => {
       slashSideAction({ id: "x", kind: "run", action: "openSchedule" }),
     ).toBe("openSchedule");
     expect(slashSideAction({ id: "x", kind: "run" })).toBeNull();
+    expect(slashSideAction({ id: "x", kind: "run", action: "compact" })).toBe(
+      "compact",
+    );
+    expect(slashSideAction({ id: "x", kind: "run", action: "rewind" })).toBe(
+      "rewind",
+    );
+    expect(slashSideAction({ id: "x", kind: "run", action: "remember" })).toBe(
+      "remember",
+    );
   });
 });

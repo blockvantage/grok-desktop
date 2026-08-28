@@ -154,4 +154,81 @@ export function registerCoreCommands(reg: CommandRegistry): void {
       };
     },
   });
+
+  reg.register({
+    id: "core.compact",
+    source: "core",
+    kind: "action",
+    title: "Summarize so far",
+    description: "Compact earlier conversation (task.compact)",
+    confirmation: "none",
+    isAvailable: always,
+    async execute() {
+      return {
+        commandId: "core.compact",
+        ok: true,
+        kind: "action",
+        message: "compact",
+      };
+    },
+  });
+
+  reg.register({
+    id: "core.rewind",
+    source: "core",
+    kind: "action",
+    title: "Undo last turn",
+    description: "Rewind the conversation (task.rewind)",
+    confirmation: "preview",
+    isAvailable: always,
+    async execute() {
+      return {
+        commandId: "core.rewind",
+        ok: true,
+        kind: "action",
+        message: "rewind",
+      };
+    },
+  });
+
+  reg.register({
+    id: "core.remember",
+    source: "core",
+    kind: "action",
+    title: "Remember this",
+    description: "Save takeaways (memory.create)",
+    confirmation: "none",
+    isAvailable: always,
+    async execute() {
+      return {
+        commandId: "core.remember",
+        ok: true,
+        kind: "action",
+        message: "remember",
+      };
+    },
+  });
+
+  reg.register({
+    id: "core.monitor",
+    source: "core",
+    kind: "template",
+    title: "Watch this until…",
+    description: "Prompt template for a watch-until monitor (Phase 3)",
+    template: "Watch this until the condition is met, then tell me what changed: {{input}}",
+    confirmation: "none",
+    isAvailable: always,
+  });
+
+  reg.register({
+    id: "core.deepResearch",
+    source: "core",
+    kind: "template",
+    title: "Deep research",
+    description: "Prompt template for a phased research workflow (Phase 3)",
+    template:
+      "Run a deep research workflow on this topic. Break it into phases, cite sources, and save notes under ./artifacts: {{input}}",
+    confirmation: "none",
+    isAvailable: always,
+  });
 }

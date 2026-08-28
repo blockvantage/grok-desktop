@@ -735,6 +735,11 @@
     "languageTitle": "Language",
     "languageDescription": "Choose the language for the Grok Desk interface. Takes effect immediately.",
     "languageSystem": "Match system",
+    "appearanceTitle": "Appearance",
+    "appearanceDescription": "Dark is the crafted default. Light uses the same brand tokens.",
+    "appearanceDark": "Dark",
+    "appearanceLight": "Light",
+    "appearanceSystem": "Match system",
     "defaultModel": "Default model",
     "defaultModelDesc": "Choose the default model Grok uses for new tasks.",
     "workspaceBehavior": "Workspace behavior",
@@ -1094,7 +1099,8 @@
     "goTo": "Go to",
     "stop": "Stop",
     "shortcuts": "Keyboard shortcuts",
-    "admin": "Setup & account"
+    "admin": "Setup & account",
+    "chatActions": "In this chat"
   },
   "shortcuts": {
     "title": "Keyboard shortcuts",
@@ -1113,7 +1119,15 @@
     "copy": "Copy last response",
     "pin": "Pin or unpin chat",
     "slash": "Slash commands",
-    "mention": "Add files"
+    "mention": "Add files",
+    "stopEsc": "Stop the running reply",
+    "queueSendNow": "Send the queued message now"
+  },
+  "mermaid": {
+    "title": "Diagram",
+    "viewSource": "View source",
+    "viewDiagram": "View diagram",
+    "rendering": "Rendering…"
   },
   "empty": {
     "title": "Nothing here yet",
@@ -1487,6 +1501,19 @@
     "briefingDesc": "What needs you right now",
     "export": "Export pack",
     "exportDesc": "Answer + files handoff",
+    "compact": "Summarize so far",
+    "compactDesc": "Tidy earlier conversation to keep going",
+    "rewind": "Undo last turn",
+    "rewindDesc": "Rewinds the conversation, not files on disk",
+    "remember": "Remember this",
+    "rememberDesc": "Save takeaways from this answer",
+    "monitor": "Watch this until…",
+    "monitorDesc": "Keep an eye on something over time",
+    "monitorGoal": "Watch this until the condition is met, then tell me what changed.",
+    "deepResearch": "Deep research",
+    "deepResearchDesc": "A research team working in phases",
+    "deepResearchGoal": "Run a deep research workflow on this topic. Break it into phases, cite sources, and save notes under ./artifacts.",
+    "needOpenChat": "Open a chat to use this command",
     "armedEffect": {
       "brief": "Structured brief · audience, message, channels",
       "research": "Deep research with sources · runs at heavy effort",

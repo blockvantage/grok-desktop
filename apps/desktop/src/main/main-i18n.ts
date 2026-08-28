@@ -124,6 +124,33 @@ const M = {
     ja: "Grok Desk の起動に失敗しました",
     zh: "Grok Desk 启动失败",
   },
+  notifyAppName: {
+    en: "Grok Desk",
+    es: "Grok Desk",
+    fr: "Grok Desk",
+    de: "Grok Desk",
+    pt: "Grok Desk",
+    ja: "Grok Desk",
+    zh: "Grok Desk",
+  },
+  notifyBrowserApproval: {
+    en: "Browser action needs your approval",
+    es: "Una acción del navegador necesita tu visto bueno",
+    fr: "Une action du navigateur attend votre accord",
+    de: "Eine Browser-Aktion braucht deine Freigabe",
+    pt: "Uma ação do navegador precisa da sua aprovação",
+    ja: "ブラウザ操作の許可が必要です",
+    zh: "浏览器操作需要你批准",
+  },
+  notifyTaskWaiting: {
+    en: "A task is waiting for your approval",
+    es: "Una tarea espera tu aprobación",
+    fr: "Une tâche attend votre approbation",
+    de: "Eine Aufgabe wartet auf deine Freigabe",
+    pt: "Uma tarefa espera a sua aprovação",
+    ja: "タスクが承認待ちです",
+    zh: "有一项任务在等你批准",
+  },
 } as const satisfies Record<string, Record<MainLocale, string>>;
 
 export type MainI18nKey = keyof typeof M;

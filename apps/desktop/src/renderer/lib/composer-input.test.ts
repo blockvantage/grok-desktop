@@ -223,6 +223,23 @@ describe("slash commands", () => {
     expect(research?.effort).toBe("heavy");
   });
 
+  it("includes summarize / undo / remember / watch / deep-research", () => {
+    expect(SLASH_COMMANDS.some((c) => c.token === "compact" && c.action === "compact")).toBe(
+      true,
+    );
+    expect(SLASH_COMMANDS.some((c) => c.token === "rewind" && c.action === "rewind")).toBe(
+      true,
+    );
+    expect(SLASH_COMMANDS.some((c) => c.token === "remember")).toBe(true);
+    expect(SLASH_COMMANDS.find((c) => c.id === "monitor")?.token).toBe("watch");
+    expect(SLASH_COMMANDS.find((c) => c.id === "deep-research")?.effort).toBe(
+      "heavy",
+    );
+    expect(filterSlashCommands("deep").some((c) => c.token === "deep-research")).toBe(
+      true,
+    );
+  });
+
   it("/video is a fill command with the expected shape", () => {
     const video = SLASH_COMMANDS.find((c) => c.id === "video");
     expect(video).toEqual({

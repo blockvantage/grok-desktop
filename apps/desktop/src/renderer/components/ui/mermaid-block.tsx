@@ -1,5 +1,7 @@
 import { useEffect, useId, useState } from "react";
 import DOMPurify from "dompurify";
+import { useT } from "@/i18n";
+import { useAppearance } from "@/components/appearance-provider";
 
 /**
  * Restrict mermaid output to presentational SVG. The SVG profile already
@@ -18,6 +20,8 @@ export function sanitizeMermaidSvg(svg: string): string {
  * Mermaid is loaded dynamically so non-diagram chats stay light.
  */
 export function MermaidBlock(props: { code: string }) {
+  const t = useT();
+  const { resolved } = useAppearance();
   const reactId = useId().replace(/:/g, "");
   const [svg, setSvg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +35,7 @@ export function MermaidBlock(props: { code: string }) {
         mermaid.initialize({
           startOnLoad: false,
           securityLevel: "strict",
-          theme: "dark",
+          theme: resolved === "light" ? "neutral" : "dark",
         });
         const id = `mmd-${reactId}-${Math.random().toString(36).slice(2, 8)}`;
         const { svg: rendered } = await mermaid.render(id, props.code);
@@ -49,20 +53,20 @@ export function MermaidBlock(props: { code: string }) {
     return () => {
       cancelled = true;
     };
-  }, [props.code, reactId]);
+  }, [props.code, reactId, resolved]);
 
   return (
-    <div className="my-3 overflow-hidden rounded-lg border border-hairline bg-black/20">
+    <div className="my-3 overflow-hidden rounded-lg border border-hairline bg-muted/40">
       <div className="flex items-center justify-between border-b border-hairline-quiet px-2 py-1">
         <span className="text-2xs uppercase tracking-wide text-muted-foreground">
-          Mermaid
+          {t("mermaid.title")}
         </span>
         <button
           type="button"
           className="text-2xs text-muted-foreground hover:text-foreground"
           onClick={() => setShowSource((v) => !v)}
         >
-          {showSource ? "View diagram" : "View source"}
+          {showSource ? t("mermaid.viewDiagram") : t("mermaid.viewSource")}
         </button>
       </div>
       {showSource || error ? (
@@ -76,7 +80,9 @@ export function MermaidBlock(props: { code: string }) {
           dangerouslySetInnerHTML={{ __html: svg }}
         />
       ) : (
-        <div className="p-3 text-2xs text-muted-foreground">Rendering…</div>
+        <div className="p-3 text-2xs text-muted-foreground">
+          {t("mermaid.rendering")}
+        </div>
       )}
     </div>
   );

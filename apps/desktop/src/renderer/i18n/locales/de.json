@@ -886,7 +886,12 @@
     "inheritUserGrokConfirm": "Plugins & Hooks aktivieren",
     "inheritUserGrokCancel": "Isoliert lassen",
     "trustedFolders": "Vertrauenswürdige Ordner",
-    "trustedFoldersDesc": "Projektwerkzeuge laufen nur in Ordnern, denen du vertraust. Bei der ersten Nutzung wird einmal pro Ordner gefragt."
+    "trustedFoldersDesc": "Projektwerkzeuge laufen nur in Ordnern, denen du vertraust. Bei der ersten Nutzung wird einmal pro Ordner gefragt.",
+    "appearanceTitle": "Erscheinungsbild",
+    "appearanceDescription": "Dunkel ist die gestaltete Standardansicht. Hell nutzt dieselben Marken-Token.",
+    "appearanceDark": "Dunkel",
+    "appearanceLight": "Hell",
+    "appearanceSystem": "System folgen"
   },
   "dictation": {
     "listening": "Grok hört zu… {text}",
@@ -1052,7 +1057,8 @@
     "goTo": "Gehe zu",
     "stop": "Stoppen",
     "shortcuts": "Tastenkürzel",
-    "admin": "Setup & Konto"
+    "admin": "Setup & Konto",
+    "chatActions": "In diesem Chat"
   },
   "empty": {
     "title": "Noch nichts hier",
@@ -1434,7 +1440,20 @@
       "video": "Kinoreifer Teaser · meist 1–2 Min."
     },
     "armedClear": "Befehl entfernen",
-    "expandsOnSend": "Wird beim Senden erweitert"
+    "expandsOnSend": "Wird beim Senden erweitert",
+    "compact": "Bisher zusammenfassen",
+    "compactDesc": "Frühere Unterhaltung aufräumen, um weiterzumachen",
+    "rewind": "Letzten Zug rückgängig",
+    "rewindDesc": "Setzt die Unterhaltung zurück, nicht Dateien auf der Platte",
+    "remember": "Das merken",
+    "rememberDesc": "Takeaways aus dieser Antwort speichern",
+    "monitor": "Beobachten bis…",
+    "monitorDesc": "Etwas über die Zeit im Blick behalten",
+    "monitorGoal": "Beobachte das, bis die Bedingung erfüllt ist, und sag mir, was sich geändert hat.",
+    "deepResearch": "Tiefe Recherche",
+    "deepResearchDesc": "Ein Rechercheteam in Phasen",
+    "deepResearchGoal": "Starte einen tiefen Recherche-Workflow zu diesem Thema. Teile in Phasen, zitiere Quellen und speichere Notizen unter ./artifacts.",
+    "needOpenChat": "Öffne einen Chat, um diesen Befehl zu nutzen"
   },
   "activity": {
     "openingPage": "Seite wird geöffnet",
@@ -1565,7 +1584,9 @@
     "copy": "Letzte Antwort kopieren",
     "pin": "Chat anheften oder lösen",
     "slash": "Slash-Befehle",
-    "mention": "Dateien hinzufügen"
+    "mention": "Dateien hinzufügen",
+    "stopEsc": "Laufende Antwort stoppen",
+    "queueSendNow": "Die Nachricht in der Warteschlange jetzt senden"
   },
   "readiness": {
     "title": "Bevor du starten kannst",
@@ -1743,5 +1764,11 @@
     "unknownDecisionShort": "Unbekannte Entscheidung",
     "corruptDetail": "Detail-JSON war beschädigt und konnte nicht gelesen werden.",
     "corruptDetailShort": "Beschädigtes Detail"
+  },
+  "mermaid": {
+    "title": "Diagramm",
+    "viewSource": "Quelle anzeigen",
+    "viewDiagram": "Diagramm zeigen",
+    "rendering": "Wird erstellt…"
   }
 }

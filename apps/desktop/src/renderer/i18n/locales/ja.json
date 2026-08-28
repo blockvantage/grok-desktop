@@ -886,7 +886,12 @@
     "inheritUserGrokConfirm": "プラグインとフックを有効にする",
     "inheritUserGrokCancel": "分離したままにする",
     "trustedFolders": "信頼済みフォルダ",
-    "trustedFoldersDesc": "プロジェクトツールは信頼済みフォルダでのみ実行されます。初回はフォルダごとに一度確認します。"
+    "trustedFoldersDesc": "プロジェクトツールは信頼済みフォルダでのみ実行されます。初回はフォルダごとに一度確認します。",
+    "appearanceTitle": "外観",
+    "appearanceDescription": "ダークが既定のデザインです。ライトも同じブランドトークンを使います。",
+    "appearanceDark": "ダーク",
+    "appearanceLight": "ライト",
+    "appearanceSystem": "システムに合わせる"
   },
   "dictation": {
     "listening": "Grok が聞き取り中… {text}",
@@ -1052,7 +1057,8 @@
     "goTo": "移動",
     "stop": "停止",
     "shortcuts": "キーボードショートカット",
-    "admin": "セットアップとアカウント"
+    "admin": "セットアップとアカウント",
+    "chatActions": "このチャット"
   },
   "empty": {
     "title": "まだ何もありません",
@@ -1434,7 +1440,20 @@
       "video": "シネマティックなティーザー動画 · 通常1〜2分"
     },
     "armedClear": "コマンドを削除",
-    "expandsOnSend": "送信時に展開されます"
+    "expandsOnSend": "送信時に展開されます",
+    "compact": "ここまで要約",
+    "compactDesc": "これまでの会話を整理して続ける",
+    "rewind": "直前のターンを取り消す",
+    "rewindDesc": "会話を巻き戻します。ディスク上のファイルは戻りません",
+    "remember": "これを覚える",
+    "rememberDesc": "この回答の要点を保存",
+    "monitor": "次まで監視…",
+    "monitorDesc": "条件を満たすまで見続ける",
+    "monitorGoal": "条件を満たすまでこれを監視し、何が変わったか教えて。",
+    "deepResearch": "深い調査",
+    "deepResearchDesc": "段階的に進む調査チーム",
+    "deepResearchGoal": "このトピックで深い調査ワークフローを実行して。段階に分け、出典を示し、メモを ./artifacts に保存して。",
+    "needOpenChat": "このコマンドはチャットを開いて使います"
   },
   "activity": {
     "openingPage": "ページを開いています",
@@ -1565,7 +1584,9 @@
     "copy": "最後の回答をコピー",
     "pin": "チャットを固定／解除",
     "slash": "スラッシュコマンド",
-    "mention": "ファイルを追加"
+    "mention": "ファイルを追加",
+    "stopEsc": "生成中の返信を停止",
+    "queueSendNow": "キューのメッセージを今すぐ送信"
   },
   "readiness": {
     "title": "実行する前に",
@@ -1743,5 +1764,11 @@
     "unknownDecisionShort": "不明な決定",
     "corruptDetail": "詳細 JSON が破損しており解析できませんでした。",
     "corruptDetailShort": "破損した詳細"
+  },
+  "mermaid": {
+    "title": "図",
+    "viewSource": "ソースを表示",
+    "viewDiagram": "図を表示",
+    "rendering": "描画中…"
   }
 }

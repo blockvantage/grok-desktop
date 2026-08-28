@@ -1,5 +1,8 @@
 // @vitest-environment jsdom
 import DOMPurify from "dompurify";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it, vi } from "vitest";
 import { sanitizeMermaidSvg } from "./mermaid-block";
 
@@ -47,5 +50,19 @@ describe("sanitizeMermaidSvg", () => {
     expect(config?.USE_PROFILES).toEqual({ svg: true, svgFilters: true });
     expect(config?.FORBID_TAGS).toEqual(["foreignObject"]);
     sanitize.mockRestore();
+  });
+
+  it("chrome copy goes through i18n catalogs", () => {
+    const src = fs.readFileSync(
+      path.join(path.dirname(fileURLToPath(import.meta.url)), "mermaid-block.tsx"),
+      "utf8",
+    );
+    expect(src).toMatch(/t\("mermaid\.title"\)/);
+    expect(src).toMatch(/t\("mermaid\.viewSource"\)/);
+    expect(src).toMatch(/t\("mermaid\.viewDiagram"\)/);
+    expect(src).toMatch(/t\("mermaid\.rendering"\)/);
+    expect(src).not.toMatch(/>Mermaid</);
+    expect(src).not.toMatch(/>View source</);
+    expect(src).not.toMatch(/>Rendering…</);
   });
 });

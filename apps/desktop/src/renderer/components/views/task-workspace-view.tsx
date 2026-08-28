@@ -1486,6 +1486,56 @@ export function TaskWorkspaceView(props: {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional
   }, [armed?.command.id]);
 
+  const undoConversationTurn = async (turn: {
+    id: string;
+    taskId: string;
+  }) => {
+    try {
+      const points = await taskRewindPoints(turn.taskId);
+      if (!points?.length) {
+        toast({
+          description: t("workspace.undoUnavailable"),
+          variant: "destructive",
+        });
+        return;
+      }
+      const point = mapTurnToRewindPoint(
+        conversation.turns,
+        points,
+        turn.id,
+      );
+      if (!point) {
+        toast({
+          description: t("workspace.undoUnavailable"),
+          variant: "destructive",
+        });
+        return;
+      }
+      const files = point.files ?? [];
+      const ok = await ownedConfirm.ask({
+        title: t("conversation.undoTurn"),
+        description: t("conversation.rewindConversationHint"),
+        items: files,
+      });
+      if (!ok) return;
+      const result = await taskRewind(turn.taskId, point.id, turn.id);
+      if (!result.ok) {
+        toast({
+          description: t("workspace.rewindFailed"),
+          variant: "destructive",
+        });
+      } else {
+        toast({ description: t("workspace.turnUndone") });
+      }
+    } catch (e) {
+      toast({
+        description:
+          e instanceof Error ? e.message : t("workspace.undoFailed"),
+        variant: "destructive",
+      });
+    }
+  };
+
   const applySlashFollow = (cmd: SlashCommand) => {
     const slash = extractSlashQuery(followUp, followCursor);
     if (!slash) return;
@@ -1532,6 +1582,26 @@ export function TaskWorkspaceView(props: {
             variant: "destructive",
           });
         });
+    } else if (side === "compact") {
+      void taskCompact(task.id).then((result) => {
+        if (!result.ok) {
+          toast({
+            description: t("workspace.summarizeUnavailable"),
+            variant: "destructive",
+          });
+        }
+      });
+    } else if (side === "remember") {
+      if (props.onRememberTakeaways) props.onRememberTakeaways(task.id);
+    } else if (side === "rewind") {
+      const last = [...conversation.turns].reverse().find((turn) => !turn.superseded);
+      if (last) void undoConversationTurn(last);
+      else {
+        toast({
+          description: t("workspace.undoUnavailable"),
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -2111,59 +2181,7 @@ export function TaskWorkspaceView(props: {
                   void Promise.resolve(props.onFollowUp?.(g));
                 }
               }}
-              onUndoTurn={async (turn) => {
-                try {
-                  const points = await taskRewindPoints(turn.taskId);
-                  if (!points?.length) {
-                    toast({
-                      description: t("workspace.undoUnavailable"),
-                      variant: "destructive",
-                    });
-                    return;
-                  }
-                  // Most recent N turns ↔ most recent N points (prompt_index order).
-                  const point = mapTurnToRewindPoint(
-                    conversation.turns,
-                    points,
-                    turn.id,
-                  );
-                  if (!point) {
-                    toast({
-                      description: t("workspace.undoUnavailable"),
-                      variant: "destructive",
-                    });
-                    return;
-                  }
-                  const files = point.files ?? [];
-                  const ok = await ownedConfirm.ask({
-                    title: t("conversation.undoTurn"),
-                    description: t("conversation.rewindConversationHint"),
-                    items: files,
-                  });
-                  if (!ok) return;
-                  const result = await taskRewind(
-                    turn.taskId,
-                    point.id,
-                    turn.id,
-                  );
-                  if (!result.ok) {
-                    toast({
-                      description: t("workspace.rewindFailed"),
-                      variant: "destructive",
-                    });
-                  } else {
-                    toast({ description: t("workspace.turnUndone") });
-                  }
-                } catch (e) {
-                  toast({
-                    description:
-                      e instanceof Error
-                        ? e.message
-                        : t("workspace.undoFailed"),
-                    variant: "destructive",
-                  });
-                }
-              }}
+              onUndoTurn={undoConversationTurn}
             />
           </div>
         </ScrollArea>
@@ -2916,6 +2934,17 @@ export function TaskWorkspaceView(props: {
                     );
                     if (action.type === "send") {
                       e.preventDefault();
+                      if (!followUp.trim()) {
+                        const queued = messageQueue.find(
+                          (item) =>
+                            item.status === "pending" ||
+                            item.status === "failed",
+                        );
+                        if (queued) {
+                          sendQueuedNow(queued);
+                          return;
+                        }
+                      }
                       // Submit the form (Enter send / Shift+Enter newline).
                       (e.currentTarget.form as HTMLFormElement | null)?.requestSubmit();
                     }

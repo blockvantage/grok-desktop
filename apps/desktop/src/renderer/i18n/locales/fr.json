@@ -886,7 +886,12 @@
     "inheritUserGrokConfirm": "Activer les plugins et hooks",
     "inheritUserGrokCancel": "Garder isolé",
     "trustedFolders": "Dossiers approuvés",
-    "trustedFoldersDesc": "Les outils de projet ne s’exécutent que dans les dossiers approuvés. La première utilisation demande une fois par dossier."
+    "trustedFoldersDesc": "Les outils de projet ne s’exécutent que dans les dossiers approuvés. La première utilisation demande une fois par dossier.",
+    "appearanceTitle": "Apparence",
+    "appearanceDescription": "Le sombre est le défaut soigné. Le clair réutilise les mêmes jetons de marque.",
+    "appearanceDark": "Sombre",
+    "appearanceLight": "Clair",
+    "appearanceSystem": "Suivre le système"
   },
   "dictation": {
     "listening": "Écoute avec Grok… {text}",
@@ -1052,7 +1057,8 @@
     "goTo": "Aller à",
     "stop": "Arrêter",
     "shortcuts": "Raccourcis clavier",
-    "admin": "Configuration et compte"
+    "admin": "Configuration et compte",
+    "chatActions": "Dans ce chat"
   },
   "empty": {
     "title": "Rien ici pour l’instant",
@@ -1434,7 +1440,20 @@
       "video": "Teaser vidéo cinématique · environ 1–2 min"
     },
     "armedClear": "Retirer la commande",
-    "expandsOnSend": "S’étend à l’envoi"
+    "expandsOnSend": "S’étend à l’envoi",
+    "compact": "Résumer jusqu'ici",
+    "compactDesc": "Ranger la conversation précédente pour continuer",
+    "rewind": "Annuler le dernier tour",
+    "rewindDesc": "Recule la conversation, pas les fichiers sur disque",
+    "remember": "Mémoriser ceci",
+    "rememberDesc": "Enregistrer les points clés de cette réponse",
+    "monitor": "Surveiller jusqu’à…",
+    "monitorDesc": "Garder un œil sur quelque chose dans le temps",
+    "monitorGoal": "Surveille ceci jusqu’à ce que la condition soit remplie, puis dis-moi ce qui a changé.",
+    "deepResearch": "Recherche approfondie",
+    "deepResearchDesc": "Une équipe de recherche en plusieurs phases",
+    "deepResearchGoal": "Lance un flux de recherche approfondie sur ce sujet. Découpe en phases, cite les sources et enregistre des notes sous ./artifacts.",
+    "needOpenChat": "Ouvrez un chat pour utiliser cette commande"
   },
   "activity": {
     "openingPage": "Ouverture de la page",
@@ -1565,7 +1584,9 @@
     "copy": "Copier la dernière réponse",
     "pin": "Épingler ou désépingler le chat",
     "slash": "Commandes slash",
-    "mention": "Ajouter des fichiers"
+    "mention": "Ajouter des fichiers",
+    "stopEsc": "Arrêter la réponse en cours",
+    "queueSendNow": "Envoyer maintenant le message en file"
   },
   "readiness": {
     "title": "Avant de pouvoir lancer",
@@ -1743,5 +1764,11 @@
     "unknownDecisionShort": "Décision inconnue",
     "corruptDetail": "Le JSON de détail était corrompu et n’a pas pu être lu.",
     "corruptDetailShort": "Détail corrompu"
+  },
+  "mermaid": {
+    "title": "Schéma",
+    "viewSource": "Voir le source",
+    "viewDiagram": "Voir le schéma",
+    "rendering": "Rendu…"
   }
 }

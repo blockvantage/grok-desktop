@@ -37,6 +37,8 @@ export type ShortcutContext = {
   nav: AppNavId | string;
   taskSurface: "list" | "workspace";
   showOnboarding: boolean;
+  /** A task is running or waiting — Esc stops instead of leaving the chat. */
+  live?: boolean;
 };
 
 const NAV_BY_DIGIT: Record<string, AppNavId> = {
@@ -80,10 +82,11 @@ export function resolveAppShortcut(ctx: ShortcutContext): ShortcutIntent {
     return { type: "stop_live" };
   }
 
-  // Escape: close overlays, then back out of workspace
+  // Escape: close overlays, stop a live run, then back out of workspace
   if (key === "Escape" && !ctx.meta) {
     if (ctx.paletteOpen) return { type: "close_palette" };
     if (ctx.inboxOpen) return { type: "close_inbox" };
+    if (ctx.live && !ctx.typing) return { type: "stop_live" };
     if (!ctx.typing && ctx.nav === "tasks" && ctx.taskSurface === "workspace") {
       return { type: "workspace_to_list" };
     }

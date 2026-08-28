@@ -56,6 +56,28 @@ describe("resolveAppShortcut", () => {
     ).toEqual({ type: "workspace_to_list" });
   });
 
+  it("Escape stops a live run before leaving the workspace", () => {
+    expect(
+      resolveAppShortcut({
+        ...base,
+        key: "Escape",
+        nav: "tasks",
+        taskSurface: "workspace",
+        live: true,
+      }),
+    ).toEqual({ type: "stop_live" });
+    expect(
+      resolveAppShortcut({
+        ...base,
+        key: "Escape",
+        nav: "tasks",
+        taskSurface: "workspace",
+        live: true,
+        typing: true,
+      }),
+    ).toEqual({ type: "none" });
+  });
+
   it("slash focuses composer on home when not typing", () => {
     expect(resolveAppShortcut({ ...base, key: "/" })).toEqual({
       type: "focus_composer_slash",

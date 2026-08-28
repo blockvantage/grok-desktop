@@ -886,7 +886,12 @@
     "inheritUserGrokConfirm": "Ativar plugins e hooks",
     "inheritUserGrokCancel": "Manter isolado",
     "trustedFolders": "Pastas de confiança",
-    "trustedFoldersDesc": "As ferramentas de projeto só correm em pastas de confiança. Na primeira utilização perguntamos uma vez por pasta."
+    "trustedFoldersDesc": "As ferramentas de projeto só correm em pastas de confiança. Na primeira utilização perguntamos uma vez por pasta.",
+    "appearanceTitle": "Aparência",
+    "appearanceDescription": "O escuro é o padrão cuidado. O claro usa os mesmos tokens da marca.",
+    "appearanceDark": "Escuro",
+    "appearanceLight": "Claro",
+    "appearanceSystem": "Seguir o sistema"
   },
   "dictation": {
     "listening": "A ouvir com o Grok… {text}",
@@ -1052,7 +1057,8 @@
     "goTo": "Ir para",
     "stop": "Parar",
     "shortcuts": "Atalhos de teclado",
-    "admin": "Configuração e conta"
+    "admin": "Configuração e conta",
+    "chatActions": "Neste chat"
   },
   "empty": {
     "title": "Ainda nada aqui",
@@ -1434,7 +1440,20 @@
       "video": "Vídeo teaser cinematográfico · costuma levar 1–2 min"
     },
     "armedClear": "Remover comando",
-    "expandsOnSend": "Expande ao enviar"
+    "expandsOnSend": "Expande ao enviar",
+    "compact": "Resumir até agora",
+    "compactDesc": "Organizar a conversa anterior para continuar",
+    "rewind": "Desfazer o último turno",
+    "rewindDesc": "Retrocede a conversa, não os ficheiros no disco",
+    "remember": "Lembrar isto",
+    "rememberDesc": "Guardar conclusões desta resposta",
+    "monitor": "Vigiar isto até…",
+    "monitorDesc": "Acompanhar algo ao longo do tempo",
+    "monitorGoal": "Vigia isto até a condição ser cumprida e diz-me o que mudou.",
+    "deepResearch": "Pesquisa profunda",
+    "deepResearchDesc": "Uma equipa a investigar por fases",
+    "deepResearchGoal": "Lança um fluxo de pesquisa profunda sobre este tema. Divide em fases, cita fontes e guarda notas em ./artifacts.",
+    "needOpenChat": "Abre um chat para usar este comando"
   },
   "activity": {
     "openingPage": "A abrir página",
@@ -1565,7 +1584,9 @@
     "copy": "Copiar última resposta",
     "pin": "Fixar ou desafixar chat",
     "slash": "Comandos de barra",
-    "mention": "Adicionar arquivos"
+    "mention": "Adicionar arquivos",
+    "stopEsc": "Parar a resposta em andamento",
+    "queueSendNow": "Enviar agora a mensagem na fila"
   },
   "readiness": {
     "title": "Antes de poderes executar",
@@ -1743,5 +1764,11 @@
     "unknownDecisionShort": "Decisão desconhecida",
     "corruptDetail": "O JSON de detalhe estava corrompido e não pôde ser analisado.",
     "corruptDetailShort": "Detalhe corrompido"
+  },
+  "mermaid": {
+    "title": "Diagrama",
+    "viewSource": "Ver código",
+    "viewDiagram": "Ver diagrama",
+    "rendering": "A renderizar…"
   }
 }

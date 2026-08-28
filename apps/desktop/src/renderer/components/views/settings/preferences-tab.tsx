@@ -28,6 +28,8 @@ import {
 import { useT } from "@/i18n";
 import { SettingsInfoRow, SettingsSection } from "./settings-row";
 import { LanguageTab } from "./language-tab";
+import { useAppearance } from "@/components/appearance-provider";
+import type { AppearancePreference } from "@/lib/appearance";
 
 export function PreferencesTab(props: {
   models: string[];
@@ -52,11 +54,44 @@ export function PreferencesTab(props: {
 }) {
   const t = useT();
   const [confirmInherit, setConfirmInherit] = useState(false);
+  const appearance = useAppearance();
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-4" data-testid="preferences-tab">
       {/* Language first — easy to find, same card density as other prefs */}
       <LanguageTab />
+
+      <Card className="border-border/70" data-testid="appearance-tab">
+        <CardHeader>
+          <CardTitle className="text-base">{t("settings.appearanceTitle")}</CardTitle>
+          <CardDescription>{t("settings.appearanceDescription")}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <SettingsSection title={t("settings.appearanceTitle")}>
+            <Select
+              value={appearance.preference}
+              onValueChange={(v) =>
+                appearance.setPreference(v as AppearancePreference)
+              }
+            >
+              <SelectTrigger data-testid="appearance-select">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="dark" data-testid="appearance-option-dark">
+                  {t("settings.appearanceDark")}
+                </SelectItem>
+                <SelectItem value="light" data-testid="appearance-option-light">
+                  {t("settings.appearanceLight")}
+                </SelectItem>
+                <SelectItem value="system" data-testid="appearance-option-system">
+                  {t("settings.appearanceSystem")}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </SettingsSection>
+        </CardContent>
+      </Card>
 
       <Card className="border-border/70">
         <CardHeader>

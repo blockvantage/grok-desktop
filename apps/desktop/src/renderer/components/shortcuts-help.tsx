@@ -6,48 +6,65 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { useT } from "@/i18n";
+import {
+  isApplePlatform,
+  modifierKeyGlyph,
+  shiftKeyGlyph,
+} from "@/lib/platform-modifier";
 
 type ShortcutRow = { keys: string[]; labelKey: string };
 type ShortcutGroup = { headingKey: string; rows: ShortcutRow[] };
 
 /** Central reference for the shell's keyboard shortcuts (previously undiscoverable). */
-export const SHORTCUT_GROUPS: ShortcutGroup[] = [
-  {
-    headingKey: "shortcuts.groupGeneral",
-    rows: [
-      { keys: ["⌘", "K"], labelKey: "shortcuts.palette" },
-      { keys: ["⌘", "N"], labelKey: "shortcuts.newChat" },
-      { keys: ["?"], labelKey: "shortcuts.help" },
-      { keys: ["esc"], labelKey: "shortcuts.escape" },
-    ],
-  },
-  {
-    headingKey: "shortcuts.groupNav",
-    rows: [{ keys: ["⌘", "1–6"], labelKey: "shortcuts.nav" }],
-  },
-  {
-    headingKey: "shortcuts.groupChat",
-    rows: [
-      { keys: ["⌘", "."], labelKey: "shortcuts.stop" },
-      { keys: ["⌘", "⇧", "I"], labelKey: "shortcuts.inbox" },
-      { keys: ["⌘", "⇧", "C"], labelKey: "shortcuts.copy" },
-      { keys: ["⌘", "⇧", "P"], labelKey: "shortcuts.pin" },
-    ],
-  },
-  {
-    headingKey: "shortcuts.groupComposer",
-    rows: [
-      { keys: ["/"], labelKey: "shortcuts.slash" },
-      { keys: ["@"], labelKey: "shortcuts.mention" },
-    ],
-  },
-];
+export function shortcutGroups(
+  mod = modifierKeyGlyph(),
+  shift = shiftKeyGlyph(),
+): ShortcutGroup[] {
+  return [
+    {
+      headingKey: "shortcuts.groupGeneral",
+      rows: [
+        { keys: [mod, "K"], labelKey: "shortcuts.palette" },
+        { keys: [mod, "N"], labelKey: "shortcuts.newChat" },
+        { keys: ["?"], labelKey: "shortcuts.help" },
+        { keys: ["esc"], labelKey: "shortcuts.escape" },
+      ],
+    },
+    {
+      headingKey: "shortcuts.groupNav",
+      rows: [{ keys: [mod, "1–6"], labelKey: "shortcuts.nav" }],
+    },
+    {
+      headingKey: "shortcuts.groupChat",
+      rows: [
+        { keys: [mod, "."], labelKey: "shortcuts.stop" },
+        { keys: ["esc"], labelKey: "shortcuts.stopEsc" },
+        { keys: [mod, shift, "I"], labelKey: "shortcuts.inbox" },
+        { keys: [mod, shift, "C"], labelKey: "shortcuts.copy" },
+        { keys: [mod, shift, "P"], labelKey: "shortcuts.pin" },
+      ],
+    },
+    {
+      headingKey: "shortcuts.groupComposer",
+      rows: [
+        { keys: ["/"], labelKey: "shortcuts.slash" },
+        { keys: ["@"], labelKey: "shortcuts.mention" },
+        { keys: [mod, "Enter"], labelKey: "shortcuts.queueSendNow" },
+      ],
+    },
+  ];
+}
+
+/** Mac-default snapshot for structure tests that grep the module. */
+export const SHORTCUT_GROUPS: ShortcutGroup[] = shortcutGroups("⌘", "⇧");
 
 export function ShortcutsHelp(props: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
   const t = useT();
+  const apple = isApplePlatform();
+  const groups = shortcutGroups(modifierKeyGlyph(apple), shiftKeyGlyph(apple));
   return (
     <Dialog open={props.open} onOpenChange={props.onOpenChange}>
       <DialogContent className="max-w-lg">
@@ -56,7 +73,7 @@ export function ShortcutsHelp(props: {
           <DialogDescription>{t("shortcuts.subtitle")}</DialogDescription>
         </DialogHeader>
         <div className="grid gap-5 sm:grid-cols-2">
-          {SHORTCUT_GROUPS.map((group) => (
+          {groups.map((group) => (
             <div key={group.headingKey} className="space-y-2">
               <p className="text-2xs font-medium uppercase tracking-wide text-muted-foreground">
                 {t(group.headingKey)}

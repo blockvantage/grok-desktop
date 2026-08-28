@@ -886,7 +886,12 @@
     "inheritUserGrokConfirm": "启用插件与钩子",
     "inheritUserGrokCancel": "保持隔离",
     "trustedFolders": "受信任的文件夹",
-    "trustedFoldersDesc": "项目工具仅在你信任的文件夹中运行。首次使用时每个文件夹会询问一次。"
+    "trustedFoldersDesc": "项目工具仅在你信任的文件夹中运行。首次使用时每个文件夹会询问一次。",
+    "appearanceTitle": "外观",
+    "appearanceDescription": "深色是精心设计的默认外观。浅色使用同一套品牌色板。",
+    "appearanceDark": "深色",
+    "appearanceLight": "浅色",
+    "appearanceSystem": "跟随系统"
   },
   "dictation": {
     "listening": "Grok 正在听… {text}",
@@ -1052,7 +1057,8 @@
     "goTo": "前往",
     "stop": "停止",
     "shortcuts": "键盘快捷键",
-    "admin": "设置与账户"
+    "admin": "设置与账户",
+    "chatActions": "当前对话"
   },
   "empty": {
     "title": "这里还没有内容",
@@ -1434,7 +1440,20 @@
       "video": "电影感预告片 · 通常 1–2 分钟"
     },
     "armedClear": "移除命令",
-    "expandsOnSend": "发送时展开"
+    "expandsOnSend": "发送时展开",
+    "compact": "总结到目前为止",
+    "compactDesc": "整理更早的对话以便继续",
+    "rewind": "撤销上一轮",
+    "rewindDesc": "只回退对话，不会还原磁盘上的文件",
+    "remember": "记住这个",
+    "rememberDesc": "保存这条回答的要点",
+    "monitor": "一直看到…",
+    "monitorDesc": "长时间关注某件事",
+    "monitorGoal": "一直看到条件满足，然后告诉我发生了什么变化。",
+    "deepResearch": "深度研究",
+    "deepResearchDesc": "分阶段推进的研究团队",
+    "deepResearchGoal": "针对这个主题启动深度研究流程。分成阶段、注明来源，并把笔记保存到 ./artifacts。",
+    "needOpenChat": "打开对话后再使用此命令"
   },
   "activity": {
     "openingPage": "正在打开页面",
@@ -1565,7 +1584,9 @@
     "copy": "复制上一条回复",
     "pin": "置顶或取消置顶对话",
     "slash": "斜杠命令",
-    "mention": "添加文件"
+    "mention": "添加文件",
+    "stopEsc": "停止正在生成的回复",
+    "queueSendNow": "立即发送队列中的消息"
   },
   "readiness": {
     "title": "运行前须完成",
@@ -1743,5 +1764,11 @@
     "unknownDecisionShort": "未知决策",
     "corruptDetail": "详情 JSON 已损坏，无法解析。",
     "corruptDetailShort": "损坏的详情"
+  },
+  "mermaid": {
+    "title": "图表",
+    "viewSource": "查看源码",
+    "viewDiagram": "查看图表",
+    "rendering": "正在渲染…"
   }
 }

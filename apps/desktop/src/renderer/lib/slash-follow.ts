@@ -38,6 +38,9 @@ export function slashSideAction(
   | "openRecipes"
   | "showBriefing"
   | "exportPack"
+  | "compact"
+  | "rewind"
+  | "remember"
   | null {
   if (cmd.action === "pickFolder") return "pickFolder";
   if (cmd.action === "openSchedule") return "openSchedule";
@@ -46,5 +49,8 @@ export function slashSideAction(
   if (cmd.action === "openRecipes") return "openRecipes";
   if (cmd.action === "showBriefing") return "showBriefing";
   if (cmd.action === "exportPack") return "exportPack";
+  if (cmd.action === "compact") return "compact";
+  if (cmd.action === "rewind") return "rewind";
+  if (cmd.action === "remember") return "remember";
   return null;
 }

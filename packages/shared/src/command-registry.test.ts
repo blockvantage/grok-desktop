@@ -32,6 +32,17 @@ describe("CommandRegistry (Phase 5 foundations)", () => {
     ).toBe(true);
   });
 
+  it("registers product-language compact/rewind/memory/research commands", () => {
+    const reg = new CommandRegistry();
+    registerCoreCommands(reg);
+    expect(reg.get("core.compact")?.kind).toBe("action");
+    expect(reg.get("core.rewind")?.kind).toBe("action");
+    expect(reg.get("core.remember")?.kind).toBe("action");
+    expect(reg.get("core.monitor")?.kind).toBe("template");
+    expect(reg.get("core.deepResearch")?.kind).toBe("template");
+    expect(reg.get("core.deepResearch")?.template).toContain("{{input}}");
+  });
+
   it("rejects duplicate registration", () => {
     const reg = new CommandRegistry();
     registerCoreCommands(reg);

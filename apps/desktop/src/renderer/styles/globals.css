@@ -117,6 +117,63 @@
     --glow-primary: 201 100% 70% / 0.18;
   }
 
+  /*
+    Light theme — same brand tokens, inverted surfaces (Phase 2.6).
+    Dark remains the crafted default; this block only applies when
+    <html data-theme="light"> is stamped by AppearanceProvider.
+    No pure #000 / #fff (DESIGN.md).
+  */
+  :root[data-theme="light"] {
+    --background: 210 40% 97%;
+    --foreground: 221 60% 14%;
+
+    --surface-0: 210 40% 97%;
+    --surface-1: 210 33% 99%;
+    --surface-2: 210 28% 95%;
+    --surface-3: 210 24% 92%;
+
+    --card: 210 33% 99%;
+    --card-foreground: 221 60% 14%;
+
+    --popover: 210 30% 98%;
+    --popover-foreground: 221 60% 14%;
+
+    --primary: 201 85% 36%;
+    --primary-foreground: 210 40% 98%;
+    --primary-hover: 201 85% 30%;
+
+    --secondary: 210 25% 92%;
+    --secondary-foreground: 221 50% 18%;
+
+    --muted: 210 22% 94%;
+    --muted-foreground: 216 18% 38%;
+
+    --accent: 210 25% 92%;
+    --accent-foreground: 221 60% 14%;
+
+    --destructive: 354 70% 48%;
+    --destructive-foreground: 210 40% 98%;
+    --destructive-text: 354 65% 42%;
+    --success: 161 45% 32%;
+    --warning: 35 80% 42%;
+    --scroll-thumb: 218 16% 72%;
+
+    --border: 218 22% 84%;
+    --input: 210 25% 94%;
+    --ring: 219 90% 48%;
+
+    --sidebar: 210 32% 94%;
+    --sidebar-foreground: 221 50% 16%;
+    --sidebar-border: 210 20% 88%;
+    --sidebar-accent: 210 28% 91%;
+    --sidebar-accent-foreground: 221 60% 14%;
+
+    --hairline-quiet: 221 40% 12% / 0.06;
+    --hairline: 221 40% 12% / 0.10;
+    --hairline-strong: 221 40% 12% / 0.16;
+    --glow-primary: 201 90% 40% / 0.12;
+  }
+
   * {
     @apply border-border;
   }
@@ -129,6 +186,10 @@
 
   html {
     color-scheme: dark;
+  }
+
+  :root[data-theme="light"] {
+    color-scheme: light;
   }
 
   body {

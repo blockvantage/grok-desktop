@@ -31,6 +31,21 @@ describe("main-i18n", () => {
     expect(mt("dialogStartFailed")).toBe("Grok Desk failed to start");
   });
 
+  it("localizes OS notification bodies", () => {
+    setMainLocale("es");
+    expect(mt("notifyBrowserApproval")).toBe(
+      "Una acción del navegador necesita tu visto bueno",
+    );
+    expect(mt("notifyTaskWaiting")).not.toBe(
+      "A task is waiting for your approval",
+    );
+    setMainLocale("ja");
+    expect(mt("notifyBrowserApproval")).toBe("ブラウザ操作の許可が必要です");
+    expect(mt("notifyBrowserApproval")).not.toBe(
+      "Browser action needs your approval",
+    );
+  });
+
   it("uses real CJK copy that differs from English", () => {
     setMainLocale("ja");
     expect(mt("trayQuit")).toBe("終了");

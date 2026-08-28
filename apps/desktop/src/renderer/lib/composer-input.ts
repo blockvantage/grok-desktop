@@ -64,7 +64,10 @@ export type SlashCommand = {
     | "openMemory"
     | "openRecipes"
     | "showBriefing"
-    | "exportPack";
+    | "exportPack"
+    | "compact"
+    | "rewind"
+    | "remember";
   /** Optional effort escalation when the command is applied (fill only). */
   effort?: EffortLevel;
   /** Registry id for capability gating (e.g. core.image). */
@@ -187,6 +190,54 @@ export const SLASH_COMMANDS: SlashCommand[] = [
     descKey: "slash.exportDesc",
     kind: "action",
     action: "exportPack",
+  },
+  {
+    id: "compact",
+    token: "compact",
+    labelKey: "slash.compact",
+    descKey: "slash.compactDesc",
+    kind: "action",
+    action: "compact",
+    registryId: "core.compact",
+  },
+  {
+    id: "rewind",
+    token: "rewind",
+    labelKey: "slash.rewind",
+    descKey: "slash.rewindDesc",
+    kind: "action",
+    action: "rewind",
+    registryId: "core.rewind",
+  },
+  {
+    id: "remember",
+    token: "remember",
+    labelKey: "slash.remember",
+    descKey: "slash.rememberDesc",
+    kind: "action",
+    action: "remember",
+    registryId: "core.remember",
+  },
+  {
+    id: "monitor",
+    token: "watch",
+    labelKey: "slash.monitor",
+    descKey: "slash.monitorDesc",
+    kind: "fill",
+    isTemplate: true,
+    goalKey: "slash.monitorGoal",
+    registryId: "core.monitor",
+  },
+  {
+    id: "deep-research",
+    token: "deep-research",
+    labelKey: "slash.deepResearch",
+    descKey: "slash.deepResearchDesc",
+    kind: "fill",
+    isTemplate: true,
+    goalKey: "slash.deepResearchGoal",
+    effort: "heavy",
+    registryId: "core.deepResearch",
   },
 ];
 

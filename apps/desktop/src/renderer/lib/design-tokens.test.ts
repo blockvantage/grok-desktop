@@ -74,6 +74,11 @@ describe("design token discipline", () => {
     expect(css).not.toMatch(/--primary:\s*34\s+32%/);
     expect(css).not.toMatch(/--primary-hover:\s*34\s+32%/);
     expect(css).not.toMatch(/#0e0e10/);
+    // Light theme is an opt-in token overlay; dark remains the default.
+    expect(css).toMatch(/:root\[data-theme="light"\]/);
+    expect(css).toMatch(
+      /\[data-theme="light"\][\s\S]*--background:\s*210\s+40%\s+97%/,
+    );
   });
 
   it("Electron window background uses midnight (no charcoal flash)", () => {

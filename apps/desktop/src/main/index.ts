@@ -672,7 +672,7 @@ app.whenReady().then(async () => {
       });
     }
     mainWindow?.webContents.send("grokdesk:browser:approval", req);
-    notifyNeedsYou("Grok Desk", "Browser action needs your approval");
+    notifyNeedsYou(mt("notifyAppName"), mt("notifyBrowserApproval"));
   });
 
   browserService.onStatus((s) => {
@@ -994,8 +994,8 @@ app.whenReady().then(async () => {
             typeof s.notificationTitle === "string" &&
             s.notificationTitle.trim()
               ? s.notificationTitle.trim()
-              : "A task is waiting for your approval";
-          notifyNeedsYou("Grok Desk", body);
+              : mt("notifyTaskWaiting");
+          notifyNeedsYou(mt("notifyAppName"), body);
         }
         lastTrayStatus = s.status;
       } catch {
