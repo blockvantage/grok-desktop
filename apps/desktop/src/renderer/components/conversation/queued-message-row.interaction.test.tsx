@@ -73,7 +73,7 @@ describe("QueuedMessageRow interactions", () => {
       />,
     );
     const send = screen.getByRole("button", { name: "Send now" });
-    expect(send).toBeDisabled();
+    expect((send as HTMLButtonElement).disabled).toBe(true);
     await user.click(send);
     expect(onSendNow).not.toHaveBeenCalled();
   });
