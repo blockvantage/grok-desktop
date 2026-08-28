@@ -916,6 +916,7 @@ export function HomeView(props: {
                             <button
                               type="button"
                               className="text-xs font-medium text-warning/90 hover:text-warning"
+                              data-testid="inbox-view-all"
                               onClick={props.onOpenInbox}
                             >
                               {t("inbox.viewAll")}

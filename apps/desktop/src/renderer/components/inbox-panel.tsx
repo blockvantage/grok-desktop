@@ -221,6 +221,7 @@ function InboxRow({
     kind === "approval" || kind === "clarification" || kind === "unfinished";
   return (
     <article
+      data-testid="inbox-row"
       className={cn(
         "rounded-xl border px-3.5 py-3 transition-colors",
         item.read

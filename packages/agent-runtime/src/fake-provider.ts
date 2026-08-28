@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import path from "node:path";
 import type { RuntimeEventSink } from "./events.js";
 import type {
@@ -105,6 +106,85 @@ class FakeAgentSession implements AgentSession {
       return { status: "cancelled", summary: "cancelled before turn" };
     }
     this.turnCount += 1;
+    const goal = input.goal;
+    const lower = goal.toLowerCase();
+
+    if (/\b429\b/.test(lower) && /capacity|rate|overloaded/.test(lower)) {
+      await sink({
+        type: "error",
+        message:
+          "HTTP 429: no available capacity right now, try again later.",
+      });
+      return {
+        status: "failed",
+        summary:
+          "HTTP 429: no available capacity right now, try again later.",
+      };
+    }
+
+    if (/\/deep-research|research deeply/.test(lower)) {
+      await sink({
+        type: "workflow_update",
+        payload: {
+          handle: "research-1",
+          objective: "Map the landscape",
+          current_phase: "gather",
+          phases: [
+            { id: "gather", title: "Gather sources", active: true },
+            { id: "synthesize", title: "Synthesize" },
+          ],
+          agents: [
+            { id: "scout", label: "Scout", status: "running", summary: "Reading" },
+          ],
+          agents_used: 1,
+          agent_budget: 3,
+        },
+      });
+      await sink({
+        type: "message",
+        role: "assistant",
+        text: "Deep research is running through gather → synthesize.",
+        channel: "text",
+      });
+      await sink({ type: "done", summary: "Deep research started." });
+      return {
+        status: "done",
+        summary: "Deep research started.",
+        providerSessionId: this.binding.providerSessionId,
+      };
+    }
+
+    if (/\/image|create an image|generate a png/.test(lower)) {
+      const imagesDir = path.join(this.cwd, "images");
+      fs.mkdirSync(imagesDir, { recursive: true });
+      const dest = path.join(imagesDir, "fake-studio.png");
+      fs.writeFileSync(
+        dest,
+        Buffer.from(
+          "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+          "base64",
+        ),
+      );
+      await sink({
+        type: "artifact",
+        title: "fake-studio.png",
+        path: dest,
+        kind: "media",
+      });
+      await sink({
+        type: "message",
+        role: "assistant",
+        text: "Saved the still to your images folder.",
+        channel: "text",
+      });
+      await sink({ type: "done", summary: "Image saved." });
+      return {
+        status: "done",
+        summary: "Image saved.",
+        providerSessionId: this.binding.providerSessionId,
+      };
+    }
+
     const signal = await sink({
       type: "message",
       role: "assistant",

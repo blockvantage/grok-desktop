@@ -343,7 +343,10 @@ export class AcpJsonRpcClient extends EventEmitter {
     _meta?: Record<string, unknown>;
   }): Promise<{ sessionId: string }> {
     const result = (await this.request("session/new", {
+      cwd: params?.cwd,
       ...(params ?? {}),
+      // CLI 1.0.5 requires this field even when empty (`missing field mcpServers`).
+      mcpServers: params?.mcpServers ?? [],
       _meta: {
         clientStatusLine: true,
         ...(params?._meta ?? {}),
@@ -361,7 +364,7 @@ export class AcpJsonRpcClient extends EventEmitter {
   ): Promise<{ stopReason?: string }> {
     const result = (await this.request("session/prompt", {
       sessionId,
-      prompt,
+      prompt: [{ type: "text", text: prompt }],
     })) as { stopReason?: string };
     return result ?? {};
   }

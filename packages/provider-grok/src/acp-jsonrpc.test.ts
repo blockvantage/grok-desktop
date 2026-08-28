@@ -137,4 +137,33 @@ describe("ACP JSON-RPC framing", () => {
     });
     await expect(client.request("initialize", {})).rejects.toThrow(/timeout/i);
   });
+
+  it("session/new always sends mcpServers and prompt sends text ContentBlocks", async () => {
+    const duplex = new MemoryLineDuplex();
+    const fake = attachFakeAcpAgent(duplex.b);
+    cleanups.push(fake.dispose);
+    const seen: ReturnType<typeof decodeJsonRpcLine>[] = [];
+    duplex.b.onLine((line) => {
+      seen.push(decodeJsonRpcLine(line));
+    });
+    const client = new AcpJsonRpcClient(duplex.a, { requestTimeoutMs: 3_000 });
+    cleanups.push(() => {
+      void client.close();
+    });
+
+    await client.initialize();
+    await client.newSession({ cwd: "/tmp" });
+    const newReq = seen.find(
+      (m) => "method" in m && m.method === "session/new",
+    ) as { params?: { mcpServers?: unknown } } | undefined;
+    expect(newReq?.params?.mcpServers).toEqual([]);
+
+    await client.prompt("fake-sess-1", "hello");
+    const promptReq = seen.find(
+      (m) => "method" in m && m.method === "session/prompt",
+    ) as { params?: { prompt?: unknown } } | undefined;
+    expect(promptReq?.params?.prompt).toEqual([
+      { type: "text", text: "hello" },
+    ]);
+  });
 });

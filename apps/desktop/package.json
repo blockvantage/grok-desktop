@@ -28,7 +28,7 @@
     "dist:win": "pnpm run build && node scripts/rebuild-native-for-electron.mjs --platform win32 --arch x64 && CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win --x64 --publish never --config.npmRebuild=false --config.win.signAndEditExecutable=false && node scripts/rebuild-native-for-electron.mjs",
     "dist:mac:unlocked": "GROKDESK_BAKE_DEV_UNLOCK=1 pnpm run build && node scripts/rebuild-native-for-electron.mjs && CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac --arm64 --publish never --config.mac.notarize=false --config.mac.identity=null",
     "dist:win:unlocked": "GROKDESK_BAKE_DEV_UNLOCK=1 pnpm run build && node scripts/rebuild-native-for-electron.mjs --platform win32 --arch x64 && CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win --x64 --publish never --config.npmRebuild=false --config.win.signAndEditExecutable=false && node scripts/rebuild-native-for-electron.mjs",
-    "e2e:chat": "pnpm run build && playwright test -c e2e/playwright.config.ts e2e/chat-delivery.spec.ts e2e/chat-recovery.spec.ts e2e/chat-approvals.spec.ts e2e/chat-experience.spec.ts",
+    "e2e:chat": "pnpm run build && playwright test -c e2e/playwright.config.ts e2e/chat-delivery.spec.ts e2e/chat-recovery.spec.ts e2e/chat-approvals.spec.ts e2e/chat-experience.spec.ts e2e/flagship-journeys.spec.ts",
     "bundle-budget": "node scripts/check-bundle-budget.mjs"
   },
   "dependencies": {

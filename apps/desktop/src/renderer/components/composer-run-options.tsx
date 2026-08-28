@@ -83,7 +83,10 @@ export function ComposerRunOptions(props: {
             {t("home.model")}
           </label>
           <Select value={props.model} onValueChange={props.onModel}>
-            <SelectTrigger className="h-9 w-full rounded-lg border-white/[0.08] bg-white/[0.03] text-xs shadow-none">
+            <SelectTrigger
+              className="h-9 w-full rounded-lg border-white/[0.08] bg-white/[0.03] text-xs shadow-none"
+              data-testid="composer-model-trigger"
+            >
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

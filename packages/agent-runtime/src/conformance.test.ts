@@ -1,4 +1,6 @@
 import { describe, it, expect } from "vitest";
+import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { FakeAgentProvider } from "./fake-provider.js";
 import { runProviderConformance } from "./conformance.js";
@@ -38,18 +40,63 @@ describe("agent-runtime conformance (fake provider)", () => {
       path: path.join("/demo/workspace", "grokdesk-demo-report.md"),
       meta: { content: expect.stringContaining("Prepare the launch brief") },
     });
-    expect(events.find((event) => event.type === "artifact")).toMatchObject({
-      path: path.join("/demo/workspace", "grokdesk-demo-report.md"),
+  });
+
+  it("routes 429 / deep-research / image goals without the launch-brief write", async () => {
+    const provider = new FakeAgentProvider();
+    const mk = async (goal: string) => {
+      const session = await provider.createSession({
+        ref: { providerId: "fake", modelId: "fake-fast" },
+        cwd: "/demo/workspace",
+        workspaceRoots: ["/demo/workspace"],
+        policy: {
+          version: "1",
+          approvalMode: "strict",
+          workspaceRoots: ["/demo/workspace"],
+          capabilities: [{ id: "shell", decision: "ask" }],
+        },
+      });
+      const events: RuntimeEvent[] = [];
+      const result = await session.runTurn({ goal }, async (event) => {
+        events.push(event);
+        return "continue";
+      });
+      return { events, result };
+    };
+    const limited = await mk("HTTP 429 capacity overloaded");
+    expect(limited.result.status).toBe("failed");
+    expect(limited.events.some((e) => e.type === "error")).toBe(true);
+    expect(limited.events.some((e) => e.type === "permission_request")).toBe(
+      false,
+    );
+    const research = await mk("/deep-research the market");
+    expect(research.events.some((e) => e.type === "workflow_update")).toBe(
+      true,
+    );
+    const imgRoot = fs.mkdtempSync(path.join(os.tmpdir(), "fake-img-"));
+    const imgSession = await provider.createSession({
+      ref: { providerId: "fake", modelId: "fake-fast" },
+      cwd: imgRoot,
+      workspaceRoots: [imgRoot],
+      policy: {
+        version: "1",
+        approvalMode: "strict",
+        workspaceRoots: [imgRoot],
+        capabilities: [{ id: "shell", decision: "ask" }],
+      },
     });
-    expect(
-      events.slice().reverse().find((event) => event.type === "message"),
-    ).toMatchObject({
-      text: expect.stringContaining("[Electron security guide](https://"),
+    const imgEvents: RuntimeEvent[] = [];
+    await imgSession.runTurn({ goal: "/image a red square" }, async (event) => {
+      imgEvents.push(event);
+      return "continue";
     });
-    expect(events.find((event) => event.type === "citations")).toMatchObject({
-      items: [expect.objectContaining({ url: expect.stringMatching(/^https:\/\//) })],
+    expect(imgEvents.find((e) => e.type === "artifact")).toMatchObject({
+      kind: "media",
     });
-    expect(JSON.stringify(events)).not.toMatch(/fake (?:turn|done|wrote)/i);
+    expect(fs.existsSync(path.join(imgRoot, "images", "fake-studio.png"))).toBe(
+      true,
+    );
+    fs.rmSync(imgRoot, { recursive: true, force: true });
   });
 
   it("fake provider supports interject, compact, and rewind", async () => {

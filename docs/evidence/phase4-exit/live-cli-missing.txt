@@ -1,0 +1,5 @@
+2026-08-28T03:54:40.979Z
+ACP initialize + session/new succeeded; prompt returned but no media under /var/folders/z7/z80ljz_s2bd_d2z3sp2czndr0000gn/T/gd-live-acp-yv1dJs/ws.
+GROK_HOME=/var/folders/z7/z80ljz_s2bd_d2z3sp2czndr0000gn/T/grokdesk-grok-home-7qqd0S
+promoted=[]
+Media promotion unit tests remain the bar for CLI session-tree copies.

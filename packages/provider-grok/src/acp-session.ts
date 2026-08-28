@@ -425,7 +425,7 @@ export class AcpMediatedSession implements AgentSession {
     const hooksMeta = sessionNewClientHooksMeta(this.initResult?._meta);
     const session = await this.client.newSession({
       cwd: cwd ?? process.cwd(),
-      ...(mcpServers.length > 0 ? { mcpServers } : {}),
+      mcpServers,
       ...(hooksMeta ? { _meta: hooksMeta } : {}),
     });
     this.sessionId = session.sessionId;

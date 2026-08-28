@@ -12,6 +12,7 @@ export function RecoveryBanner(props: {
       role="status"
       aria-live="polite"
       aria-atomic="true"
+      data-testid="recovery-banner"
     >
       <div className="text-sm font-semibold text-warning">{model.title}</div>
       <p className="mt-1 text-xs leading-relaxed text-warning">
