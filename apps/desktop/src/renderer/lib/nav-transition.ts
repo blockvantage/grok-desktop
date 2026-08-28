@@ -1,10 +1,19 @@
 /**
  * Pure nav transition side-effects for App shell (Phase 6 extract).
+ * Task list/workspace selection lives in task-navigation and is re-exported
+ * here so App can treat this module as the nav/route surface.
  */
 
 import type { AppNavId } from "./app-shortcuts";
+import type { TaskSurface } from "./task-navigation";
 
-export type TaskSurface = "list" | "workspace";
+export type { TaskSurface, TaskNavState } from "./task-navigation";
+export {
+  openTaskListState,
+  openTaskWorkspaceState,
+  shouldClearSelectionOnDelete,
+  shouldSkipCancel,
+} from "./task-navigation";
 
 /**
  * When changing primary nav, clear search fields; force list surface when
@@ -39,4 +48,12 @@ export function newChatNavState(): {
     taskSurface: "list",
     goal: "",
   };
+}
+
+/** Keep list surface while highlighting a task row. */
+export function selectTaskInList(id: string): {
+  selectedId: string;
+  taskSurface: "list";
+} {
+  return { selectedId: id, taskSurface: "list" };
 }

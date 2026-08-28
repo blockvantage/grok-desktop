@@ -76,23 +76,23 @@ describe("lazy preview / heavy render imports", () => {
     expect(app).toMatch(/lazy\s*\(\s*\(\s*\)\s*=>\s*import\(["']@\/components\/inbox-panel/);
   });
 
-  it("keeps Home and basic chat shell eager in the initial chunk", () => {
+  it("lazy-splits Home and TaskWorkspace off the entry chunk (I21)", () => {
     const app = read("App.tsx");
-    // Eager imports for reliability (not React.lazy).
     expect(app).toMatch(
-      /import\s+\{\s*HomeView\s*\}\s+from\s+["']@\/components\/views\/home-view["']/,
+      /lazy\s*\(\s*\(\s*\)\s*=>\s*import\(["']@\/components\/views\/home-view/,
     );
+    expect(app).toMatch(
+      /lazy\s*\(\s*\(\s*\)\s*=>\s*import\(["']@\/components\/views\/task-workspace-view/,
+    );
+    // Task list stays eager; stream loads with the workspace chunk.
     expect(app).toMatch(
       /import\s+\{\s*TasksView\s*\}\s+from\s+["']@\/components\/views\/tasks-view["']/,
     );
-    expect(app).toMatch(
+    expect(app).not.toMatch(
+      /import\s+\{\s*HomeView\s*\}\s+from\s+["']@\/components\/views\/home-view["']/,
+    );
+    expect(app).not.toMatch(
       /import\s+\{\s*TaskWorkspaceView\s*\}\s+from\s+["']@\/components\/views\/task-workspace-view["']/,
-    );
-    expect(app).not.toMatch(
-      /lazy\s*\(\s*\(\s*\)\s*=>\s*import\(["']@\/components\/views\/home-view/,
-    );
-    expect(app).not.toMatch(
-      /lazy\s*\(\s*\(\s*\)\s*=>\s*import\(["']@\/components\/views\/task-workspace-view/,
     );
   });
 

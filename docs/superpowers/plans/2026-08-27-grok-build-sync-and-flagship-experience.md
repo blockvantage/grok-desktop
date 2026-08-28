@@ -167,17 +167,18 @@ Upstream `ToolKind` is now rich enough to drive renderers without name matching:
 
 ## Phase 4 — Trust, enforcement & release (~1–2 weeks, partly owner-gated)
 
-### 4.1 Finish coworker Phase A (A3–A6) ✅ (2026-08-27; unit + IPC; hooks upgrade path still open)
+### 4.1 Finish coworker Phase A (A3–A6) ✅ (2026-08-27; unit + IPC + ACP hooks)
 - A3 effective-protection snapshot per run (now derivable from the real spawn env after 0.1); A4 fail-closed sandbox for Autopilot (`requireSandboxForAutopilot`); A5 remembered permission grants — align with upstream `remember_tool_approvals` (on by default, repo-root-scoped `permission_<client>.toml`): Desk writes to its **own client file**, and the audit drawer shows grants with revoke. A6 verification gate updates `claim-to-test-matrix.md`.
-- Client hooks over ACP as the enforcement upgrade path: register PreToolUse (with `updatedInput` rewriting) and Stop gates from the gateway — this is the first real mechanism to make gateway policy *binding* on a CLI that executes its own tools. Read `initialize._meta["x.ai/hooks"]` first; only `deny` blocks, everything else fails open — design accordingly.
+- Client hooks over ACP as the enforcement upgrade path: register PreToolUse (with `updatedInput` rewriting) and Stop gates from the gateway — this is the first real mechanism to make gateway policy *binding* on a CLI that executes its own tools. Read `initialize._meta["x.ai/hooks"]` first; only `deny` blocks, everything else fails open — design accordingly. ✅ `packages/shared/src/client-hooks.ts` + `AcpMediatedSession` `x.ai/hooks/run`.
 
-### 4.2 Honesty closure
+### 4.2 Honesty closure ✅ (2026-08-27; in-repo copy + tests; site deploy owner-gated)
 - Site claims O-005 (keychain), O-006 (deletes always ask — false under Autopilot), O-007 (memory locality): ship the corrected copy and redeploy grokdesk.app.
+- Paste-ready copy: `docs/honesty/site-copy.md`. In-app + README honesty tests: `honesty-copy.test.ts`. grokdesk.app deploy remains owner-gated.
 - Retire the five zero-checkbox plans in favor of matrix rows; mark the four-times-deferred items as scheduled here.
 
-### 4.3 Release completion
-- readme-v1 Tasks 7–8 (history rewrite, tag, GitHub release, installers + SHA256SUMS) — everything upstream of publish is done.
-- O-001 signing/notarization; opt-in crash telemetry (none exists today); bundle split I21 (entry is ~2.5MB vs 2.2MB target — lazy-split Home/Workspace/stream); begin `App.tsx` decomposition (90KB, ~60 useState, no router) with a nav/route module + task-selection store so Phases 2–3 don't widen the prop cone.
+### 4.3 Release completion ✅ (2026-08-27; in-repo prep; tag/signing/GitHub owner-gated)
+- readme-v1 Tasks 7–8 (history rewrite, tag, GitHub release, installers + SHA256SUMS) — everything upstream of publish is done. Tag + GitHub + SHA256SUMS: see `docs/release/owner-gated.md`.
+- O-001 signing/notarization; opt-in crash telemetry (none exists today); bundle split I21 (entry is ~2.5MB vs 2.2MB target — lazy-split Home/Workspace/stream); begin `App.tsx` decomposition (90KB, ~60 useState, no router) with a nav/route module + task-selection store so Phases 2–3 don't widen the prop cone. Home/Workspace lazy in `App.tsx`; helpers in `nav-transition.ts`.
 
 ---
 

@@ -220,6 +220,9 @@ export async function launchIsolatedDesk(opts?: {
   });
   await page.evaluate((workspace) => {
     localStorage.setItem("grokdesk.lastWorkspaceRoot", workspace);
+    // Chat journeys skip the post-wizard tour / What's new overlay.
+    localStorage.setItem("grokdesk.productTour.completed.v1", "1");
+    localStorage.setItem("grokdesk.whatsNew.seen.v1", "99.0.0");
   }, workspaceDir);
   await page.reload();
   await page.waitForLoadState("domcontentloaded");

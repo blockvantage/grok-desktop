@@ -683,14 +683,17 @@ export function HomeView(props: {
         taskId: i.taskId,
       })),
       scheduleRuns: props.tasks
-        .filter((t) => t.scheduleRuleId && t.completedAt)
-        .map((t) => ({
-          scheduleId: t.scheduleRuleId!,
-          scheduleName: bySchedule.get(t.scheduleRuleId!) ?? t.title ?? "Scheduled",
-          taskId: t.id,
-          status: t.status,
-          finishedAt: t.completedAt!,
-          goal: t.goal,
+        .filter((task) => task.scheduleRuleId && task.completedAt)
+        .map((task) => ({
+          scheduleId: task.scheduleRuleId!,
+          scheduleName:
+            bySchedule.get(task.scheduleRuleId!) ??
+            task.title ??
+            t("nav.scheduled"),
+          taskId: task.id,
+          status: task.status,
+          finishedAt: task.completedAt!,
+          goal: task.goal,
         })),
       usage: {
         hasUsedQueue: false,

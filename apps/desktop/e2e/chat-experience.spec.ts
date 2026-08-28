@@ -270,6 +270,11 @@ test.describe("refined chat production trace", () => {
         defaultApprovalMode: "strict",
         trustedFolders: [workspace],
       });
+      await page.evaluate((ws) => {
+        localStorage.setItem("grokdesk.lastWorkspaceRoot", ws);
+        localStorage.setItem("grokdesk.productTour.completed.v1", "1");
+        localStorage.setItem("grokdesk.whatsNew.seen.v1", "99.0.0");
+      }, workspace);
       await page.reload();
       await page.waitForLoadState("domcontentloaded");
       await waitForGateway(page);

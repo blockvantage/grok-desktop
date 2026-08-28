@@ -58,9 +58,7 @@ import {
   type NavId,
 } from "@/components/shell/app-sidebar";
 import { AppTopbar } from "@/components/shell/app-topbar";
-import { HomeView } from "@/components/views/home-view";
 import { TasksView } from "@/components/views/tasks-view";
-import { TaskWorkspaceView } from "@/components/views/task-workspace-view";
 import {
   projectDesktopReadiness,
   readinessInputFromAppState,
@@ -198,12 +196,6 @@ import {
   type AccountSnapshot,
 } from "@/lib/account-state";
 import {
-  openTaskListState,
-  openTaskWorkspaceState,
-  shouldClearSelectionOnDelete,
-  shouldSkipCancel,
-} from "@/lib/task-navigation";
-import {
   ONBOARDING_DISMISSED_KEY,
   onboardingSettingsPayload,
   seedStarterGoal,
@@ -211,6 +203,12 @@ import {
 import {
   navChangeSideEffects,
   newChatNavState,
+  openTaskListState,
+  openTaskWorkspaceState,
+  selectTaskInList,
+  shouldClearSelectionOnDelete,
+  shouldSkipCancel,
+  type TaskSurface,
 } from "@/lib/nav-transition";
 import {
   createFailedNavState,
@@ -352,6 +350,18 @@ const RemoteControlBanner = lazy(() =>
     default: m.RemoteControlBanner,
   })),
 );
+// I21: Home + workspace (and the stream it owns) stay off the entry chunk.
+// Names kept for ui-structure.test.ts.
+const HomeView = lazy(() =>
+  import("@/components/views/home-view").then((m) => ({
+    default: m.HomeView,
+  })),
+);
+const TaskWorkspaceView = lazy(() =>
+  import("@/components/views/task-workspace-view").then((m) => ({
+    default: m.TaskWorkspaceView,
+  })),
+);
 
 function ViewFallback() {
   return (
@@ -367,7 +377,6 @@ function ViewFallback() {
 }
 
 type TaskFilter = "all" | "running" | "scheduled" | "done" | "failed";
-type TaskSurface = "list" | "workspace";
 
 export function App() {
   const { toast } = useToast();
@@ -917,7 +926,7 @@ export function App() {
       setWhatsNewShowAll(false);
       setWhatsNewOpen(true);
     }
-    // Intentionally not depending on updateStatus — reopen only after tour/onboarding.
+    // Intentionally not depending on updateStatus: reopen only after tour/onboarding.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [booting, showOnboarding, tourCompleted]);
 
@@ -2181,6 +2190,7 @@ export function App() {
         )}
 
         {!booting && nav === "home" && (
+          <Suspense fallback={<ViewFallback />}>
           <HomeView
             greeting={greeting}
             goal={goal}
@@ -2277,6 +2287,7 @@ export function App() {
               }
             }}
           />
+          </Suspense>
         )}
 
         {!booting &&
@@ -2320,7 +2331,11 @@ export function App() {
             tasks={tasks}
             artifacts={artifacts}
             selectedId={selectedId}
-            onSelect={(id) => setSelectedId(id)}
+            onSelect={(id) => {
+              const next = selectTaskInList(id);
+              setSelectedId(next.selectedId);
+              setTaskSurface(next.taskSurface);
+            }}
             onOpenWorkspace={openTaskWorkspace}
             filter={taskFilter}
             onFilter={setTaskFilter}
@@ -2341,6 +2356,7 @@ export function App() {
           nav === "tasks" &&
           taskSurface === "workspace" &&
           workspaceTask && (
+            <Suspense fallback={<ViewFallback />}>
             <TaskWorkspaceView
               key={selectedChat?.id ?? workspaceTask.id}
               task={workspaceTask}
@@ -2511,6 +2527,7 @@ export function App() {
                 });
               }}
             />
+            </Suspense>
           )}
 
         {!booting && nav === "scheduled" && (
