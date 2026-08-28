@@ -131,7 +131,7 @@ Upstream `ToolKind` is now rich enough to drive renderers without name matching:
 
 ### 2.7 Test engineering for the chat surface (enables everything above) ✅ (2026-08-28; e2e:chat 17×2 incl. flagship, visual-qa fail-closed)
 - Switch component tests to jsdom + Testing Library (today `vitest.config.ts` is `environment: "node"`; 16 files assert on `renderToStaticMarkup` strings — zero interaction coverage on approve/send-now/edit-turn/slash menu). **Started 2026-08-27:** jsdom is limited to `*.interaction.test.tsx`.
-- Convert the three grep-only "e2e" specs (`chat-delivery`, `chat-recovery`, `chat-approvals`) into real Playwright journeys on the fake provider: queue+interject, retry-on-failed, missing-attachment repick, drag-drop, undo turn, compact. ✅ (2026-08-28; `pnpm --filter @grokdesk/desktop e2e:chat` **17 passed ×2**, including `flagship-journeys.spec.ts`)
+- Convert the three grep-only "e2e" specs (`chat-delivery`, `chat-recovery`, `chat-approvals`) into real Playwright journeys on the fake provider: queue+interject, retry-on-failed, missing-attachment repick, drag-drop, undo turn, compact. ✅ (2026-08-28; `e2e:chat` **18 passed**, including image **and** video landing in the workspace)
 - Un-soft-skip `visual-qa` (it currently exits 0 with "1 skipped"); run full `pnpm test` in the release gate.
 
 ---

@@ -42,7 +42,7 @@ describe("agent-runtime conformance (fake provider)", () => {
     });
   });
 
-  it("routes 429 / deep-research / image goals without the launch-brief write", async () => {
+  it("routes 429 / deep-research / image / video goals without the launch-brief write", async () => {
     const provider = new FakeAgentProvider();
     const mk = async (goal: string) => {
       const session = await provider.createSession({
@@ -97,6 +97,31 @@ describe("agent-runtime conformance (fake provider)", () => {
       true,
     );
     fs.rmSync(imgRoot, { recursive: true, force: true });
+
+    const vidRoot = fs.mkdtempSync(path.join(os.tmpdir(), "fake-vid-"));
+    const vidSession = await provider.createSession({
+      ref: { providerId: "fake", modelId: "fake-fast" },
+      cwd: vidRoot,
+      workspaceRoots: [vidRoot],
+      policy: {
+        version: "1",
+        approvalMode: "strict",
+        workspaceRoots: [vidRoot],
+        capabilities: [{ id: "shell", decision: "ask" }],
+      },
+    });
+    const vidEvents: RuntimeEvent[] = [];
+    await vidSession.runTurn({ goal: "/video a short clip" }, async (event) => {
+      vidEvents.push(event);
+      return "continue";
+    });
+    expect(vidEvents.find((e) => e.type === "artifact")).toMatchObject({
+      kind: "media",
+    });
+    expect(fs.existsSync(path.join(vidRoot, "videos", "fake-studio.mp4"))).toBe(
+      true,
+    );
+    fs.rmSync(vidRoot, { recursive: true, force: true });
   });
 
   it("fake provider supports interject, compact, and rewind", async () => {

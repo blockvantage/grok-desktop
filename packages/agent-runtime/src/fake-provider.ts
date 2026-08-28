@@ -185,6 +185,39 @@ class FakeAgentSession implements AgentSession {
       };
     }
 
+    if (/\/video|create a video|generate an mp4/.test(lower)) {
+      const videosDir = path.join(this.cwd, "videos");
+      fs.mkdirSync(videosDir, { recursive: true });
+      const dest = path.join(videosDir, "fake-studio.mp4");
+      // Minimal ISO BMFF `ftyp` so the path is a real mp4 container start.
+      fs.writeFileSync(
+        dest,
+        Buffer.from([
+          0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70, 0x69, 0x73, 0x6f,
+          0x6d, 0x00, 0x00, 0x00, 0x00, 0x69, 0x73, 0x6f, 0x6d, 0x6d, 0x70,
+          0x34, 0x31,
+        ]),
+      );
+      await sink({
+        type: "artifact",
+        title: "fake-studio.mp4",
+        path: dest,
+        kind: "media",
+      });
+      await sink({
+        type: "message",
+        role: "assistant",
+        text: "Saved the clip to your videos folder.",
+        channel: "text",
+      });
+      await sink({ type: "done", summary: "Video saved." });
+      return {
+        status: "done",
+        summary: "Video saved.",
+        providerSessionId: this.binding.providerSessionId,
+      };
+    }
+
     const signal = await sink({
       type: "message",
       role: "assistant",

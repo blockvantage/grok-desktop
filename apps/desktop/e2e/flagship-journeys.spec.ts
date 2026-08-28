@@ -1,7 +1,7 @@
 /**
  * DoD #4 Playwright journeys on the fake provider:
  * mid-conversation model change, Waiting on you, deep-research panel,
- * media in the workspace, conversation search, plain-language 429 banner.
+ * image and video in the workspace, conversation search, plain-language 429 banner.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -140,6 +140,26 @@ test.describe("flagship non-coder journeys", () => {
       await waitForTaskStatus(desk.page, created.id, "done");
       const png = path.join(desk.workspaceDir, "images", "fake-studio.png");
       expect(fs.existsSync(png), png).toBe(true);
+    } finally {
+      await desk.close();
+    }
+  });
+
+  test("video goal lands an mp4 in the workspace folder", async () => {
+    test.setTimeout(150_000);
+    const desk = await launchIsolatedDesk({ prefix: "grokdesk-journey-video-" });
+    try {
+      await expect(desk.page.getByTestId("home-create-video")).toBeVisible({
+        timeout: 30_000,
+      });
+      const created = await createTask(
+        desk,
+        "/video a short clip",
+        "journey-video",
+      );
+      await waitForTaskStatus(desk.page, created.id, "done");
+      const mp4 = path.join(desk.workspaceDir, "videos", "fake-studio.mp4");
+      expect(fs.existsSync(mp4), mp4).toBe(true);
     } finally {
       await desk.close();
     }

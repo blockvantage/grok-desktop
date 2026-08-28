@@ -10,7 +10,7 @@ Post-skeptic rebuild (ACP media window, live PNG, `waiting_approval` resume). Ho
 | `pnpm test` | 0 (desktop **1913**, gateway **919**, live-cli PNG) | — (live-cli already spent credits on pass 1) |
 | `pnpm --filter @grokdesk/desktop release-qa` | 0 (78 tests) | 0 (78 tests) |
 | `pnpm --filter @grokdesk/desktop bundle-budget` | 0 — JS **2,102,309** (`index-C2CHC-HD.js`) | 0 — same bytes |
-| `e2e:chat` (17 tests incl. 6 flagship) | **17 passed** (rebuild + Playwright) | **17 passed** (existing `out/`) |
+| `e2e:chat` | **17 passed** ×2, then **18 passed** after `/video` journey | same 17-pass dual-gate; video added later |
 
 Logs: implementer scratch `gates/pass-1/` and `gates/pass-2/`. Live PNG: `docs/evidence/phase4-exit/live-cli-ok.txt`.
 
@@ -29,4 +29,4 @@ After pack, `better-sqlite3` was restored to Node ABI 127 (`prebuild-install --r
 
 `grok 1.0.5` on PATH. Isolated `GROK_HOME` (user hooks not copied), Desk MCP/skills on `session/new`, ContentBlock `session/prompt`. Permission replies use ACP `{ outcome: { outcome: "selected", optionId } }`. Successful prompt without workspace media **fails**. Pass-1 `pnpm test` re-ran the fixture: `workspacePng=true` (`live-cli-ok.txt`).
 
-DoD #4: `apps/desktop/e2e/flagship-journeys.spec.ts` — six fake-provider journeys inside `e2e:chat` (17 tests), both passes green.
+DoD #4: `apps/desktop/e2e/flagship-journeys.spec.ts` — seven fake-provider journeys (model, inbox, deep-research, image, **video**, search, 429). `e2e:chat` **18 passed** after the video journey.
