@@ -43,6 +43,16 @@ describe("projectEffectiveProtection", () => {
     expect(snap.summaryLabelKey).not.toMatch(/safeWorkspace/i);
   });
 
+  it("sandboxProfile is null when argv lacks --sandbox even if Autopilot", () => {
+    const snap = projectEffectiveProtection({
+      policy: { ...policy, approvalMode: "autopilot" },
+      supportsSandbox: true,
+      spawnArgs: ["agent", "stdio", "--cwd", "/ws"],
+    });
+    expect(snap.sandboxProfile).toBeNull();
+    expect(claimsSafeWorkspace(snap)).toBe(false);
+  });
+
   it("prefers actual spawn argv over intended profile", () => {
     const spawnArgs = policyToGrokArgs({
       policy,

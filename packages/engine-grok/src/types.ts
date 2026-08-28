@@ -133,6 +133,8 @@ export type NormalizedEngineEvent =
         supportsSandbox: boolean;
         isolateGrokHome: boolean;
         executesOwnTools: boolean;
+        /** Actual GROK_HOME from spawn env (no secrets). */
+        grokHome?: string | null;
       };
       /** ACP `initialize` capability table (Phase 1.1). */
       capabilities?: Record<string, unknown>;

@@ -25,11 +25,15 @@ export type ApproveDecision = "approve" | "reject";
 
 export function tasksApproveParams(
   params: Record<string, unknown>,
-): { approvalId: string; decision: ApproveDecision } | null {
+): {
+  approvalId: string;
+  decision: ApproveDecision;
+  remember: boolean;
+} | null {
   const approvalId =
     typeof params.approvalId === "string" ? params.approvalId : "";
   const decision = params.decision;
   if (!approvalId) return null;
   if (decision !== "approve" && decision !== "reject") return null;
-  return { approvalId, decision };
+  return { approvalId, decision, remember: params.remember === true };
 }

@@ -23,6 +23,7 @@ export type TasksCoreDeps = {
   approve: (
     approvalId: string,
     decision: "approve" | "reject",
+    opts?: { remember?: boolean },
   ) => Promise<void>;
   registerBrowserHostApproval: (params: Record<string, unknown>) => unknown;
   /** Pre-run verified desk-browser capability handshake (no secrets). */
@@ -157,7 +158,9 @@ export async function dispatchTasksCoreMethod(
     case "tasks.approve": {
       const p = tasksApproveParams(params);
       if (!p) throw new Error("approvalId and decision required");
-      await deps.approve(p.approvalId, p.decision);
+      await deps.approve(p.approvalId, p.decision, {
+        remember: p.remember,
+      });
       return okResponse();
     }
     case "browser.hostApproval":

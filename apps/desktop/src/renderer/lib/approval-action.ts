@@ -1,6 +1,7 @@
 export type ApprovalActionTarget = {
   taskId: string;
   approvalId: string;
+  remember?: boolean;
 };
 
 export type ApprovalDecision = "approve" | "reject";

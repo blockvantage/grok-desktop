@@ -59,6 +59,7 @@ export function SettingsView(props: {
     preferProviderEngine?: boolean;
     inheritUserGrok?: boolean;
     trustedFolders?: string[];
+    requireSandboxForAutopilot?: boolean;
   }) => Promise<void>;
   onMcpServersChange?: (mcpServers: McpRow[]) => void;
   /** Opt-in AgentProvider engine path (default false). */
@@ -67,6 +68,7 @@ export function SettingsView(props: {
   inheritUserGrok?: boolean;
   /** T5: trusted workspace folders. */
   trustedFolders?: string[];
+  requireSandboxForAutopilot?: boolean;
   onUntrustFolder?: (path: string) => void;
   /** Deep-link into a settings tab (e.g. Tools from home checklist). */
   initialTab?: SettingsTabId;
@@ -386,6 +388,14 @@ export function SettingsView(props: {
               bundledCount={bundledCount}
               approvalMode={props.approvalMode}
               onApprovalMode={props.onApprovalMode}
+              requireSandboxForAutopilot={props.requireSandboxForAutopilot}
+              onRequireSandboxForAutopilot={(enabled) => {
+                void props
+                  .onSettingsChange({ requireSandboxForAutopilot: enabled })
+                  .catch((e: unknown) =>
+                    showConnectorError(humanizeError(e, t)),
+                  );
+              }}
               preferProviderEngine={props.preferProviderEngine}
               onPreferProviderEngine={(enabled) => {
                 // App onSettingsChange toasts success; only surface errors here.

@@ -58,11 +58,39 @@ describe("protection chip", () => {
             supportsSandbox: true,
             isolateGrokHome: true,
             executesOwnTools: true,
+            grokHome: "/tmp/isolated",
           },
         },
       },
     ]);
     expect(found?.spawnArgs).toContain("--sandbox");
+    expect(found?.grokHome).toBe("/tmp/isolated");
     expect(protectionFromEvents([{ kind: "message", payload: {} }])).toBeNull();
+  });
+
+  it("historical snapshot wins over live Autopilot settings without sandbox argv", () => {
+    const stored = protectionFromEvents([
+      {
+        kind: "step",
+        payload: {
+          title: "protection",
+          protection: {
+            spawnArgs: ["agent", "stdio", "--cwd", "/ws"],
+            supportsSandbox: false,
+            isolateGrokHome: true,
+            executesOwnTools: true,
+          },
+        },
+      },
+    ]);
+    const chip = projectProtectionChip(
+      protectionInputFromTask({
+        policy: { ...policy, approvalMode: "autopilot" },
+        supportsSandbox: true,
+        spawnProtection: stored,
+      }),
+    );
+    expect(chip.claimsSafe).toBe(false);
+    expect(chip.snapshot.sandboxProfile).toBeNull();
   });
 });

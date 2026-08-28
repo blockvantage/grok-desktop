@@ -32,6 +32,7 @@ describe("appSettingsAfterSave", () => {
       preferProviderEngine: true,
       inheritUserGrok: true,
       trustedFolders: ["/ws"],
+      requireSandboxForAutopilot: false,
     });
     expect(r.toastKey).toBe("settings.savedApplied");
   });

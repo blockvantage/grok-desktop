@@ -53,6 +53,48 @@ describe("evaluateProviderOwnToolsGate", () => {
     }
   });
 
+  it("rejects Autopilot when sandbox is required but unsupported", () => {
+    const r = evaluateProviderOwnToolsGate({
+      executesOwnTools: true,
+      allowShell: true,
+      allowNetworkTools: true,
+      approvalMode: "autopilot",
+      requireSandboxForAutopilot: true,
+      supportsSandbox: false,
+    });
+    expect(r).toMatchObject({
+      action: "reject",
+      receipt: {
+        decision: "deny",
+        detail: { reason: "sandbox_required_unavailable" },
+      },
+    });
+  });
+
+  it("does not gate Autopilot sandbox when the requirement is off", () => {
+    const r = evaluateProviderOwnToolsGate({
+      executesOwnTools: true,
+      allowShell: true,
+      allowNetworkTools: true,
+      approvalMode: "autopilot",
+      requireSandboxForAutopilot: false,
+      supportsSandbox: false,
+    });
+    expect(r.action).toBe("proceed");
+  });
+
+  it("proceeds Autopilot when sandbox is required and available", () => {
+    const r = evaluateProviderOwnToolsGate({
+      executesOwnTools: false,
+      allowShell: true,
+      allowNetworkTools: true,
+      approvalMode: "autopilot",
+      requireSandboxForAutopilot: true,
+      supportsSandbox: true,
+    });
+    expect(r.action).toBe("proceed");
+  });
+
   it("proceeds balanced when shell/network allowed", () => {
     const r = evaluateProviderOwnToolsGate({
       executesOwnTools: true,

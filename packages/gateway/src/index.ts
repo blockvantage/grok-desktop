@@ -31,6 +31,7 @@ import { loadAttachmentsPreamble } from "./services/attachment-stage.js";
 import { ArtifactService } from "./services/artifacts.js";
 import { MemoryService } from "./services/memory.js";
 import { SettingsService } from "./services/settings.js";
+import { PermissionGrantStore } from "./services/permission-grants.js";
 import { SchedulerService } from "./services/scheduler.js";
 import { InboxService } from "./services/inbox.js";
 import { ProactivityService } from "./services/proactivity.js";
@@ -201,6 +202,7 @@ export class Gateway {
   artifacts!: ArtifactService;
   memory!: MemoryService;
   settings!: SettingsService;
+  permissionGrants!: PermissionGrantStore;
   scheduler!: SchedulerService;
   inbox!: InboxService;
   proactivity!: ProactivityService;
@@ -329,6 +331,9 @@ export class Gateway {
     });
     this.memory = new MemoryService(this.db);
     this.settings = new SettingsService(this.db);
+    this.permissionGrants = new PermissionGrantStore(
+      path.join(this.paths.dataDir, "permission-grants"),
+    );
     // SEC-02: durable file vault under dataDir; migrate plaintext MCP env → vault refs.
     // Does not touch OS keychain (desktop safeStorage purge remains separate/auth-gated).
     try {
@@ -463,6 +468,9 @@ export class Gateway {
       : await createLiveAcpTransportFactory({
           mcpServersProvider,
           skillsPathsProvider,
+          copyPermissionGrants: (grokHome, cwd) => {
+            this.permissionGrants.copyIntoGrokHome(grokHome, cwd);
+          },
         });
     const engineSelection = resolveEngineSelection({
       env: process.env,
@@ -552,6 +560,10 @@ export class Gateway {
         this.settings.getAll().inheritUserGrok === true,
       trustedFoldersProvider: () =>
         this.settings.getAll().trustedFolders ?? [],
+      requireSandboxForAutopilot: () =>
+        this.settings.getAll().requireSandboxForAutopilot === true,
+      supportsSandbox: () => acpLive?.supportsSandbox === true,
+      permissionGrants: this.permissionGrants,
       runAttempts: this.runAttempts,
       operationReceipts: this.operationReceipts,
       declaredArtifacts: this.declaredArtifacts,
@@ -560,7 +572,11 @@ export class Gateway {
         (task.mode !== "interactive" ||
           this.conversations.hasUserTurn(task.id)),
       // Phase 3 bridge: registry capabilities authorize fail-closed/degraded before engine run.
-      providerPreflight: createProviderPreflight(this.providers),
+      providerPreflight: createProviderPreflight(this.providers, {
+        requireSandboxForAutopilot: () =>
+          this.settings.getAll().requireSandboxForAutopilot === true,
+        supportsSandbox: () => acpLive?.supportsSandbox === true,
+      }),
       onRunSettled: () => this.outboxDrain?.schedule(),
       reconcileAssistantTurn: (taskId) => {
         const task = this.tasks.get(taskId);

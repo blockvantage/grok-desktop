@@ -10,6 +10,7 @@ describe("appSettingsFromSettingsGet", () => {
       preferProviderEngine: false,
       inheritUserGrok: false,
       trustedFolders: [],
+      requireSandboxForAutopilot: false,
     });
   });
 
@@ -25,6 +26,7 @@ describe("appSettingsFromSettingsGet", () => {
         preferProviderEngine: true,
         inheritUserGrok: true,
         trustedFolders: ["/ws"],
+        requireSandboxForAutopilot: true,
       }),
     ).toEqual({
       mcpServers: mcp,
@@ -33,6 +35,7 @@ describe("appSettingsFromSettingsGet", () => {
       preferProviderEngine: true,
       inheritUserGrok: true,
       trustedFolders: ["/ws"],
+      requireSandboxForAutopilot: true,
     });
   });
 });

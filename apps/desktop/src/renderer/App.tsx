@@ -400,6 +400,7 @@ export function App() {
     preferProviderEngine: boolean;
     inheritUserGrok: boolean;
     trustedFolders: string[];
+    requireSandboxForAutopilot: boolean;
   }>({
     mcpServers: [],
     skillsPaths: [],
@@ -407,6 +408,7 @@ export function App() {
     preferProviderEngine: false,
     inheritUserGrok: false,
     trustedFolders: [],
+    requireSandboxForAutopilot: false,
   });
   /** Bumps when user dismisses folder-trust prompt (session-only). */
   const [folderTrustUiTick, setFolderTrustUiTick] = useState(0);
@@ -2363,11 +2365,12 @@ export function App() {
               onPauseAll={() => void rpc("tasks.pauseAll", {})}
               onResumeAll={() => void rpc("tasks.resumeAll", {})}
               onCancel={() => void cancelTask(workspaceTask.id)}
-              onApprove={async ({ taskId, approvalId }) => {
+              onApprove={async ({ taskId, approvalId, remember }) => {
                 await rpc("tasks.approve", {
                   taskId,
                   approvalId,
                   decision: "approve",
+                  remember: remember === true,
                 });
               }}
               onReject={async ({ taskId, approvalId }) => {
@@ -2661,6 +2664,9 @@ export function App() {
               preferProviderEngine={appSettings.preferProviderEngine}
               inheritUserGrok={appSettings.inheritUserGrok}
               trustedFolders={appSettings.trustedFolders}
+              requireSandboxForAutopilot={
+                appSettings.requireSandboxForAutopilot
+              }
               onUntrustFolder={(folderPath) => {
                 const next = untrustFolder(
                   appSettings.trustedFolders,
@@ -2703,6 +2709,7 @@ export function App() {
                   preferProviderEngine?: boolean;
                   inheritUserGrok?: boolean;
                   trustedFolders?: string[];
+                  requireSandboxForAutopilot?: boolean;
                   engineReloaded?: boolean;
                 }>("settings.set", next);
                 const merged = appSettingsAfterSave({

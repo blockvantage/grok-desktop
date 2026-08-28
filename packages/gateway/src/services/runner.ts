@@ -26,6 +26,8 @@ import type { RunAttemptService } from "./run-attempts.js";
 import type { OperationReceiptService } from "./operation-receipts.js";
 import type { DeclaredArtifactService } from "./declared-artifacts.js";
 import { evaluateProviderOwnToolsGate } from "./policy-provider-gate.js";
+import type { PermissionGrantStore } from "./permission-grants.js";
+import { grantPatternFromToolRequest } from "@grokdesk/shared";
 import type { ProviderPreflightFn } from "./provider-preflight.js";
 import {
   engineOwnedBrowserCallFromRequest,
@@ -237,6 +239,9 @@ export class TaskRunner {
   private inheritUserGrokProvider: (() => boolean) | null = null;
   /** T5: trusted workspace folders for project tools at run start. */
   private trustedFoldersProvider: (() => string[]) | null = null;
+  private requireSandboxForAutopilot: (() => boolean) | null = null;
+  private supportsSandbox: (() => boolean) | null = null;
+  private permissionGrants: PermissionGrantStore | null = null;
   /** In-memory per-thread desktop grants (survive task restarts in-process). */
   private desktopGrants = new DesktopGrantStore();
   /**
@@ -275,6 +280,9 @@ export class TaskRunner {
       onRunSettled?: () => void;
       reconcileAssistantTurn?: (taskId: string) => void;
       onScheduledTask?: (payload: Record<string, unknown>) => void;
+      requireSandboxForAutopilot?: () => boolean;
+      supportsSandbox?: () => boolean;
+      permissionGrants?: PermissionGrantStore | null;
     },
   ) {
     this.maxConcurrent = clampMaxConcurrent(opts?.maxConcurrent ?? 3);
@@ -285,6 +293,9 @@ export class TaskRunner {
     this.desktopMachineProvider = opts?.desktopMachineProvider ?? null;
     this.inheritUserGrokProvider = opts?.inheritUserGrokProvider ?? null;
     this.trustedFoldersProvider = opts?.trustedFoldersProvider ?? null;
+    this.requireSandboxForAutopilot = opts?.requireSandboxForAutopilot ?? null;
+    this.supportsSandbox = opts?.supportsSandbox ?? null;
+    this.permissionGrants = opts?.permissionGrants ?? null;
     this.runAttempts = opts?.runAttempts ?? null;
     this.runAttemptLeaseMs = Math.max(
       75,
@@ -481,6 +492,7 @@ export class TaskRunner {
   async approve(
     approvalId: string,
     decision: "approve" | "reject",
+    opts?: { remember?: boolean },
   ): Promise<void> {
     const p = this.pending.get(approvalId);
     if (!p) return;
@@ -558,6 +570,27 @@ export class TaskRunner {
     }
     if (decision === "approve") {
       const tool = p.toolRequest.tool;
+      if (opts?.remember && this.permissionGrants) {
+        const task = this.tasks.get(p.taskId);
+        const scope = task?.policySnapshot.workspaceRoots[0] ?? "";
+        if (scope) {
+          const pattern = grantPatternFromToolRequest({
+            tool,
+            command: p.toolRequest.command,
+          });
+          this.permissionGrants.upsert({
+            scopeRoot: scope,
+            toolPattern: pattern,
+            decision: "allow",
+          });
+          this.audit.append({
+            taskId: p.taskId,
+            action: "permission_grant",
+            detail: { toolPattern: pattern, scopeRoot: scope },
+            decision: "allow",
+          });
+        }
+      }
       const url = browserOpenUrlFromToolMeta(
         p.toolRequest.meta as Record<string, unknown> | undefined,
       );
@@ -1070,6 +1103,9 @@ export class TaskRunner {
           allowShell: task.policySnapshot.allowShell,
           allowNetworkTools: task.policySnapshot.allowNetworkTools,
           approvalMode: task.policySnapshot.approvalMode,
+          requireSandboxForAutopilot:
+            this.requireSandboxForAutopilot?.() === true,
+          supportsSandbox: this.supportsSandbox?.() === true,
         });
         const plan = planFromEngineOwnToolsGate(gate);
         if (plan.kind === "reject" && gate.action === "reject") {
@@ -1741,6 +1777,27 @@ export class TaskRunner {
               ? "Plan ready for review"
               : "Tool requires approval",
           };
+        }
+
+        if (decision.decision === "needs_approval" && this.permissionGrants) {
+          const scope = liveTask.policySnapshot.workspaceRoots[0] ?? "";
+          const remembered = this.permissionGrants.match(scope, {
+            tool: event.tool,
+            command: event.command ?? null,
+            title:
+              typeof meta.title === "string" ? meta.title : null,
+          });
+          if (remembered?.decision === "deny") {
+            decision = {
+              decision: "deny",
+              reason: "Remembered never-allow for this workspace",
+            };
+          } else if (remembered?.decision === "allow") {
+            decision = {
+              decision: "allow",
+              reason: "Remembered always-allow for this workspace",
+            };
+          }
         }
 
         this.audit.append({

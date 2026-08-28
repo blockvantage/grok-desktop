@@ -110,6 +110,8 @@ export type LiveAcpFactoryDeps = {
   mcpServersProvider?: () => readonly DeskMcpServerLike[];
   skillsPathsProvider?: () => readonly string[];
   userHome?: string;
+  /** Overlay Desk remembered grants into isolated GROK_HOME before spawn. */
+  copyPermissionGrants?: (grokHome: string, cwd: string) => void;
 };
 
 export async function createLiveAcpTransportFactory(
@@ -166,6 +168,13 @@ export async function createLiveAcpTransportFactory(
       trustedFolders: input.trustedFolders,
       binary,
     });
+    if (provisioned.grokHome && deps?.copyPermissionGrants) {
+      try {
+        deps.copyPermissionGrants(provisioned.grokHome, input.cwd);
+      } catch {
+        /* grants overlay is best-effort; spawn still proceeds */
+      }
+    }
     const transport = spawn({
       binary,
       args,

@@ -521,7 +521,8 @@
     "queueRemoveShort": "移除",
     "composerSaveWhenReady": "引擎就绪后保存",
     "composerTryAgain": "重试",
-    "viewAudit": "查看审计"
+    "viewAudit": "查看审计",
+    "alwaysAllow": "在此文件夹始终允许"
   },
   "conversation": {
     "viewWork": "查看工作",
@@ -902,7 +903,10 @@
     "appearanceLight": "浅色",
     "appearanceSystem": "跟随系统",
     "showTour": "显示导览",
-    "whatsNew": "更新说明"
+    "whatsNew": "更新说明",
+    "requireSandboxAutopilot": "自动驾驶沙箱",
+    "requireSandboxAutopilotLabel": "自动驾驶必须使用系统沙箱",
+    "requireSandboxAutopilotDesc": "开启后，若此 Grok 运行时无法使用系统沙箱，自动驾驶就不会启动。除非你要这种硬停止，否则保持关闭。"
   },
   "dictation": {
     "listening": "Grok 正在听… {text}",
@@ -1822,7 +1826,12 @@
     "unknownDecision": "存储的决策未知（{value}）；显示为 info。",
     "unknownDecisionShort": "未知决策",
     "corruptDetail": "详情 JSON 已损坏，无法解析。",
-    "corruptDetailShort": "损坏的详情"
+    "corruptDetailShort": "损坏的详情",
+    "grantsTitle": "已记住的授权",
+    "grantsEmpty": "还没有记住的授权。",
+    "revokeGrant": "撤销",
+    "grantAllow": "始终允许",
+    "grantDeny": "永不允许"
   },
   "mermaid": {
     "title": "图表",

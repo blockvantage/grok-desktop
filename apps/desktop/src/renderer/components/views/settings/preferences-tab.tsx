@@ -51,6 +51,8 @@ export function PreferencesTab(props: {
   /** T5: trusted workspace folders for project tools. */
   trustedFolders?: string[];
   onUntrustFolder?: (path: string) => void;
+  requireSandboxForAutopilot?: boolean;
+  onRequireSandboxForAutopilot?: (enabled: boolean) => void;
 }) {
   const t = useT();
   const [confirmInherit, setConfirmInherit] = useState(false);
@@ -157,6 +159,26 @@ export function PreferencesTab(props: {
               </SelectContent>
             </Select>
           </SettingsSection>
+          {props.onRequireSandboxForAutopilot ? (
+            <SettingsSection title={t("settings.requireSandboxAutopilot")}>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 space-y-1 pr-2">
+                  <p className="text-sm text-foreground/90">
+                    {t("settings.requireSandboxAutopilotLabel")}
+                  </p>
+                  <p className="text-2xs leading-relaxed text-muted-foreground">
+                    {t("settings.requireSandboxAutopilotDesc")}
+                  </p>
+                </div>
+                <Switch
+                  checked={Boolean(props.requireSandboxForAutopilot)}
+                  onCheckedChange={props.onRequireSandboxForAutopilot}
+                  aria-label={t("settings.requireSandboxAutopilotLabel")}
+                  data-testid="require-sandbox-autopilot"
+                />
+              </div>
+            </SettingsSection>
+          ) : null}
           {props.onPreferProviderEngine ? (
             <SettingsSection title={t("settings.providerEngine")}>
               <div className="flex items-start justify-between gap-3">

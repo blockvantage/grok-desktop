@@ -32,6 +32,12 @@ describe("settings-schema", () => {
     if (off.ok) expect(off.value.deskSignedOut).toBe(false);
   });
 
+  it("accepts requireSandboxForAutopilot boolean", () => {
+    const on = parsePartialAppSettings({ requireSandboxForAutopilot: true });
+    expect(on.ok).toBe(true);
+    if (on.ok) expect(on.value.requireSandboxForAutopilot).toBe(true);
+  });
+
   it("accepts weeklyRecapEnabled boolean", () => {
     const on = parsePartialAppSettings({ weeklyRecapEnabled: true });
     expect(on.ok).toBe(true);

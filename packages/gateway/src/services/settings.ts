@@ -87,6 +87,11 @@ export interface AppSettings {
    * the CLI file; sign-in clears this flag and reuses the session if valid.
    */
   deskSignedOut: boolean;
+  /**
+   * Phase 4.1: when true, Autopilot refuses to spawn if the CLI probe
+   * does not support `--sandbox`. Default false (honesty first; opt-in gate).
+   */
+  requireSandboxForAutopilot: boolean;
 }
 
 const DEFAULTS: AppSettings = {
@@ -105,6 +110,7 @@ const DEFAULTS: AppSettings = {
   trustedFolders: [],
   weeklyRecapEnabled: true,
   deskSignedOut: false,
+  requireSandboxForAutopilot: false,
 };
 
 /** Drop corrupt/hostile MCP rows on settings load (same bounds as settings.set). */
@@ -223,6 +229,10 @@ export class SettingsService {
           typeof parsed.deskSignedOut === "boolean"
             ? parsed.deskSignedOut
             : undefined,
+        requireSandboxForAutopilot:
+          typeof parsed.requireSandboxForAutopilot === "boolean"
+            ? parsed.requireSandboxForAutopilot
+            : undefined,
       };
       return {
         ...DEFAULTS,
@@ -253,6 +263,10 @@ export class SettingsService {
           typeof rest.deskSignedOut === "boolean"
             ? rest.deskSignedOut
             : DEFAULTS.deskSignedOut,
+        requireSandboxForAutopilot:
+          typeof rest.requireSandboxForAutopilot === "boolean"
+            ? rest.requireSandboxForAutopilot
+            : DEFAULTS.requireSandboxForAutopilot,
       };
     } catch {
       return {
@@ -322,6 +336,9 @@ export class SettingsService {
       weeklyRecapEnabled:
         parsed.value.weeklyRecapEnabled ?? current.weeklyRecapEnabled,
       deskSignedOut: parsed.value.deskSignedOut ?? current.deskSignedOut,
+      requireSandboxForAutopilot:
+        parsed.value.requireSandboxForAutopilot ??
+        current.requireSandboxForAutopilot,
       // Never accept license from set()
       license: current.license,
     };

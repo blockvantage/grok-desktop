@@ -521,7 +521,8 @@
     "queueRemoveShort": "削除",
     "composerSaveWhenReady": "エンジンの準備ができたら保存",
     "composerTryAgain": "再試行",
-    "viewAudit": "監査を表示"
+    "viewAudit": "監査を表示",
+    "alwaysAllow": "このフォルダでは常に許可"
   },
   "conversation": {
     "viewWork": "作業を表示",
@@ -902,7 +903,10 @@
     "appearanceLight": "ライト",
     "appearanceSystem": "システムに合わせる",
     "showTour": "ツアーを表示",
-    "whatsNew": "新着情報"
+    "whatsNew": "新着情報",
+    "requireSandboxAutopilot": "オートパイロットのサンドボックス",
+    "requireSandboxAutopilotLabel": "オートパイロットに OS サンドボックスを必須にする",
+    "requireSandboxAutopilotDesc": "オンにすると、この Grok ランタイムが OS サンドボックスを使えない場合、オートパイロットは開始しません。その硬い停止が必要なときだけオンにしてください。"
   },
   "dictation": {
     "listening": "Grok が聞き取り中… {text}",
@@ -1822,7 +1826,12 @@
     "unknownDecision": "保存された決定は不明（{value}）でした。info として表示。",
     "unknownDecisionShort": "不明な決定",
     "corruptDetail": "詳細 JSON が破損しており解析できませんでした。",
-    "corruptDetailShort": "破損した詳細"
+    "corruptDetailShort": "破損した詳細",
+    "grantsTitle": "記憶した許可",
+    "grantsEmpty": "記憶した許可はまだありません。",
+    "revokeGrant": "取り消す",
+    "grantAllow": "常に許可",
+    "grantDeny": "許可しない"
   },
   "mermaid": {
     "title": "図",

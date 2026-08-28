@@ -332,8 +332,9 @@ describe("ConversationTurn", () => {
     expect(count(html, "data-approval-actions")).toBe(1);
     expect(count(html, "data-approve-action")).toBe(1);
     expect(count(html, "data-reject-action")).toBe(1);
+    expect(count(html, "data-testid=\"approval-always-allow\"")).toBe(1);
     expect(html).toContain("Publish the report?");
-    expect(count(html, "disabled=\"\"")).toBe(2);
+    expect(count(html, "disabled=\"\"")).toBe(3);
     expect(html).toContain('aria-busy="true"');
     expect(html).toContain('tabindex="-1"');
     expect(html).toContain('aria-live="assertive"');

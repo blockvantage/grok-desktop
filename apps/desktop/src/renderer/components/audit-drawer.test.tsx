@@ -85,6 +85,8 @@ vi.mock("@/lib/api", () => ({
   audit: {
     list: (...args: unknown[]) => listMock(...args),
   },
+  listPermissionGrants: async () => [],
+  revokePermissionGrant: async () => ({ ok: true }),
 }));
 
 vi.mock("@/i18n", () => ({
@@ -223,6 +225,25 @@ function renderUncontrolled(
 // ── controlled static markup ────────────────────────────────────────────────
 
 describe("AuditDrawer (controlled render)", () => {
+  it("renders remembered grants with revoke", () => {
+    const html = render({
+      open: true,
+      entries: [],
+      grants: [
+        {
+          id: "g1",
+          scopeRoot: "/ws",
+          toolPattern: "Bash(git *)",
+          decision: "allow",
+          createdAt: "2026-08-27T00:00:00.000Z",
+        },
+      ],
+    });
+    expect(html).toContain('data-testid="audit-grants"');
+    expect(html).toContain("Bash(git *)");
+    expect(html).toContain('data-testid="audit-grant-revoke"');
+  });
+
   it("shows empty copy when no entries", () => {
     const html = render({
       open: true,

@@ -32,6 +32,8 @@ export type SideDataDeps = {
     limit: number;
     offset: number;
   };
+  listPermissionGrants?: (scopeRoot?: string) => unknown;
+  revokePermissionGrant?: (scopeRoot: string, toolPattern: string) => unknown;
 };
 
 export const SIDE_DATA_METHODS = new Set([
@@ -46,6 +48,8 @@ export const SIDE_DATA_METHODS = new Set([
   "inbox.markRead",
   "inbox.dismiss",
   "audit.list",
+  "permissions.listGrants",
+  "permissions.revokeGrant",
 ]);
 
 export function isSideDataMethod(method: string): boolean {
@@ -132,6 +136,26 @@ export function dispatchSideDataMethod(
           ? params.offset
           : undefined;
       return deps.auditList({ taskId, decision, limit, offset });
+    }
+    case "permissions.listGrants": {
+      const scopeRoot =
+        typeof params.scopeRoot === "string" && params.scopeRoot.trim()
+          ? params.scopeRoot.trim()
+          : undefined;
+      return deps.listPermissionGrants?.(scopeRoot) ?? [];
+    }
+    case "permissions.revokeGrant": {
+      const scopeRoot =
+        typeof params.scopeRoot === "string" ? params.scopeRoot.trim() : "";
+      const toolPattern =
+        typeof params.toolPattern === "string" ? params.toolPattern.trim() : "";
+      if (!scopeRoot || !toolPattern) {
+        throw new Error("scopeRoot and toolPattern required");
+      }
+      return (
+        deps.revokePermissionGrant?.(scopeRoot, toolPattern) ??
+        okResponse()
+      );
     }
     default:
       throw new Error(`Unhandled side-data method: ${method}`);

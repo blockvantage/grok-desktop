@@ -380,6 +380,7 @@
   "workspace": {
     "followUp": "Add a follow-up for this workspace…",
     "approve": "Approve",
+    "alwaysAllow": "Always allow in this folder",
     "reject": "Reject",
     "send": "Send",
     "workLog": "Work log",
@@ -565,7 +566,12 @@
     "unknownDecision": "Stored decision was unknown ({value}); shown as info.",
     "unknownDecisionShort": "Unknown decision",
     "corruptDetail": "Detail JSON was corrupt and could not be parsed.",
-    "corruptDetailShort": "Corrupt detail"
+    "corruptDetailShort": "Corrupt detail",
+    "grantsTitle": "Remembered grants",
+    "grantsEmpty": "No remembered grants yet.",
+    "revokeGrant": "Revoke",
+    "grantAllow": "Always allow",
+    "grantDeny": "Never allow"
   },
   "conversation": {
     "viewWork": "View work",
@@ -795,6 +801,9 @@
     "selectConnector": "Select a connector to read the full description.",
     "loadingPresets": "Loading presets…",
     "defaultApproval": "Default approval",
+    "requireSandboxAutopilot": "Autopilot sandbox",
+    "requireSandboxAutopilotLabel": "Require OS sandbox for Autopilot",
+    "requireSandboxAutopilotDesc": "When on, Autopilot will not start if this Grok runtime cannot use an OS sandbox. Leave off unless you want that hard stop.",
     "shellTools": "Shell tools",
     "tempChatFolders": "Temp chat folders",
     "defaultSkills": "Default skills",

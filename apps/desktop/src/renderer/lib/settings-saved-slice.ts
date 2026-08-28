@@ -9,6 +9,7 @@ export type AppSettingsSlice = {
   preferProviderEngine?: boolean;
   inheritUserGrok?: boolean;
   trustedFolders?: string[];
+  requireSandboxForAutopilot?: boolean;
 };
 
 /**
@@ -22,6 +23,7 @@ export function appSettingsAfterSave(input: {
     preferProviderEngine?: boolean;
     inheritUserGrok?: boolean;
     trustedFolders?: string[];
+    requireSandboxForAutopilot?: boolean;
   };
   saved: {
     mcpServers?: AppSettingsSlice["mcpServers"];
@@ -30,6 +32,7 @@ export function appSettingsAfterSave(input: {
     preferProviderEngine?: boolean;
     inheritUserGrok?: boolean;
     trustedFolders?: string[];
+    requireSandboxForAutopilot?: boolean;
     engineReloaded?: boolean;
   };
 }): {
@@ -60,6 +63,11 @@ export function appSettingsAfterSave(input: {
         input.next.trustedFolders ??
         input.prior.trustedFolders ??
         [],
+      requireSandboxForAutopilot:
+        input.saved.requireSandboxForAutopilot ??
+        input.next.requireSandboxForAutopilot ??
+        input.prior.requireSandboxForAutopilot ??
+        false,
     },
     toastKey: input.saved.engineReloaded
       ? "settings.savedApplied"

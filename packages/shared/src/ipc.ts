@@ -221,6 +221,7 @@ export const IpcRequestSchema = z.discriminatedUnion("method", [
       taskId: z.string().min(1).max(128),
       approvalId: z.string().min(1).max(128),
       decision: z.enum(["approve", "reject"]),
+      remember: z.boolean().optional(),
       clientMutationId: ClientMutationIdSchema,
     }),
   }),
@@ -790,6 +791,23 @@ export const IpcRequestSchema = z.discriminatedUnion("method", [
     id: z.string().min(1).max(128),
     method: z.literal("remote.telepresence.listDisplays"),
     params: z.object({}).default({}),
+  }),
+  z.object({
+    id: z.string().min(1).max(128),
+    method: z.literal("permissions.listGrants"),
+    params: z
+      .object({
+        scopeRoot: z.string().min(1).max(4096).optional(),
+      })
+      .default({}),
+  }),
+  z.object({
+    id: z.string().min(1).max(128),
+    method: z.literal("permissions.revokeGrant"),
+    params: z.object({
+      scopeRoot: z.string().min(1).max(4096),
+      toolPattern: z.string().min(1).max(512),
+    }),
   }),
   z.object({
     id: z.string().min(1).max(128),

@@ -417,6 +417,7 @@ export class AgentProviderEngine implements EngineAdapter {
         supportsSandbox,
         isolateGrokHome,
         executesOwnTools: this.executesOwnToolsFlag !== false,
+        grokHome: session.isolatedProfileDir ?? null,
       },
       ...(initializeCaps
         ? { capabilities: initializeCaps }

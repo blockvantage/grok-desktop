@@ -230,6 +230,33 @@ export async function listAudit(
   return rpc<ListAuditResult>("audit.list", { ...params });
 }
 
+export type PermissionGrantDto = {
+  id: string;
+  scopeRoot: string;
+  toolPattern: string;
+  decision: "allow" | "deny";
+  createdAt: string;
+};
+
+export async function listPermissionGrants(
+  scopeRoot?: string,
+): Promise<PermissionGrantDto[]> {
+  const rows = await rpc<PermissionGrantDto[]>("permissions.listGrants", {
+    ...(scopeRoot ? { scopeRoot } : {}),
+  });
+  return Array.isArray(rows) ? rows : [];
+}
+
+export async function revokePermissionGrant(
+  scopeRoot: string,
+  toolPattern: string,
+): Promise<{ ok: boolean }> {
+  return rpc<{ ok: boolean }>("permissions.revokeGrant", {
+    scopeRoot,
+    toolPattern,
+  });
+}
+
 export async function pickDirectory(): Promise<string | null> {
   if (!window.grokdesk?.pickDirectory) return null;
   return window.grokdesk.pickDirectory();

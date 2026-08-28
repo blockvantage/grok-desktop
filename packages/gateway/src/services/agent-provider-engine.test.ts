@@ -902,6 +902,7 @@ describe("AgentProviderEngine T3 protection honesty", () => {
       throw new Error("expected session_meta.protection");
     }
     expect(meta.protection.isolateGrokHome).toBe(true);
+    expect(meta.protection.grokHome).toBe("/tmp/grokdesk-isolated-home");
   });
 
   it("does not claim isolated profile when spawn env has no GROK_HOME", async () => {

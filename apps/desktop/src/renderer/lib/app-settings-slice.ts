@@ -19,6 +19,8 @@ export type AppSettingsSlice = {
   inheritUserGrok: boolean;
   /** T5: trusted folders for project tools. */
   trustedFolders: string[];
+  /** Phase 4.1: Autopilot fail-closed without OS sandbox. */
+  requireSandboxForAutopilot: boolean;
 };
 
 /**
@@ -31,6 +33,7 @@ export function appSettingsFromSettingsGet(settings: {
   preferProviderEngine?: boolean;
   inheritUserGrok?: boolean;
   trustedFolders?: string[];
+  requireSandboxForAutopilot?: boolean;
 }): AppSettingsSlice {
   return {
     mcpServers: settings.mcpServers ?? [],
@@ -45,5 +48,6 @@ export function appSettingsFromSettingsGet(settings: {
           (p): p is string => typeof p === "string" && p.trim().length > 0,
         )
       : [],
+    requireSandboxForAutopilot: settings.requireSandboxForAutopilot === true,
   };
 }

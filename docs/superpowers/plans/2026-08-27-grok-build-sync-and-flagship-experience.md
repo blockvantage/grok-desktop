@@ -167,7 +167,7 @@ Upstream `ToolKind` is now rich enough to drive renderers without name matching:
 
 ## Phase 4 — Trust, enforcement & release (~1–2 weeks, partly owner-gated)
 
-### 4.1 Finish coworker Phase A (A3–A6)
+### 4.1 Finish coworker Phase A (A3–A6) ✅ (2026-08-27; unit + IPC; hooks upgrade path still open)
 - A3 effective-protection snapshot per run (now derivable from the real spawn env after 0.1); A4 fail-closed sandbox for Autopilot (`requireSandboxForAutopilot`); A5 remembered permission grants — align with upstream `remember_tool_approvals` (on by default, repo-root-scoped `permission_<client>.toml`): Desk writes to its **own client file**, and the audit drawer shows grants with revoke. A6 verification gate updates `claim-to-test-matrix.md`.
 - Client hooks over ACP as the enforcement upgrade path: register PreToolUse (with `updatedInput` rewriting) and Stop gates from the gateway — this is the first real mechanism to make gateway policy *binding* on a CLI that executes its own tools. Read `initialize._meta["x.ai/hooks"]` first; only `deny` blocks, everything else fails open — design accordingly.
 

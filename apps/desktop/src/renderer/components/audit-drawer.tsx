@@ -22,7 +22,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ScrollText } from "lucide-react";
 import type { AuditEntry } from "@grokdesk/shared";
-import { audit, type ListAuditParams, type ListAuditResult } from "@/lib/api";
+import {
+  audit,
+  listPermissionGrants,
+  revokePermissionGrant,
+  type ListAuditParams,
+  type ListAuditResult,
+  type PermissionGrantDto,
+} from "@/lib/api";
 import { useT } from "@/i18n";
 import { humanizeError } from "@/lib/errors";
 import { relativeTime } from "@/lib/format";
@@ -76,6 +83,9 @@ export type AuditDrawerProps = {
   total?: number;
   /** Controlled soft-dropped invalid row count (tests). Ignored when auto-fetching. */
   droppedInvalid?: number;
+  /** Controlled remembered grants (tests). When omitted, auto-fetch. */
+  grants?: PermissionGrantDto[];
+  onRevokeGrant?: (grant: PermissionGrantDto) => void;
 };
 
 // ── pure helpers (exported for unit tests) ──────────────────────────────────
@@ -656,6 +666,7 @@ export function AuditDrawer(props: AuditDrawerProps) {
   const [droppedInvalid, setDroppedInvalid] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [grants, setGrants] = useState<PermissionGrantDto[]>([]);
   /** filterKey for which loaded/error state is authoritative (null = never settled). */
   const [resultFilterKey, setResultFilterKey] = useState<string | null>(null);
   const loadGen = useRef(0);
@@ -752,6 +763,23 @@ export function AuditDrawer(props: AuditDrawerProps) {
     return sortNewestFirst(loaded);
   }, [controlled, props.entries, loaded]);
 
+  const grantRows = props.grants ?? grants;
+
+  useEffect(() => {
+    if (!props.open || props.grants !== undefined || controlled) return;
+    let cancelled = false;
+    void listPermissionGrants()
+      .then((list) => {
+        if (!cancelled) setGrants(Array.isArray(list) ? list : []);
+      })
+      .catch(() => {
+        if (!cancelled) setGrants([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [props.open, props.grants, controlled]);
+
   const displayHasMore = controlled ? Boolean(props.hasMore) : hasMore;
   const displayTotal = controlled
     ? typeof props.total === "number"
@@ -823,6 +851,59 @@ export function AuditDrawer(props: AuditDrawerProps) {
 
         <ScrollArea className="flex-1">
           <div className="flex flex-col gap-2 p-3" data-testid="audit-list">
+            {grantRows.length > 0 ? (
+              <div className="mb-2 space-y-1.5" data-testid="audit-grants">
+                <p className="px-1 text-2xs font-medium uppercase tracking-wide text-muted-foreground">
+                  {t("audit.grantsTitle")}
+                </p>
+                {grantRows.map((g) => (
+                  <div
+                    key={`${g.scopeRoot}:${g.toolPattern}:${g.decision}`}
+                    className="flex items-center justify-between gap-2 rounded-md border border-border/50 px-2 py-1.5 text-xs"
+                    data-testid="audit-grant-row"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate font-mono">{g.toolPattern}</p>
+                      <p className="truncate text-2xs text-muted-foreground">
+                        {g.decision === "deny"
+                          ? t("audit.grantDeny")
+                          : t("audit.grantAllow")}
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      className="shrink-0"
+                      data-testid="audit-grant-revoke"
+                      onClick={() => {
+                        if (props.onRevokeGrant) {
+                          props.onRevokeGrant(g);
+                          return;
+                        }
+                        void revokePermissionGrant(g.scopeRoot, g.toolPattern)
+                          .then(() =>
+                            setGrants((prev) =>
+                              prev.filter(
+                                (x) =>
+                                  !(
+                                    x.scopeRoot === g.scopeRoot &&
+                                    x.toolPattern === g.toolPattern
+                                  ),
+                              ),
+                            ),
+                          )
+                          .catch(() => {
+                            /* keep row; next refresh is honest */
+                          });
+                      }}
+                    >
+                      {t("audit.revokeGrant")}
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ) : null}
             {view.showLoading ? (
               <div
                 className="flex items-center justify-center gap-2 py-12 text-sm text-muted-foreground"

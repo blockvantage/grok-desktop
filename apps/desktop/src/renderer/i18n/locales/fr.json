@@ -521,7 +521,8 @@
     "queueRemoveShort": "Retirer",
     "composerSaveWhenReady": "Enregistrer quand le moteur est prêt",
     "composerTryAgain": "Réessayer",
-    "viewAudit": "Voir l’audit"
+    "viewAudit": "Voir l’audit",
+    "alwaysAllow": "Toujours autoriser dans ce dossier"
   },
   "conversation": {
     "viewWork": "Voir le travail",
@@ -902,7 +903,10 @@
     "appearanceLight": "Clair",
     "appearanceSystem": "Suivre le système",
     "showTour": "Voir la visite",
-    "whatsNew": "Nouveautés"
+    "whatsNew": "Nouveautés",
+    "requireSandboxAutopilot": "Sandbox Autopilote",
+    "requireSandboxAutopilotLabel": "Exiger le sandbox OS pour Autopilote",
+    "requireSandboxAutopilotDesc": "Si c’est activé, Autopilote ne démarre pas si ce runtime Grok ne peut pas utiliser un sandbox OS. Laissez désactivé sauf si vous voulez cet arrêt net."
   },
   "dictation": {
     "listening": "Écoute avec Grok… {text}",
@@ -1822,7 +1826,12 @@
     "unknownDecision": "Décision stockée inconnue ({value}) ; affichée comme info.",
     "unknownDecisionShort": "Décision inconnue",
     "corruptDetail": "Le JSON de détail était corrompu et n’a pas pu être lu.",
-    "corruptDetailShort": "Détail corrompu"
+    "corruptDetailShort": "Détail corrompu",
+    "grantsTitle": "Autorisations mémorisées",
+    "grantsEmpty": "Aucune autorisation mémorisée pour l’instant.",
+    "revokeGrant": "Révoquer",
+    "grantAllow": "Toujours autoriser",
+    "grantDeny": "Ne jamais autoriser"
   },
   "mermaid": {
     "title": "Schéma",

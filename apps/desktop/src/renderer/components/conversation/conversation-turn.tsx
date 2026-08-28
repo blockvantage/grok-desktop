@@ -520,6 +520,29 @@ export function ConversationTurn({
                   : t("workspace.approve")}
               </Button>
               <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={approvalBusy !== null}
+                data-testid="approval-always-allow"
+                data-task-id={approvalTarget.taskId}
+                data-approval-id={approvalTarget.approvalId}
+                onClick={() => {
+                  setApprovalError("");
+                  void runApprovalAction({
+                    target: { ...approvalTarget, remember: true },
+                    action: onApprove,
+                    actionElement: approveRef.current,
+                    turnElement: turnRef.current,
+                    announce: setApprovalError,
+                  }).then((ok) => {
+                    if (!ok) setRestoreApprovalFocus("approve");
+                  });
+                }}
+              >
+                {t("workspace.alwaysAllow")}
+              </Button>
+              <Button
                 ref={rejectRef}
                 type="button"
                 size="sm"

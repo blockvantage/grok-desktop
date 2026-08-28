@@ -165,6 +165,12 @@ describe("SettingsService skills + connectors + license", () => {
     expect(settings.getAll().onboardingCompleted).toBe(true);
   });
 
+  it("defaults requireSandboxForAutopilot to false and persists true", () => {
+    expect(settings.getAll().requireSandboxForAutopilot).toBe(false);
+    const next = settings.set({ requireSandboxForAutopilot: true });
+    expect(next.requireSandboxForAutopilot).toBe(true);
+  });
+
   it("defaults deskSignedOut to false and persists true", () => {
     expect(settings.getAll().deskSignedOut).toBe(false);
     const next = settings.set({ deskSignedOut: true });

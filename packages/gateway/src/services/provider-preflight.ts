@@ -25,7 +25,11 @@ export type ProviderPreflightFn = (
  */
 export function createProviderPreflight(
   providers: ProviderRegistry,
-  opts?: { defaultProviderId?: string },
+  opts?: {
+    defaultProviderId?: string;
+    requireSandboxForAutopilot?: () => boolean;
+    supportsSandbox?: () => boolean;
+  },
 ): ProviderPreflightFn {
   const defaultId = opts?.defaultProviderId ?? "grok";
 
@@ -47,6 +51,8 @@ export function createProviderPreflight(
       allowShell: task.policySnapshot.allowShell,
       allowNetworkTools: task.policySnapshot.allowNetworkTools,
       approvalMode: task.policySnapshot.approvalMode,
+      requireSandboxForAutopilot: opts?.requireSandboxForAutopilot?.() === true,
+      supportsSandbox: opts?.supportsSandbox?.() === true,
     });
 
     if (gate.action === "reject") {

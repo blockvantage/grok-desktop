@@ -32,7 +32,14 @@ describe("tasksApproveParams", () => {
   it("accepts approve/reject only", () => {
     expect(
       tasksApproveParams({ approvalId: "a1", decision: "approve" }),
-    ).toEqual({ approvalId: "a1", decision: "approve" });
+    ).toEqual({ approvalId: "a1", decision: "approve", remember: false });
+    expect(
+      tasksApproveParams({
+        approvalId: "a1",
+        decision: "approve",
+        remember: true,
+      }),
+    ).toEqual({ approvalId: "a1", decision: "approve", remember: true });
     expect(
       tasksApproveParams({ approvalId: "a1", decision: "maybe" }),
     ).toBeNull();

@@ -56,6 +56,7 @@ export type GatewayDomainServiceBag = {
     approve: (
       approvalId: string,
       decision: "approve" | "reject",
+      opts?: { remember?: boolean },
     ) => Promise<void>;
     registerHostBrowserApproval: (input: {
       approvalId: string;
@@ -142,6 +143,11 @@ export type GatewayDomainServiceBag = {
       hasRemainingLiterals: boolean;
     };
   };
+  permissionGrants?: {
+    list: (scopeRoot: string) => unknown;
+    listAll: () => unknown;
+    revoke: (scopeRoot: string, toolPattern: string) => boolean;
+  };
   scheduler: {
     list: () => unknown;
     create: (params: unknown) => unknown;
@@ -204,8 +210,8 @@ export function buildDomainDispatchDeps(
       cancel: (taskId) => g.runner.cancel(taskId),
       setTitle: (taskId, title) => g.tasks.setTitle(taskId, title),
       deleteChat: (taskId) => g.deleteChat(taskId),
-      approve: (approvalId, decision) =>
-        g.runner.approve(approvalId, decision),
+      approve: (approvalId, decision, opts) =>
+        g.runner.approve(approvalId, decision, opts),
       registerBrowserHostApproval: (p) =>
         registerBrowserHostApproval(
           p as {
@@ -349,6 +355,13 @@ export function buildDomainDispatchDeps(
       inboxMarkRead: (id) => g.inbox.markRead(id),
       inboxDismiss: (id) => g.inbox.dismiss(id),
       auditList: (params) => g.audit.list(params),
+      listPermissionGrants: (scopeRoot) =>
+        scopeRoot
+          ? g.permissionGrants?.list(scopeRoot) ?? []
+          : g.permissionGrants?.listAll() ?? [],
+      revokePermissionGrant: (scopeRoot, toolPattern) => ({
+        ok: g.permissionGrants?.revoke(scopeRoot, toolPattern) === true,
+      }),
     },
     eventsExport: {
       listEvents: (taskId, afterSeq) =>

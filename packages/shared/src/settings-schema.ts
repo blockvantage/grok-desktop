@@ -53,6 +53,8 @@ export const APP_SETTINGS_SETTABLE_KEYS = [
   "weeklyRecapEnabled",
   /** Phase 3.6: Desk-only sign-out; does not delete ~/.grok/auth.json. */
   "deskSignedOut",
+  /** Phase 4.1: fail-closed Autopilot when OS sandbox is unavailable. */
+  "requireSandboxForAutopilot",
 ] as const;
 
 export type SettableSettingsKey = (typeof APP_SETTINGS_SETTABLE_KEYS)[number];
@@ -108,6 +110,7 @@ export const partialAppSettingsSchema = z
     weeklyRecapEnabled: z.boolean().optional(),
     /** Desk-scoped sign-out overlay (CLI session file is left alone). */
     deskSignedOut: z.boolean().optional(),
+    requireSandboxForAutopilot: z.boolean().optional(),
   })
   .partial();
 

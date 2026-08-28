@@ -73,6 +73,30 @@ describe("ipc schemas", () => {
     ]);
   });
 
+  it("accepts tasks.approve remember and permissions grant methods", () => {
+    expect(
+      parseIpcRequest({
+        id: "1",
+        method: "tasks.approve",
+        params: { taskId: "t", approvalId: "a", decision: "approve", remember: true },
+      }).method,
+    ).toBe("tasks.approve");
+    expect(
+      parseIpcRequest({
+        id: "2",
+        method: "permissions.listGrants",
+        params: { scopeRoot: "/ws" },
+      }).method,
+    ).toBe("permissions.listGrants");
+    expect(
+      parseIpcRequest({
+        id: "3",
+        method: "permissions.revokeGrant",
+        params: { scopeRoot: "/ws", toolPattern: "Bash(git *)" },
+      }).method,
+    ).toBe("permissions.revokeGrant");
+  });
+
   it("rejects empty goal", () => {
     expect(() =>
       CreateTaskInputSchema.parse({ goal: "", workspaceRoots: ["/tmp"] }),

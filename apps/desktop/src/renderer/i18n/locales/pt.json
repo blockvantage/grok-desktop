@@ -521,7 +521,8 @@
     "queueRemoveShort": "Remover",
     "composerSaveWhenReady": "Guardar quando o motor estiver pronto",
     "composerTryAgain": "Tentar de novo",
-    "viewAudit": "Ver auditoria"
+    "viewAudit": "Ver auditoria",
+    "alwaysAllow": "Permitir sempre nesta pasta"
   },
   "conversation": {
     "viewWork": "Ver trabalho",
@@ -902,7 +903,10 @@
     "appearanceLight": "Claro",
     "appearanceSystem": "Seguir o sistema",
     "showTour": "Ver tour",
-    "whatsNew": "Novidades"
+    "whatsNew": "Novidades",
+    "requireSandboxAutopilot": "Sandbox do Autopiloto",
+    "requireSandboxAutopilotLabel": "Exigir sandbox do sistema no Autopiloto",
+    "requireSandboxAutopilotDesc": "Quando ligado, o Autopiloto não arranca se este runtime Grok não puder usar uma sandbox do sistema. Deixa desligado salvo se quiseres esse corte."
   },
   "dictation": {
     "listening": "A ouvir com o Grok… {text}",
@@ -1822,7 +1826,12 @@
     "unknownDecision": "Decisão guardada era desconhecida ({value}); mostrada como info.",
     "unknownDecisionShort": "Decisão desconhecida",
     "corruptDetail": "O JSON de detalhe estava corrompido e não pôde ser analisado.",
-    "corruptDetailShort": "Detalhe corrompido"
+    "corruptDetailShort": "Detalhe corrompido",
+    "grantsTitle": "Permissões lembradas",
+    "grantsEmpty": "Ainda não há permissões lembradas.",
+    "revokeGrant": "Revogar",
+    "grantAllow": "Permitir sempre",
+    "grantDeny": "Nunca permitir"
   },
   "mermaid": {
     "title": "Diagrama",

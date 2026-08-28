@@ -521,7 +521,8 @@
     "queueRemoveShort": "Entfernen",
     "composerSaveWhenReady": "Speichern, wenn die Engine bereit ist",
     "composerTryAgain": "Erneut versuchen",
-    "viewAudit": "Audit anzeigen"
+    "viewAudit": "Audit anzeigen",
+    "alwaysAllow": "In diesem Ordner immer erlauben"
   },
   "conversation": {
     "viewWork": "Arbeit anzeigen",
@@ -902,7 +903,10 @@
     "appearanceLight": "Hell",
     "appearanceSystem": "System folgen",
     "showTour": "Tour zeigen",
-    "whatsNew": "Neuigkeiten"
+    "whatsNew": "Neuigkeiten",
+    "requireSandboxAutopilot": "Autopilot-Sandbox",
+    "requireSandboxAutopilotLabel": "OS-Sandbox für Autopilot verlangen",
+    "requireSandboxAutopilotDesc": "Wenn an, startet Autopilot nicht, falls diese Grok-Runtime keine OS-Sandbox nutzen kann. Aus lassen, außer du willst diesen harten Stopp."
   },
   "dictation": {
     "listening": "Grok hört zu… {text}",
@@ -1822,7 +1826,12 @@
     "unknownDecision": "Gespeicherte Entscheidung war unbekannt ({value}); als info angezeigt.",
     "unknownDecisionShort": "Unbekannte Entscheidung",
     "corruptDetail": "Detail-JSON war beschädigt und konnte nicht gelesen werden.",
-    "corruptDetailShort": "Beschädigtes Detail"
+    "corruptDetailShort": "Beschädigtes Detail",
+    "grantsTitle": "Gemerkte Freigaben",
+    "grantsEmpty": "Noch keine gemerkten Freigaben.",
+    "revokeGrant": "Widerrufen",
+    "grantAllow": "Immer erlauben",
+    "grantDeny": "Nie erlauben"
   },
   "mermaid": {
     "title": "Diagramm",

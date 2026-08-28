@@ -32,6 +32,10 @@ export interface ProviderGateInput {
   allowShell: boolean;
   allowNetworkTools: boolean;
   approvalMode: "strict" | "balanced" | "autopilot";
+  /** Opt-in Autopilot fail-closed when the CLI cannot pass --sandbox. */
+  requireSandboxForAutopilot?: boolean;
+  /** Live CLI probe: --sandbox is documented/supported. */
+  supportsSandbox?: boolean;
 }
 
 /**
@@ -44,6 +48,28 @@ export interface ProviderGateInput {
 export function evaluateProviderOwnToolsGate(
   input: ProviderGateInput,
 ): ProviderGateAction {
+  if (
+    input.requireSandboxForAutopilot === true &&
+    input.approvalMode === "autopilot" &&
+    input.supportsSandbox !== true
+  ) {
+    return {
+      action: "reject",
+      message:
+        "Autopilot is set to require an OS sandbox, and this Grok runtime does not support --sandbox. Turn the requirement off in Settings or use Careful/Balanced.",
+      receipt: {
+        action: "policy.provider_gate",
+        decision: "deny",
+        effect: "rejected",
+        detail: {
+          reason: "sandbox_required_unavailable",
+          approvalMode: input.approvalMode,
+          supportsSandbox: false,
+        },
+      },
+    };
+  }
+
   if (!input.executesOwnTools) {
     return { action: "proceed" };
   }

@@ -47,15 +47,18 @@ export function protectionInputFromTask(opts: {
     supportsSandbox?: boolean;
     isolateGrokHome?: boolean;
     executesOwnTools?: boolean;
+    grokHome?: string | null;
   } | null;
 }): ProjectProtectionInput {
   const p = opts.spawnProtection;
+  const grokHome = p?.grokHome?.trim();
   return {
     policy: opts.policy,
     supportsSandbox: p?.supportsSandbox ?? opts.supportsSandbox,
     isolateGrokHome: p?.isolateGrokHome ?? opts.isolateGrokHome ?? true,
     executesOwnTools: p?.executesOwnTools ?? true,
     spawnArgs: p?.spawnArgs,
+    spawnEnv: grokHome ? { GROK_HOME: grokHome } : undefined,
   };
 }
 
@@ -65,14 +68,13 @@ export function protectionFromEvents(
     kind: string;
     payload?: Record<string, unknown> | null;
   }[],
-): ProjectProtectionInput["spawnArgs"] extends infer _S
-  ? {
-      spawnArgs: string[];
-      supportsSandbox: boolean;
-      isolateGrokHome: boolean;
-      executesOwnTools: boolean;
-    } | null
-  : never {
+): {
+  spawnArgs: string[];
+  supportsSandbox: boolean;
+  isolateGrokHome: boolean;
+  executesOwnTools: boolean;
+  grokHome: string | null;
+} | null {
   for (let i = events.length - 1; i >= 0; i--) {
     const ev = events[i]!;
     if (ev.kind !== "step") continue;
@@ -85,6 +87,10 @@ export function protectionFromEvents(
       supportsSandbox: prot.supportsSandbox === true,
       isolateGrokHome: prot.isolateGrokHome !== false,
       executesOwnTools: prot.executesOwnTools !== false,
+      grokHome:
+        typeof prot.grokHome === "string" && prot.grokHome.trim()
+          ? prot.grokHome
+          : null,
     };
   }
   return null;
