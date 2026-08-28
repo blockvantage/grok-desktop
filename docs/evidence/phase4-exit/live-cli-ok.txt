@@ -1,0 +1,6 @@
+2026-08-28T04:24:15.659Z
+sessionId=01a0469c-1f40-77e0-a02c-61fdfd339437
+GROK_HOME=/var/folders/z7/z80ljz_s2bd_d2z3sp2czndr0000gn/T/grokdesk-grok-home-K3GEFl
+workspacePng=true
+promoted=[]
+media=["/var/folders/z7/z80ljz_s2bd_d2z3sp2czndr0000gn/T/gd-live-acp-EbECxj/ws/images/live-cli.png"]

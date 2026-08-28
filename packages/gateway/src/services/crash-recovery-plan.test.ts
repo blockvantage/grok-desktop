@@ -36,6 +36,17 @@ describe("crash-recovery-plan", () => {
     expect(noSession.kind).toBe("interrupt");
   });
 
+  it("requeues waiting_approval when a provider session exists instead of interrupted_on_restart", () => {
+    const plan = planTaskInterruptOnRestart("waiting_approval", {
+      providerSessionId: "sess-parked",
+    });
+    expect(plan).toEqual({ kind: "resume", requeueStatus: "queued" });
+    const noSession = planTaskInterruptOnRestart("waiting_approval", {
+      providerSessionId: null,
+    });
+    expect(noSession.kind).toBe("interrupt");
+  });
+
   it("skips terminal and queued statuses", () => {
     expect(planTaskInterruptOnRestart("queued")).toEqual({ kind: "skip" });
     expect(planTaskInterruptOnRestart("done")).toEqual({ kind: "skip" });

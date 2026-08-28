@@ -433,6 +433,7 @@ export class AgentProviderEngine implements EngineAdapter {
     });
 
     let sawDone = false;
+    const runStartedAtMs = Date.now();
     const result = await session.runTurn(
       { goal: prompt },
       async (ev) => {
@@ -447,6 +448,7 @@ export class AgentProviderEngine implements EngineAdapter {
       grokHome: session.isolatedProfileDir,
       destRoot: mediaDestRoot(task.policySnapshot.workspaceRoots, cwd),
       onEvent,
+      sinceMs: runStartedAtMs - 30_000,
     });
 
     if (result.status === "cancelled") {
@@ -553,6 +555,7 @@ async function promoteAcpSessionMedia(opts: {
   grokHome?: string | null;
   destRoot: string;
   onEvent: EngineRunOptions["onEvent"];
+  sinceMs: number;
 }): Promise<void> {
   if (!opts.grokHome) return;
   let promoted: ReturnType<typeof promoteSessionMediaToWorkspace> = [];
@@ -560,7 +563,7 @@ async function promoteAcpSessionMedia(opts: {
     promoted = promoteSessionMediaToWorkspace({
       grokHome: opts.grokHome,
       destRoot: opts.destRoot,
-      sinceMs: Date.now() - 30_000,
+      sinceMs: opts.sinceMs,
     });
   } catch {
     return;

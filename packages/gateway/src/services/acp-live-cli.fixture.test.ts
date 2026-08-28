@@ -13,6 +13,7 @@ import os from "node:os";
 import path from "node:path";
 import {
   AcpJsonRpcClient,
+  acpPermissionResult,
   spawnAcpLineTransport,
 } from "@grokdesk/provider-grok";
 import { promoteSessionMediaToWorkspace } from "@grokdesk/engine-grok";
@@ -180,10 +181,34 @@ describe("ACP live CLI fixture", () => {
       env: provisioned.env,
       allowSpawn: true,
     });
+    const reverseLog: string[] = [];
     const client = new AcpJsonRpcClient(transport, {
-      requestTimeoutMs: 75_000,
+      requestTimeoutMs: 90_000,
+      onServerRequest: (method, params, respond) => {
+        reverseLog.push(
+          `${method} ${JSON.stringify(params ?? {}).slice(0, 400)}`,
+        );
+        if (method === "session/request_permission") {
+          const rec = params as {
+            options?: Array<{ optionId?: string; kind?: string }>;
+          };
+          respond(acpPermissionResult("allow_once", rec.options));
+          return;
+        }
+        if (method === "x.ai/hooks/run") {
+          respond({ permission: "allow" });
+          return;
+        }
+        respond({});
+      },
     });
     clients.push(client);
+    client.on("notification", (method, params) => {
+      const rec = params as { update?: { sessionUpdate?: string; title?: string } };
+      reverseLog.push(
+        `notify:${String(method)}:${rec?.update?.sessionUpdate ?? ""}:${rec?.update?.title ?? ""}`,
+      );
+    });
 
     try {
       const init = await client.initialize();
@@ -194,10 +219,17 @@ describe("ACP live CLI fixture", () => {
       });
       expect(session.sessionId).toMatch(/\S/);
 
+      const promptStartedAtMs = Date.now();
       try {
         await client.prompt(
           session.sessionId,
-          "Create a tiny 1x1 PNG and save it as images/live-cli.png in this workspace. Do not ask questions.",
+          [
+            "You MUST create images/live-cli.png in this workspace.",
+            "Call a write/file tool (or image_gen). Do not only describe an image.",
+            "A valid 1x1 PNG in base64 is:",
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+            "Do not ask questions. After the file exists, stop.",
+          ].join(" "),
         );
       } catch (e) {
         writeLiveCliMissing(
@@ -212,7 +244,7 @@ describe("ACP live CLI fixture", () => {
       const promoted = promoteSessionMediaToWorkspace({
         grokHome: provisioned.grokHome!,
         destRoot: cwd,
-        sinceMs: Date.now() - 180_000,
+        sinceMs: promptStartedAtMs - 30_000,
       });
       const workspacePng = path.join(cwd, "images", "live-cli.png");
       const media = collectMediaFiles(cwd);
@@ -222,24 +254,30 @@ describe("ACP live CLI fixture", () => {
         media.length > 0;
       if (!found) {
         const grokListing = collectMediaFiles(provisioned.grokHome ?? cwd);
-        writeLiveCliMissing(
-          `ACP initialize + session/new succeeded; prompt returned but no media under ${cwd}.\n` +
-            `GROK_HOME=${provisioned.grokHome}\n` +
-            `promoted=${JSON.stringify(promoted.map((p) => p.destPath))}\n` +
-            `workspaceFiles=${JSON.stringify(collectMediaFiles(cwd))}\n` +
-            `grokHomeMedia=${JSON.stringify(grokListing)}\n` +
-            `Media promotion unit tests remain the bar for CLI session-tree copies.`,
+        const detail =
+          `ACP initialize + session/new + prompt succeeded; no media under ${cwd}.\n` +
+          `GROK_HOME=${provisioned.grokHome}\n` +
+          `promoted=${JSON.stringify(promoted.map((p) => p.destPath))}\n` +
+          `workspaceFiles=${JSON.stringify(media)}\n` +
+          `grokHomeMedia=${JSON.stringify(grokListing)}\n` +
+          `reverseRpc=${JSON.stringify(reverseLog)}`;
+        writeLiveCliMissing(detail);
+        expect.fail(
+          "Live prompt completed without workspace media. Spawn-env units are the bar only when the CLI cannot run.\n" +
+            detail,
         );
-      } else {
-        writeLiveCliOk(
-          `sessionId=${session.sessionId}\nGROK_HOME=${provisioned.grokHome}\n` +
-            `workspacePng=${fs.existsSync(workspacePng)}\n` +
-            `promoted=${JSON.stringify(promoted.map((p) => p.destPath))}\n` +
-            `media=${JSON.stringify(media)}`,
-        );
-        expect(found).toBe(true);
       }
+      writeLiveCliOk(
+        `sessionId=${session.sessionId}\nGROK_HOME=${provisioned.grokHome}\n` +
+          `workspacePng=${fs.existsSync(workspacePng)}\n` +
+          `promoted=${JSON.stringify(promoted.map((p) => p.destPath))}\n` +
+          `media=${JSON.stringify(media)}`,
+      );
+      expect(found).toBe(true);
     } catch (e) {
+      if (e instanceof Error && /without workspace media/.test(e.message)) {
+        throw e;
+      }
       writeLiveCliMissing(
         `Live ACP initialize/session/new failed:\n${
           e instanceof Error ? e.stack ?? e.message : String(e)

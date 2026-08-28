@@ -986,6 +986,56 @@ describe("AgentProviderEngine T3 protection honesty", () => {
     }
   });
 
+  it("promotes media written 45s before a slow turn completes", async () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "gd-acp-media-slow-"));
+    try {
+      const grokHome = path.join(root, "home");
+      const workspace = path.join(root, "ws");
+      fs.mkdirSync(workspace);
+      const imgDir = path.join(
+        grokHome,
+        "sessions",
+        "%2Fws",
+        "sess-slow",
+        "images",
+      );
+      fs.mkdirSync(imgDir, { recursive: true });
+      const src = path.join(imgDir, "slow-rocket.png");
+      const engine = createAgentProviderEngine(
+        {
+          ...stubProvider({ caps: acpCaps }),
+          createSession: async (input: SessionInput) => ({
+            binding: {
+              providerId: "stub",
+              providerSessionId: "stub-slow",
+              modelId: input.ref.modelId,
+              createdAt: new Date().toISOString(),
+            },
+            isolatedProfileDir: grokHome,
+            async runTurn(_turn, sink) {
+              fs.writeFileSync(src, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+              await new Promise((r) => setTimeout(r, 45_000));
+              await sink({ type: "done", summary: "ok" });
+              return { status: "done", summary: "ok" };
+            },
+            async cancel() {},
+          }),
+        } as never,
+        { supportsSandbox: false, executesOwnTools: true },
+      );
+      await engine.run({
+        task: task("Generate an image of a rocket", [workspace]),
+        systemPreamble: "",
+        onEvent: async () => "continue",
+      });
+      expect(fs.existsSync(path.join(workspace, "images", "slow-rocket.png"))).toBe(
+        true,
+      );
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  }, 70_000);
+
   it("defaults supportsSandbox to false (fail closed) when option omitted", async () => {
     const engine = createAgentProviderEngine(stubProvider({ caps: acpCaps }));
     const events: NormalizedEngineEvent[] = [];

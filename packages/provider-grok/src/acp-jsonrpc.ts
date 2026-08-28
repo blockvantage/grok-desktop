@@ -71,6 +71,57 @@ export interface AcpPermissionRequest {
 
 export type AcpPermissionDecision = "allow" | "deny" | "allow_once";
 
+export type AcpPermissionOption = {
+  optionId?: string;
+  kind?: string;
+};
+
+/**
+ * grok 1.0.5 `session/request_permission` result: nested selected/optionId.
+ * A string `outcome` is still accepted by the fake peer for older tests.
+ */
+export function acpPermissionResult(
+  decision: AcpPermissionDecision,
+  options?: AcpPermissionOption[] | null,
+): { outcome: { outcome: "selected"; optionId: string } } {
+  const aliases =
+    decision === "deny"
+      ? ["reject-once", "reject_once", "deny"]
+      : decision === "allow"
+        ? ["allow-always", "allow_always", "allow"]
+        : ["allow-once", "allow_once"];
+  const optionId =
+    options?.find((o) => {
+      const id = (o.optionId ?? "").toLowerCase();
+      const kind = (o.kind ?? "").toLowerCase();
+      return aliases.some((a) => id === a || kind === a);
+    })?.optionId ?? aliases[0]!;
+  return { outcome: { outcome: "selected", optionId } };
+}
+
+export function interpretAcpPermissionResult(
+  result: unknown,
+): AcpPermissionDecision {
+  if (!result || typeof result !== "object") return "deny";
+  const rec = result as { outcome?: unknown };
+  if (
+    rec.outcome === "allow" ||
+    rec.outcome === "deny" ||
+    rec.outcome === "allow_once"
+  ) {
+    return rec.outcome;
+  }
+  if (rec.outcome && typeof rec.outcome === "object") {
+    const inner = rec.outcome as { outcome?: string; optionId?: string };
+    if (inner.outcome === "cancelled") return "deny";
+    const id = (inner.optionId ?? "").toLowerCase();
+    if (id.includes("reject") || id === "deny") return "deny";
+    if (id.includes("always")) return "allow";
+    if (id.includes("once") || id.includes("allow")) return "allow_once";
+  }
+  return "deny";
+}
+
 export interface AcpSpawnMeta {
   grokHome: string | null;
   isolateGrokHome: boolean;
@@ -550,17 +601,9 @@ export function attachFakeAcpAgent(
       if (waiter) {
         permWaiters.delete(key);
         state.pendingPermissionIds.delete(key);
-        let decision: AcpPermissionDecision = "deny";
-        if ("result" in msg && msg.result && typeof msg.result === "object") {
-          const outcome = (msg.result as { outcome?: string }).outcome;
-          if (
-            outcome === "allow" ||
-            outcome === "deny" ||
-            outcome === "allow_once"
-          ) {
-            decision = outcome;
-          }
-        }
+        const decision = interpretAcpPermissionResult(
+          "result" in msg ? msg.result : undefined,
+        );
         state.permissionOutcomes.push(decision);
         if (decision === "allow" || decision === "allow_once") {
           state.toolsExecuted.push({

@@ -34,7 +34,10 @@ export function planTaskInterruptOnRestart(
   if (!shouldInterruptTaskStatus(status)) {
     return { kind: "skip" };
   }
-  if (status === "running" && opts?.providerSessionId) {
+  if (
+    (status === "running" || status === "waiting_approval") &&
+    opts?.providerSessionId
+  ) {
     return { kind: "resume", requeueStatus: "queued" };
   }
   return {

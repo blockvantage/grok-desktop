@@ -17,8 +17,10 @@ import {
 } from "@grokdesk/agent-runtime";
 import {
   AcpJsonRpcClient,
+  acpPermissionResult,
   type AcpLineTransport,
   type AcpPermissionDecision,
+  type AcpPermissionOption,
 } from "./acp-jsonrpc.js";
 import {
   applyApproverOverride,
@@ -204,6 +206,7 @@ export class AcpMediatedSession implements AgentSession {
             kind?: string;
             title?: string;
             toolCallId?: string;
+            options?: AcpPermissionOption[];
           };
           if (isExitPlanMode(p)) {
             void this.handleExitPlanMode(
@@ -285,6 +288,7 @@ export class AcpMediatedSession implements AgentSession {
       kind?: string;
       title?: string;
       toolCallId?: string;
+      options?: AcpPermissionOption[];
     },
     respond: (result: unknown) => void,
     reject: (code: number, message: string) => void,
@@ -304,12 +308,12 @@ export class AcpMediatedSession implements AgentSession {
         });
         const outcome = applyApproverOverride(broker, human);
         this.emitReceipt(broker, p, outcome);
-        respond({ outcome });
+        respond(acpPermissionResult(outcome, p.options));
         return;
       }
       const outcome = applyApproverOverride(broker, null);
       this.emitReceipt(broker, p, outcome);
-      respond({ outcome });
+      respond(acpPermissionResult(outcome, p.options));
     } catch (e) {
       reject(-32000, e instanceof Error ? e.message : String(e));
     }

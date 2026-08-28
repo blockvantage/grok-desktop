@@ -4,9 +4,11 @@ import {
   ACP_MAX_PENDING_RPC,
   AcpJsonRpcClient,
   MemoryLineDuplex,
+  acpPermissionResult,
   attachFakeAcpAgent,
-  encodeJsonRpc,
   decodeJsonRpcLine,
+  encodeJsonRpc,
+  interpretAcpPermissionResult,
 } from "./acp-jsonrpc.js";
 
 describe("ACP JSON-RPC framing", () => {
@@ -165,5 +167,22 @@ describe("ACP JSON-RPC framing", () => {
     expect(promptReq?.params?.prompt).toEqual([
       { type: "text", text: "hello" },
     ]);
+  });
+
+  it("encodes grok 1.0.5 permission results as selected optionId", () => {
+    expect(
+      acpPermissionResult("allow_once", [
+        { optionId: "allow-once", kind: "allow_once" },
+        { optionId: "reject-once", kind: "reject_once" },
+      ]),
+    ).toEqual({
+      outcome: { outcome: "selected", optionId: "allow-once" },
+    });
+    expect(
+      interpretAcpPermissionResult({
+        outcome: { outcome: "selected", optionId: "allow-once" },
+      }),
+    ).toBe("allow_once");
+    expect(interpretAcpPermissionResult({ outcome: "deny" })).toBe("deny");
   });
 });

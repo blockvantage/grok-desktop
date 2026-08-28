@@ -27,13 +27,13 @@ After pack, `better-sqlite3` was restored to Node ABI 127 (`prebuild-install --r
 
 ## Live CLI ACP + flagship journeys (same day)
 
-`grok 1.0.5` on PATH. `packages/gateway/src/services/acp-live-cli.fixture.test.ts` spawned `grok agent stdio` with isolated `GROK_HOME` (user `hooks/evil.sh` not copied), Desk MCP/skills on `session/new`, and `session/prompt` as ContentBlock[] (CLI 1.0.5 rejects a raw string with `-32602`). Initialize + session/new + prompt succeeded; no PNG under the workspace. `docs/evidence/phase4-exit/live-cli-missing.txt` records that. Spawn-env units remain the media bar.
+`grok 1.0.5` on PATH. `packages/gateway/src/services/acp-live-cli.fixture.test.ts` spawned `grok agent stdio` with isolated `GROK_HOME` (user `hooks/evil.sh` not copied), Desk MCP/skills on `session/new`, and `session/prompt` as ContentBlock[]. A successful prompt without workspace media **fails** the fixture (spawn-env units are the bar only when the CLI cannot run). After answering `session/request_permission` with ACP `{ outcome: { outcome: "selected", optionId } }`, `images/live-cli.png` landed in the workspace (`docs/evidence/phase4-exit/live-cli-ok.txt`).
 
 DoD #4 journeys: `apps/desktop/e2e/flagship-journeys.spec.ts` (fake provider). `e2e:chat` is 17 tests.
 
 | Gate | Pass 1 | Pass 2 |
 |---|---|---|
-| live-cli fixture | 0 (prompt ok; media missing file) | — |
+| live-cli fixture | 0 (`images/live-cli.png` on disk) | — |
 | `pnpm --filter @grokdesk/desktop e2e:chat` | **17 passed** (rebuild + Playwright) | **17 passed** (existing `out/`) |
 
 Logs: implementer scratch `gates/e2e-chat-1.log`, `gates/e2e-chat-2.log`, `gates/live-cli-fixture.log`.
